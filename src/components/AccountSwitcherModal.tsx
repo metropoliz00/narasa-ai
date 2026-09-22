@@ -117,7 +117,9 @@ export const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({
               className="w-12 h-12 rounded-xl object-cover ring-2 ring-blue-500/20 shadow-xs"
             />
             <div className="text-left space-y-0.5">
-              <span className="text-sm font-bold text-[#25324B] block">{currentUser.name}</span>
+              <span className="text-sm font-bold text-[#25324B] block">
+                {currentUser.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim()}
+              </span>
               <div>{getRoleBadge(currentUser)}</div>
             </div>
           </div>
@@ -226,7 +228,7 @@ export const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({
                     />
                     <div className="min-w-0 space-y-0.5">
                       <span className="text-xs sm:text-sm font-bold text-[#25324B] truncate block">
-                        {u.name}
+                        {u.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim()}
                       </span>
                       <div className="flex items-center gap-1.5 pt-0.5">
                         {getRoleBadge(u)}

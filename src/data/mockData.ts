@@ -155,14 +155,16 @@ export const DEMO_USERS: Record<string, UserProfile> = {
 };
 
 export const DEFAULT_MISSIONS: LearningMission[] = [
+  // ==================== MATEMATIKA (KPK & FPB) ====================
   {
     id: 'mission-kpk-fpb',
-    title: 'Petualangan KPK & FPB dalam Kehidupan Sehari-hari',
+    idMapel: 'matematika',
+    title: 'Misi 1: Berburu Interval Jam Dinding',
     grade: 'Kelas V',
     phase: 'Fase C',
     subject: 'Matematika',
     material: 'Kelipatan Persekutuan Terkecil (KPK) & Faktor Persekutuan Terbesar (FPB)',
-    cp: 'Peserta didik dapat memahami dan menyelesaikan masalah penalaran yang berkaitan dengan kelipatan dan faktor dalam konteks kehidupan sehari-hari.',
+    cp: 'Peserta didik dapat memahami dan menyelesaikan masalah penalaran yang berkaitan dengan kelipatan and faktor dalam konteks kehidupan sehari-hari.',
     tp: 'Menerapkan konsep KPK dan FPB untuk menyelesaikan masalah nyata terkait interval waktu berulang dan pembagian merata dengan strategi logis.',
     indicators: [
       'Menemukan informasi kuantitatif berulang atau interval dari objek nyata di sekitar',
@@ -181,14 +183,113 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       presentation: true,
       peerQuestion: true
     },
-    description: 'Ajak murid memotret benda yang memiliki ritme, jarum berputar, jadwal, atau benda yang dikelompokkan (jam dinding, kipas angin, deretan ubin, kotak pensil).',
+    description: 'Temukan dan potret jam dinding analog di sekolah. Amati pergerakan jarumnya yang berdetak setiap menit atau detik untuk memahami konsep interval waktu berulang.',
     isActive: true,
     createdAt: '2026-09-10',
-    suggestedObjects: ['Jam dinding kelas', 'Kipas angin berputar', 'Deretan lampu teras', 'Jadwal piket & kalender']
+    suggestedObjects: ['Jam dinding kelas V', 'Jam dinding ruang guru', 'Jam dinding perpustakaan']
   },
   {
+    id: 'mission-kpk-fpb-2',
+    idMapel: 'matematika',
+    title: 'Misi 2: Pola Putaran Kipas Angin',
+    grade: 'Kelas V',
+    phase: 'Fase C',
+    subject: 'Matematika',
+    material: 'Kelipatan Persekutuan Terkecil (KPK) & Faktor Persekutuan Terbesar (FPB)',
+    cp: 'Peserta didik dapat memahami dan menyelesaikan masalah penalaran yang berkaitan dengan kelipatan dan faktor dalam konteks kehidupan sehari-hari.',
+    tp: 'Menerapkan konsep KPK dan FPB untuk menyelesaikan masalah nyata terkait interval waktu berulang dan pembagian merata dengan strategi logis.',
+    indicators: [
+      'Menganalisis putaran berulang kipas angin dengan kecepatan konstan',
+      'Menyusun rasio dan kelipatan putaran yang seimbang',
+      'Membuktikan hasil hitung persekutuan putaran secara terperinci'
+    ],
+    targetCompetency: 'numeracy',
+    cognitiveLevel: 'C4',
+    strictCurriculumMode: true,
+    features: {
+      adaptiveDifficulty: true,
+      scaffolding: true,
+      reasoning: true,
+      evidence: true,
+      reflection: true,
+      presentation: true,
+      peerQuestion: true
+    },
+    description: 'Temukan dan potret kipas angin yang berputar di ruang kelas atau lorong sekolah. Hitung jumlah baling-balingnya dan pergerakan konstan berulang untuk memvisualisasikan kelipatan putaran.',
+    isActive: true,
+    createdAt: '2026-09-11',
+    suggestedObjects: ['Kipas angin dinding kelas', 'Kipas angin langit-langit', 'Baling-baling exhaust fan']
+  },
+  {
+    id: 'mission-kpk-fpb-3',
+    idMapel: 'matematika',
+    title: 'Misi 3: Pembagian Ubin Kelas',
+    grade: 'Kelas V',
+    phase: 'Fase C',
+    subject: 'Matematika',
+    material: 'Kelipatan Persekutuan Terkecil (KPK) & Faktor Persekutuan Terbesar (FPB)',
+    cp: 'Peserta didik dapat memahami dan menyelesaikan masalah penalaran yang berkaitan dengan kelipatan dan faktor dalam konteks kehidupan sehari-hari.',
+    tp: 'Menerapkan konsep KPK dan FPB untuk menyelesaikan masalah nyata terkait interval waktu berulang dan pembagian merata dengan strategi logis.',
+    indicators: [
+      'Mengidentifikasi pembagian area lantai kelas secara presisi menggunakan ubin',
+      'Menghitung faktor persekutuan terbesar (FPB) dari ukuran panjang dan lebar lantai',
+      'Menyimpulkan rancangan ubin ideal tanpa tersisa'
+    ],
+    targetCompetency: 'numeracy',
+    cognitiveLevel: 'C5',
+    strictCurriculumMode: true,
+    features: {
+      adaptiveDifficulty: true,
+      scaffolding: true,
+      reasoning: true,
+      evidence: true,
+      reflection: true,
+      presentation: true,
+      peerQuestion: true
+    },
+    description: 'Temukan dan potret susunan ubin lantai persegi di dalam kelas atau lorong. Hitung bagaimana ubin-ubin tersebut membagi ruangan secara merata untuk memahami konsep faktor pembagi terbesar.',
+    isActive: true,
+    createdAt: '2026-09-12',
+    suggestedObjects: ['Ubin lantai kelas persegi', 'Keramik tangga sekolah', 'Paving block halaman depan']
+  },
+  {
+    id: 'mission-kpk-fpb-4',
+    idMapel: 'matematika',
+    title: 'Misi 4: Susunan Kue Kantin',
+    grade: 'Kelas V',
+    phase: 'Fase C',
+    subject: 'Matematika',
+    material: 'Kelipatan Persekutuan Terkecil (KPK) & Faktor Persekutuan Terbesar (FPB)',
+    cp: 'Peserta didik dapat memahami dan menyelesaikan masalah penalaran yang berkaitan dengan kelipatan dan faktor dalam konteks kehidupan sehari-hari.',
+    tp: 'Menerapkan konsep KPK dan FPB untuk menyelesaikan masalah nyata terkait interval waktu berulang dan pembagian merata dengan strategi logis.',
+    indicators: [
+      'Menganalisis pengelompokkan jenis jajanan pasar di nampan kantin sehat',
+      'Menentukan jumlah piring saji maksimal yang dibutuhkan untuk membagi kue sama rata (FPB)',
+      'Menyajikan visualisasi pembagian merata makanan'
+    ],
+    targetCompetency: 'numeracy',
+    cognitiveLevel: 'C6',
+    strictCurriculumMode: true,
+    features: {
+      adaptiveDifficulty: true,
+      scaffolding: true,
+      reasoning: true,
+      evidence: true,
+      reflection: true,
+      presentation: true,
+      peerQuestion: true
+    },
+    description: 'Kunjungi kantin sekolah dan potret jajanan pasar atau kue yang diletakkan berjajar secara rapi di nampan. Amati bagaimana kue tersebut dikelompokkan secara merata untuk mempelajari FPB.',
+    isActive: true,
+    createdAt: '2026-09-13',
+    suggestedObjects: ['Kue donat di piring saji', 'Lemper di nampan mika', 'Pastel goreng di baki kantin']
+  },
+
+  // ==================== IPAS (EKOSISTEM) ====================
+  {
     id: 'mission-ipas-ekosistem',
-    title: 'Eksplorasi Hubungan Komponen Biotik & Abiotik Sekolah',
+    idMapel: 'ipas',
+    title: 'Misi 1: Menemukan Produsen Hijau',
     grade: 'Kelas V',
     phase: 'Fase C',
     subject: 'IPAS',
@@ -196,9 +297,9 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
     cp: 'Peserta didik menyelidiki bagaimana hubungan saling ketergantungan antara komponen biotik dan abiotik membentuk keseimbangan ekosistem.',
     tp: 'Menganalisis peran objek di lingkungan sekolah dalam mendukung kehidupan makhluk hidup dan mengajukan argumen berbasis bukti visual.',
     indicators: [
-      'Mengidentifikasi komponen biotik dan abiotik pada objek yang difoto',
-      'Menjelaskan dampak perubahan kondisi objek terhadap lingkungan sekitarnya',
-      'Menyusun teks observasi ringkas berbasis bukti foto'
+      'Mengidentifikasi komponen produsen biotik pada tanaman hijau yang difoto',
+      'Menjelaskan peran klorofil dan fotosintesis dalam rantai makanan sekolah',
+      'Menyusun deskripsi ketergantungan makhluk hidup lain kepada tanaman'
     ],
     targetCompetency: 'both',
     cognitiveLevel: 'C4',
@@ -212,27 +313,28 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       presentation: true,
       peerQuestion: true
     },
-    description: 'Foto tanaman di pot, pohon taman sekolah, kolam ikan, tanah lembap, atau sarang semut di halaman.',
+    description: 'Potret tanaman hijau atau pohon di sekitar halaman sekolah yang berperan sebagai produsen dalam rantai makanan, penghasil oksigen pendukung kehidupan ekosistem.',
     isActive: true,
     createdAt: '2026-09-08',
-    suggestedObjects: ['Pohon peneduh di lapangan', 'Tanaman lidah mertua di lorong', 'Kolam ikan sekolah', 'Tanah dan bebatuan']
+    suggestedObjects: ['Pohon peneduh di lapangan upacara', 'Tanaman lidah mertua di koridor', 'Rumput hijau subur di taman']
   },
   {
-    id: 'mission-b-indo-deskripsi',
-    title: 'Detektif Teks Deskripsi Objek Sekitar',
+    id: 'mission-ipas-ekosistem-2',
+    idMapel: 'ipas',
+    title: 'Misi 2: Menyelidiki Komponen Abiotik',
     grade: 'Kelas V',
     phase: 'Fase C',
-    subject: 'Bahasa Indonesia',
-    material: 'Teks Deskripsi Berbasis Panca Indra & Observasi Nyata',
-    cp: 'Peserta didik mampu menulis teks deskripsi terperinci dengan memperhatikan ciri fisik, fungsi, dan kesan yang dirasakan.',
-    tp: 'Menyusun deskripsi mendalam tentang suatu objek nyata di sekolah dengan kosakata baku, rincian pancaindra, dan bukti observasi.',
+    subject: 'IPAS',
+    material: 'Ekosistem dan Keseimbangan Alam di Sekitar Kita',
+    cp: 'Peserta didik menyelidiki bagaimana hubungan saling ketergantungan antara komponen biotik dan abiotik membentuk keseimbangan ekosistem.',
+    tp: 'Menganalisis peran objek di lingkungan sekolah dalam mendukung kehidupan makhluk hidup dan mengajukan argumen berbasis bukti visual.',
     indicators: [
-      'Menemukan 4 detail sensorik (warna, tekstur, bentuk, ukuran) dari foto',
-      'Mengembangkan kalimat deskripsi yang koheren tanpa spekulasi berlebihan',
-      'Mengevaluasi apakah teks sudah mencerminkan bukti visual foto'
+      'Mengidentifikasi komponen non-hidup (abiotik) pendukung kesuburan tanaman',
+      'Menjelaskan pengaruh kelembapan tanah atau batuan terhadap ekosistem mikro',
+      'Menganalisis interaksi tanah-air-udara dengan tanaman pot'
     ],
-    targetCompetency: 'literacy',
-    cognitiveLevel: 'C4-C6',
+    targetCompetency: 'both',
+    cognitiveLevel: 'C4',
     strictCurriculumMode: true,
     features: {
       adaptiveDifficulty: true,
@@ -243,10 +345,204 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       presentation: true,
       peerQuestion: true
     },
-    description: 'Foto kantin sekolah, rak buku perpustakaan, tempat sampah pilah, atau mading sekolah.',
+    description: 'Temukan dan potret komponen tidak hidup (abiotik) seperti tanah, batu, atau genangan air yang membantu pertumbuhan tanaman dan menyokong kehidupan mikroorganisme sekitar.',
+    isActive: true,
+    createdAt: '2026-09-09',
+    suggestedObjects: ['Tanah hitam subur di dalam pot', 'Bebatuan kerikil di kolam', 'Genangan air/air kran penyiram']
+  },
+  {
+    id: 'mission-ipas-ekosistem-3',
+    idMapel: 'ipas',
+    title: 'Misi 3: Interaksi Makhluk Hidup',
+    grade: 'Kelas V',
+    phase: 'Fase C',
+    subject: 'IPAS',
+    material: 'Ekosistem dan Keseimbangan Alam di Sekitar Kita',
+    cp: 'Peserta didik menyelidiki bagaimana hubungan saling ketergantungan antara komponen biotik dan abiotik membentuk keseimbangan ekosistem.',
+    tp: 'Menganalisis peran objek di lingkungan sekolah dalam mendukung kehidupan makhluk hidup dan mengajukan argumen berbasis bukti visual.',
+    indicators: [
+      'Menemukan contoh simbiosis atau interaksi nyata antar makhluk hidup berbeda di sekolah',
+      'Mendeskripsikan pergerakan atau perilaku serangga pendukung penyerbukan',
+      'Menilai kestabilan interaksi biotik mikro'
+    ],
+    targetCompetency: 'both',
+    cognitiveLevel: 'C5',
+    strictCurriculumMode: true,
+    features: {
+      adaptiveDifficulty: true,
+      scaffolding: true,
+      reasoning: true,
+      evidence: true,
+      reflection: true,
+      presentation: true,
+      peerQuestion: true
+    },
+    description: 'Amati dan potret interaksi atau hubungan nyata antara makhluk hidup berbeda, misalnya serangga kecil di daun, semut beriringan mencari makan, atau kupu-kupu yang hinggap di bunga.',
+    isActive: true,
+    createdAt: '2026-09-10',
+    suggestedObjects: ['Semut hitam berbaris di batang pohon', 'Lebah atau kupu-kupu di mahkota bunga', 'Burung pipit bertengger di kabel listrik']
+  },
+  {
+    id: 'mission-ipas-ekosistem-4',
+    idMapel: 'ipas',
+    title: 'Misi 4: Menjaga Keseimbangan dengan Tempat Sampah',
+    grade: 'Kelas V',
+    phase: 'Fase C',
+    subject: 'IPAS',
+    material: 'Ekosistem dan Keseimbangan Alam di Sekitar Kita',
+    cp: 'Peserta didik menyelidiki bagaimana hubungan saling ketergantungan antara komponen biotik dan abiotik membentuk keseimbangan ekosistem.',
+    tp: 'Menganalisis peran objek di lingkungan sekolah dalam mendukung kehidupan makhluk hidup dan mengajukan argumen berbasis bukti visual.',
+    indicators: [
+      'Menganalisis dampak pemilahan sampah organik dan anorganik bagi kesuburan tanah',
+      'Menghubungkan kebersihan drainase dengan kesehatan ekosistem sekolah',
+      'Mengusulkan aksi pelestarian lingkungan berbasis bukti visual'
+    ],
+    targetCompetency: 'both',
+    cognitiveLevel: 'C6',
+    strictCurriculumMode: true,
+    features: {
+      adaptiveDifficulty: true,
+      scaffolding: true,
+      reasoning: true,
+      evidence: true,
+      reflection: true,
+      presentation: true,
+      peerQuestion: true
+    },
+    description: 'Potret sarana penjaga keseimbangan alam buatan di sekolah, seperti tempat sampah pilah atau saluran drainase air untuk menganalisis kebersihan dan pencegahan kerusakan ekosistem.',
+    isActive: true,
+    createdAt: '2026-09-11',
+    suggestedObjects: ['Tempat sampah terpilah tiga warna', 'Saluran air bersih terawat', 'Komposter sampah organik daun']
+  },
+
+  // ==================== BAHASA INDONESIA (TEKS DESKRIPSI) ====================
+  {
+    id: 'mission-b-indo-deskripsi',
+    idMapel: 'bahasa_indonesia',
+    title: 'Misi 1: Keindahan Mading Sekolah',
+    grade: 'Kelas V',
+    phase: 'Fase C',
+    subject: 'Bahasa Indonesia',
+    material: 'Teks Deskripsi Berbasis Panca Indra & Observasi Nyata',
+    cp: 'Peserta didik mampu menulis teks deskripsi terperinci dengan memperhatikan ciri fisik, fungsi, dan kesan yang dirasakan.',
+    tp: 'Menyusun deskripsi mendalam tentang suatu objek nyata di sekolah dengan kosakata baku, rincian pancaindra, dan bukti observasi.',
+    indicators: [
+      'Mengidentifikasi detail visual warna, bentuk, dan susunan mading sekolah',
+      'Menggunakan kata sifat penginderaan visual yang kaya dan relevan',
+      'Menyusun kerangka paragraf pembuka teks deskripsi objek mading'
+    ],
+    targetCompetency: 'literacy',
+    cognitiveLevel: 'C4',
+    strictCurriculumMode: true,
+    features: {
+      adaptiveDifficulty: true,
+      scaffolding: true,
+      reasoning: true,
+      evidence: true,
+      reflection: true,
+      presentation: true,
+      peerQuestion: true
+    },
+    description: 'Cari dan potret Majalah Dinding (mading) sekolah yang penuh warna. Amati tata letak kertas, tulisan tangan, serta gambar dekoratif untuk bahan teks deskripsi visual pancaindra.',
     isActive: true,
     createdAt: '2026-09-05',
-    suggestedObjects: ['Kantin sekolah saat istirahat', 'Rak buku perpustakaan', 'Tempat sampah terpilah 3 warna']
+    suggestedObjects: ['Papan mading lobi sekolah', 'Kliping puisi bertulisan rapi', 'Gambar hiasan origami kertas warna-warni']
+  },
+  {
+    id: 'mission-b-indo-deskripsi-2',
+    idMapel: 'bahasa_indonesia',
+    title: 'Misi 2: Kerapian Rak Perpustakaan',
+    grade: 'Kelas V',
+    phase: 'Fase C',
+    subject: 'Bahasa Indonesia',
+    material: 'Teks Deskripsi Berbasis Panca Indra & Observasi Nyata',
+    cp: 'Peserta didik mampu menulis teks deskripsi terperinci dengan memperhatikan ciri fisik, fungsi, dan kesan yang dirasakan.',
+    tp: 'Menyusun deskripsi mendalam tentang suatu objek nyata di sekolah dengan kosakata baku, rincian pancaindra, dan bukti observasi.',
+    indicators: [
+      'Menemukan ciri fisik bahan, ukuran, dan tekstur rak buku perpustakaan',
+      'Mendeskripsikan keheningan atmosfer perpustakaan menggunakan panca indera pendengaran dan perasaan',
+      'Mengembangkan tulisan koheren tanpa menyisipkan asumsi fiktif'
+    ],
+    targetCompetency: 'literacy',
+    cognitiveLevel: 'C4',
+    strictCurriculumMode: true,
+    features: {
+      adaptiveDifficulty: true,
+      scaffolding: true,
+      reasoning: true,
+      evidence: true,
+      reflection: true,
+      presentation: true,
+      peerQuestion: true
+    },
+    description: 'Kunjungi perpustakaan sekolah and potret deretan buku yang tersusun rapi di rak kayu. Rasakan kesan ketenangan dan kerapian susunan buku untuk memperkaya teks deskripsi fisik objek.',
+    isActive: true,
+    createdAt: '2026-09-06',
+    suggestedObjects: ['Deretan novel cerita nusantara', 'Tumpukan kamus besar berdebu tipis', 'Papan penunjuk kategori buku kayu']
+  },
+  {
+    id: 'mission-b-indo-deskripsi-3',
+    idMapel: 'bahasa_indonesia',
+    title: 'Misi 3: Aromatik Kantin Sehat',
+    grade: 'Kelas V',
+    phase: 'Fase C',
+    subject: 'Bahasa Indonesia',
+    material: 'Teks Deskripsi Berbasis Panca Indra & Observasi Nyata',
+    cp: 'Peserta didik mampu menulis teks deskripsi terperinci dengan memperhatikan ciri fisik, fungsi, dan kesan yang dirasakan.',
+    tp: 'Menyusun deskripsi mendalam tentang suatu objek nyata di sekolah dengan kosakata baku, rincian pancaindra, dan bukti observasi.',
+    indicators: [
+      'Menggali deskripsi sensorik aroma, rasa, dan kehangatan etalase kantin',
+      'Menuliskan detail fisik kemasan, kebersihan, dan susunan nampan saji',
+      'Menyatukan pengamatan panca indra ke dalam kesimpulan utuh teks deskripsi'
+    ],
+    targetCompetency: 'literacy',
+    cognitiveLevel: 'C5',
+    strictCurriculumMode: true,
+    features: {
+      adaptiveDifficulty: true,
+      scaffolding: true,
+      reasoning: true,
+      evidence: true,
+      reflection: true,
+      presentation: true,
+      peerQuestion: true
+    },
+    description: 'Potret suasana atau etalase makanan bersih di kantin sekolah. Amati bentuk wadah saji, warna makanan hangat, serta aroma lezat yang tercium untuk melatih menulis deskripsi pancaindra penciuman.',
+    isActive: true,
+    createdAt: '2026-09-07',
+    suggestedObjects: ['Etalase kaca penutup makanan', 'Nampan saji berisi kue tradisional', 'Daftar menu makanan bersih tertempel dinding']
+  },
+  {
+    id: 'mission-b-indo-deskripsi-4',
+    idMapel: 'bahasa_indonesia',
+    title: 'Misi 4: Gerbang Sekolah yang Gagah',
+    grade: 'Kelas V',
+    phase: 'Fase C',
+    subject: 'Bahasa Indonesia',
+    material: 'Teks Deskripsi Berbasis Panca Indra & Observasi Nyata',
+    cp: 'Peserta didik mampu menulis teks deskripsi terperinci dengan memperhatikan ciri fisik, fungsi, dan kesan yang dirasakan.',
+    tp: 'Menyusun deskripsi mendalam tentang suatu objek nyata di sekolah dengan kosakata baku, rincian pancaindra, dan bukti observasi.',
+    indicators: [
+      'Mendeskripsikan material, ketebalan, dan ukuran kokoh dari tiang/gerbang sekolah',
+      'Menggambarkan kesan kemegahan atau keindahan gerbang depan sekolah',
+      'Menyusun karya teks deskripsi akhir dengan bahasa baku yang objektif dan rapi'
+    ],
+    targetCompetency: 'literacy',
+    cognitiveLevel: 'C6',
+    strictCurriculumMode: true,
+    features: {
+      adaptiveDifficulty: true,
+      scaffolding: true,
+      reasoning: true,
+      evidence: true,
+      reflection: true,
+      presentation: true,
+      peerQuestion: true
+    },
+    description: 'Pergilah ke area depan sekolah, potret pilar gerbang utama sekolah atau papan nama sekolah. Amati bahan pembuatannya (seperti besi atau semen kokoh) untuk mendeskripsikan ciri fisik kekokohan dan fungsinya.',
+    isActive: true,
+    createdAt: '2026-09-08',
+    suggestedObjects: ['Pilar beton gerbang berlapis batu alam', 'Papan nama sekolah dari logam mengkilap', 'Tanaman hias menjalar di tembok pagar depan']
   }
 ];
 

@@ -240,33 +240,46 @@ export async function dbFetchMissions(): Promise<LearningMission[]> {
       return [];
     }
 
-    return data.map((row: any) => ({
-      id: row.id,
-      title: row.title,
-      grade: row.grade,
-      phase: row.phase,
-      subject: row.subject,
-      material: row.material,
-      cp: row.cp,
-      tp: row.tp,
-      indicators: Array.isArray(row.indicators) ? row.indicators : [],
-      targetCompetency: row.target_competency,
-      cognitiveLevel: row.cognitive_level,
-      strictCurriculumMode: row.strict_curriculum_mode,
-      features: row.features || {
-        adaptiveDifficulty: true,
-        scaffolding: true,
-        reasoning: true,
-        evidence: true,
-        reflection: true,
-        presentation: true,
-        peerQuestion: true
-      },
-      description: row.description,
-      isActive: row.is_active,
-      createdAt: row.created_at,
-      suggestedObjects: Array.isArray(row.suggested_objects) ? row.suggested_objects : []
-    }));
+    return data.map((row: any) => {
+      const subject = row.subject || 'Matematika';
+      const mapelIdMap: Record<string, string> = {
+        'Matematika': 'matematika',
+        'IPAS': 'ipas',
+        'Bahasa Indonesia': 'bahasa_indonesia',
+        'Pendidikan Pancasila': 'pancasila',
+        'Seni Budaya': 'seni_budaya'
+      };
+      const idMapel = row.id_mapel || mapelIdMap[subject] || subject.toLowerCase().replace(/\s+/g, '_');
+
+      return {
+        id: row.id,
+        idMapel,
+        title: row.title,
+        grade: row.grade,
+        phase: row.phase,
+        subject,
+        material: row.material,
+        cp: row.cp,
+        tp: row.tp,
+        indicators: Array.isArray(row.indicators) ? row.indicators : [],
+        targetCompetency: row.target_competency,
+        cognitiveLevel: row.cognitive_level,
+        strictCurriculumMode: row.strict_curriculum_mode,
+        features: row.features || {
+          adaptiveDifficulty: true,
+          scaffolding: true,
+          reasoning: true,
+          evidence: true,
+          reflection: true,
+          presentation: true,
+          peerQuestion: true
+        },
+        description: row.description,
+        isActive: row.is_active,
+        createdAt: row.created_at,
+        suggestedObjects: Array.isArray(row.suggested_objects) ? row.suggested_objects : []
+      };
+    });
   } catch (e) {
     return [];
   }
@@ -279,6 +292,7 @@ export async function dbUpsertMission(mission: LearningMission): Promise<boolean
   try {
     const payload = {
       id: mission.id,
+      id_mapel: mission.idMapel,
       title: mission.title,
       grade: mission.grade,
       phase: mission.phase,

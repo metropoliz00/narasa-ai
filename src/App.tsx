@@ -14,7 +14,8 @@ import {
   ConceptQuiz,
   QuizSubmission,
   GroupObservationRecord,
-  PresentationSettings
+  PresentationSettings,
+  Subject
 } from './types';
 import {
   DEMO_USERS,
@@ -212,6 +213,7 @@ export default function App() {
 
   // Student Navigation Tab
   const [studentTab, setStudentTab] = useState<StudentTab>('home');
+  const [studentSelectedSubjectId, setStudentSelectedSubjectId] = useState<string>('all');
 
   // Determine if presentation tab is allowed based on teacher setting and current user
   const isPresentationAllowed = (() => {
@@ -289,7 +291,58 @@ export default function App() {
 
   // Teacher Modals
   const [isNewMissionModalOpen, setIsNewMissionModalOpen] = useState(false);
+  const [editingMission, setEditingMission] = useState<LearningMission | null>(null);
   const [isClassroomProjectorOpen, setIsClassroomProjectorOpen] = useState(false);
+
+  // Dynamic Subjects state
+  const [subjects, setSubjects] = useState<Subject[]>(() => {
+    const saved = localStorage.getItem('narasa_subjects');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [
+      { id: 'matematika', name: 'Matematika' },
+      { id: 'ipas', name: 'IPAS' },
+      { id: 'bahasa_indonesia', name: 'Bahasa Indonesia' },
+      { id: 'pancasila', name: 'Pendidikan Pancasila' },
+      { id: 'seni_budaya', name: 'Seni Budaya' }
+    ];
+  });
+
+  const handleAddSubject = (name: string) => {
+    const cleanName = name.trim();
+    if (!cleanName) return;
+    const id = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
+    if (subjects.some((s) => s.id === id)) {
+      toast.error('Mata Pelajaran Sudah Ada', `Mata pelajaran "${cleanName}" sudah terdaftar.`);
+      return;
+    }
+    const updated = [...subjects, { id, name: cleanName }];
+    setSubjects(updated);
+    localStorage.setItem('narasa_subjects', JSON.stringify(updated));
+    toast.success('Mata Pelajaran Ditambahkan', `Mata pelajaran "${cleanName}" berhasil ditambahkan.`);
+  };
+
+  const handleDeleteSubject = (id: string) => {
+    const subjectToDelete = subjects.find((s) => s.id === id);
+    if (!subjectToDelete) return;
+    const updated = subjects.filter((s) => s.id !== id);
+    setSubjects(updated);
+    localStorage.setItem('narasa_subjects', JSON.stringify(updated));
+    toast.success('Mata Pelajaran Dihapus', `Mata pelajaran "${subjectToDelete.name}" berhasil dihapus.`);
+  };
+
+  const handleOpenNewMissionModal = () => {
+    setEditingMission(null);
+    setIsNewMissionModalOpen(true);
+  };
+
+  const handleOpenEditMissionModal = (mission: LearningMission) => {
+    setEditingMission(mission);
+    setIsNewMissionModalOpen(true);
+  };
 
   // User Account Actions
   const handleAddUser = (userData: Omit<UserProfile, 'id'>) => {
@@ -748,9 +801,13 @@ export default function App() {
                 conceptQuizzes={conceptQuizzes}
                 groupObservations={groupObservations}
                 presentationSettings={presentationSettings}
+                subjects={subjects}
+                onAddSubject={handleAddSubject}
+                onDeleteSubject={handleDeleteSubject}
                 onSaveGroupObservation={handleSaveGroupObservation}
                 onUpdatePresentationSettings={handleUpdatePresentationSettings}
-                onOpenNewMissionModal={() => setIsNewMissionModalOpen(true)}
+                onOpenNewMissionModal={handleOpenNewMissionModal}
+                onOpenEditMissionModal={handleOpenEditMissionModal}
                 onOpenClassroomPresentation={() => setIsClassroomProjectorOpen(true)}
                 onViewSessionDetail={(s) => {
                   setActiveSessionForViewer(s);
@@ -804,7 +861,7 @@ export default function App() {
                       <div className="relative z-10 space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-xs backdrop-blur-sm">
-                            <span>Halo, {currentUser.name}! 👋</span>
+                            <span>Halo, {currentUser.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim()}! 👋</span>
                           </div>
                           {currentUser.isGroup ? (
                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs backdrop-blur-sm">
@@ -1015,7 +1072,7 @@ export default function App() {
                 {/* 2. STUDENT EXPLORE / MISSIONS TAB */}
                 {studentTab === 'explore' && (
                   <div className="space-y-6 text-left">
-                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
                         <h2 className="text-lg sm:text-xl font-bold text-[#25324B] font-display">
                           Pilih Misi Pembelajaran
@@ -1024,11 +1081,32 @@ export default function App() {
                           Setiap misi dirancang oleh guru dengan tujuan pembelajaran dan kriteria kurikulum yang jelas. Pilih misi untuk mulai memotret objek.
                         </p>
                       </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <label htmlFor="student-subject-filter" className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                          Mapel:
+                        </label>
+                        <select
+                          id="student-subject-filter"
+                          value={studentSelectedSubjectId}
+                          onChange={(e) => setStudentSelectedSubjectId(e.target.value)}
+                          className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 font-bold text-xs text-slate-700 outline-none focus:border-blue-500 cursor-pointer shadow-2xs"
+                        >
+                          <option value="all">📖 Semua Mapel</option>
+                          {subjects.map((subj) => (
+                            <option key={subj.id} value={subj.id}>
+                              {subj.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {missions.map((m) => {
-                        const isCurrent = m.id === activeMission.id;
+                      {missions
+                        .filter((m) => studentSelectedSubjectId === 'all' || m.idMapel === studentSelectedSubjectId)
+                        .map((m) => {
+                          const isCurrent = m.id === activeMission.id;
                         return (
                           <div
                             key={m.id}
@@ -1111,6 +1189,9 @@ export default function App() {
                     currentUser={currentUser}
                     quizSubmissions={quizSubmissions}
                     onSubmitQuizResult={handleSubmitQuizResult}
+                    missions={missions}
+                    sessions={sessions}
+                    subjects={subjects}
                   />
                 )}
 
@@ -1212,6 +1293,7 @@ export default function App() {
         onConfirmPhoto={handleConfirmPhoto}
         activeMissionTitle={activeMission.title}
         activeMissionSubject={activeMission.subject}
+        suggestedObjects={activeMission.suggestedObjects}
       />
 
       {/* Scanning AI Animation */}
@@ -1280,9 +1362,21 @@ export default function App() {
       <MissionCreatorModal
         isOpen={isNewMissionModalOpen}
         onClose={() => setIsNewMissionModalOpen(false)}
-        onSaveMission={(newM) => {
-          setMissions([newM, ...missions]);
-          setActiveMission(newM);
+        editingMission={editingMission}
+        subjects={subjects}
+        onSaveMission={(savedMission) => {
+          const exists = missions.some((m) => m.id === savedMission.id);
+          if (exists) {
+            setMissions(missions.map((m) => (m.id === savedMission.id ? savedMission : m)));
+            if (activeMission.id === savedMission.id) {
+              setActiveMission(savedMission);
+            }
+            toast.success('Misi Diperbarui', `Misi "${savedMission.title}" berhasil diperbarui.`);
+          } else {
+            setMissions([savedMission, ...missions]);
+            setActiveMission(savedMission);
+            toast.success('Misi Ditambahkan', `Misi baru "${savedMission.title}" berhasil diterbitkan.`);
+          }
         }}
       />
 

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LearningMission, CognitiveLevel, TargetCompetency } from '../types';
+import React, { useState, useEffect } from 'react';
+import { LearningMission, CognitiveLevel, TargetCompetency, Subject } from '../types';
 import {
   Sparkles,
   X,
@@ -17,16 +17,20 @@ interface MissionCreatorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaveMission: (mission: LearningMission) => void;
+  editingMission?: LearningMission | null;
+  subjects?: Subject[];
 }
 
 export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
   isOpen,
   onClose,
-  onSaveMission
+  onSaveMission,
+  editingMission,
+  subjects = []
 }) => {
   const [title, setTitle] = useState('');
   const [grade, setGrade] = useState('Kelas V');
-  const [phase, setPhase] = useState('Fase C');
+  const [phase, setPhase] = useState('Fase C (Kelas 5-6)');
   const [subject, setSubject] = useState('Matematika');
   const [material, setMaterial] = useState('');
   const [cp, setCp] = useState('');
@@ -48,6 +52,54 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
     peerQuestion: true
   });
 
+  useEffect(() => {
+    if (editingMission) {
+      setTitle(editingMission.title || '');
+      setGrade(editingMission.grade || 'Kelas V');
+      setPhase(editingMission.phase || 'Fase C (Kelas 5-6)');
+      setSubject(editingMission.subject || (subjects[0]?.name || 'Matematika'));
+      setMaterial(editingMission.material || '');
+      setCp(editingMission.cp || '');
+      setTp(editingMission.tp || '');
+      setIndicatorsText(editingMission.indicators ? editingMission.indicators.join('\n') : '');
+      setTargetCompetency(editingMission.targetCompetency || 'numeracy');
+      setCognitiveLevel(editingMission.cognitiveLevel || 'C4-C6');
+      setStrictCurriculumMode(editingMission.strictCurriculumMode ?? true);
+      setDescription(editingMission.description || '');
+      setFeatures(editingMission.features || {
+        adaptiveDifficulty: true,
+        scaffolding: true,
+        reasoning: true,
+        evidence: true,
+        reflection: true,
+        presentation: true,
+        peerQuestion: true
+      });
+    } else {
+      setTitle('');
+      setGrade('Kelas V');
+      setPhase('Fase C (Kelas 5-6)');
+      setSubject(subjects[0]?.name || 'Matematika');
+      setMaterial('');
+      setCp('');
+      setTp('');
+      setIndicatorsText('');
+      setTargetCompetency('numeracy');
+      setCognitiveLevel('C4-C6');
+      setStrictCurriculumMode(true);
+      setDescription('');
+      setFeatures({
+        adaptiveDifficulty: true,
+        scaffolding: true,
+        reasoning: true,
+        evidence: true,
+        reflection: true,
+        presentation: true,
+        peerQuestion: true
+      });
+    }
+  }, [editingMission, isOpen]);
+
   if (!isOpen) return null;
 
   const toggleFeature = (key: keyof typeof features) => {
@@ -63,8 +115,17 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
       .map((i) => i.trim())
       .filter((i) => i.length > 0);
 
-    const newMission: LearningMission = {
-      id: `mission-${Date.now()}`,
+    const foundSubject = subjects.find(
+      (s) => s.name.toLowerCase() === subject.toLowerCase()
+    );
+    const idMapel = foundSubject
+      ? foundSubject.id
+      : subject.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
+
+    const updatedMission: LearningMission = {
+      ...editingMission,
+      id: editingMission ? editingMission.id : `mission-${Date.now()}`,
+      idMapel,
       title,
       grade,
       phase,
@@ -78,12 +139,12 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
       strictCurriculumMode,
       features,
       description: description || 'Misi eksplorasi objek di lingkungan sekitar sekolah.',
-      isActive: true,
-      createdAt: new Date().toISOString().split('T')[0],
-      suggestedObjects: ['Benda nyata di ruang kelas', 'Lingkungan halaman sekolah']
+      isActive: editingMission ? editingMission.isActive : true,
+      createdAt: editingMission ? editingMission.createdAt : new Date().toISOString().split('T')[0],
+      suggestedObjects: editingMission ? (editingMission.suggestedObjects || ['Benda nyata', 'Lingkungan sekitar']) : ['Benda nyata di ruang kelas', 'Lingkungan halaman sekolah']
     };
 
-    onSaveMission(newMission);
+    onSaveMission(updatedMission);
     onClose();
   };
 
@@ -98,10 +159,10 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold font-display">
-                Rancang Learning Mission Baru
+                {editingMission ? 'Ubah Rencana Learning Mission' : 'Rancang Learning Mission Baru'}
               </h2>
               <p className="text-xs text-white/80">
-                Guru menentukan arah materi dan kompetensi, sistem memandu nalar eksplorasi murid
+                {editingMission ? 'Perbarui Capaian Pembelajaran, materi pokok, dan indikator keberhasilan' : 'Guru menentukan arah materi dan kompetensi, sistem memandu nalar eksplorasi murid'}
               </p>
             </div>
           </div>
@@ -161,11 +222,11 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white font-medium outline-none text-xs"
               >
-                <option>Matematika</option>
-                <option>IPAS</option>
-                <option>Bahasa Indonesia</option>
-                <option>Pendidikan Pancasila</option>
-                <option>Seni Budaya</option>
+                {subjects.map((subj) => (
+                  <option key={subj.id} value={subj.name}>
+                    {subj.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -344,7 +405,7 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
               type="submit"
               className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:shadow-md hover:shadow-blue-500/20 active:scale-98 transition-all"
             >
-              Terbitkan Learning Mission
+              {editingMission ? 'Simpan Perubahan' : 'Terbitkan Learning Mission'}
             </button>
           </div>
         </form>

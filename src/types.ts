@@ -1,5 +1,10 @@
 export type UserRole = 'teacher' | 'student' | 'school_admin' | 'central_admin' | 'admin';
 
+export interface Subject {
+  id: string; // e.g., 'matematika'
+  name: string; // e.g., 'Matematika'
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -60,6 +65,7 @@ export interface MissionFeatures {
 
 export interface LearningMission {
   id: string;
+  idMapel: string; // ID Mapel untuk memisahkan tampilan setiap mapel
   title: string;
   grade: string;
   phase: string;

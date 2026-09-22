@@ -27,6 +27,7 @@ interface CameraCaptureModalProps {
   onConfirmPhoto: (imageDataUrl: string, objectNameHint: string) => void;
   activeMissionTitle: string;
   activeMissionSubject: string;
+  suggestedObjects?: string[];
 }
 
 export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
@@ -34,7 +35,8 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   onClose,
   onConfirmPhoto,
   activeMissionTitle,
-  activeMissionSubject
+  activeMissionSubject,
+  suggestedObjects = []
 }) => {
   const [activeMode, setActiveMode] = useState<'live' | 'upload'>('live');
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);

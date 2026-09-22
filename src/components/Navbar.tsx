@@ -241,7 +241,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="text-left leading-tight hidden xs:block sm:block">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-[#25324B] max-w-[120px] sm:max-w-[160px] truncate">
-                        {currentUser.name}
+                        {currentUser.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim()}
                       </span>
                     </div>
                     <div className="pt-0.5">
@@ -285,7 +285,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div className="space-y-0.5 min-w-0 flex-1 text-left">
                         <div className="flex items-center justify-between gap-1">
                           <h4 className="font-bold text-sm text-[#25324B] truncate">
-                            {currentUser.name}
+                            {currentUser.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim()}
                           </h4>
                           {getRoleBadge(currentUser)}
                         </div>
