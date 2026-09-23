@@ -159,7 +159,7 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold font-display">
-                {editingMission ? 'Ubah Rencana Learning Mission' : 'Rancang Learning Mission Baru'}
+                {editingMission ? 'Ubah Rencana Misi Pembelajaran' : 'Rancang Misi Pembelajaran Baru'}
               </h2>
               <p className="text-xs text-white/80">
                 {editingMission ? 'Perbarui Capaian Pembelajaran, materi pokok, dan indikator keberhasilan' : 'Guru menentukan arah materi dan kompetensi, sistem memandu nalar eksplorasi murid'}
@@ -405,7 +405,7 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
               type="submit"
               className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:shadow-md hover:shadow-blue-500/20 active:scale-98 transition-all"
             >
-              {editingMission ? 'Simpan Perubahan' : 'Terbitkan Learning Mission'}
+              {editingMission ? 'Simpan Perubahan' : 'Terbitkan Misi Pembelajaran'}
             </button>
           </div>
         </form>

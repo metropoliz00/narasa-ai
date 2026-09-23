@@ -864,9 +864,21 @@ export default function App() {
                             <span>Halo, {currentUser.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim()}! 👋</span>
                           </div>
                           {currentUser.isGroup ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs backdrop-blur-sm">
-                              👥 Akun Kelompok Belajar ({currentUser.groupMembers?.length || 0} Anggota)
-                            </span>
+                            <>
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs backdrop-blur-sm">
+                                👥 Akun Kelompok Belajar ({currentUser.groupMembers?.length || 0} Anggota)
+                              </span>
+                              <button
+                                onClick={() => {
+                                  setAccountModalEditingUser(currentUser);
+                                  setIsAccountModalOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-xs cursor-pointer active:scale-95"
+                              >
+                                <Camera className="w-3.5 h-3.5" />
+                                <span>Upload Foto Kelompok</span>
+                              </button>
+                            </>
                           ) : (
                             <SchoolClassBadge classNameStr={currentUser.className} schoolNameStr={currentUser.schoolName} size="md" />
                           )}

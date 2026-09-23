@@ -221,7 +221,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               className="px-4 py-2.5 rounded-xl bg-[#4F8EF7] hover:bg-blue-600 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Buat Learning Mission</span>
+              <span>Buat Misi Pembelajaran</span>
             </button>
             <button
               onClick={onOpenClassroomPresentation}
@@ -273,7 +273,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          <span>Learning Missions ({missions.length})</span>
+          <span>Misi Pembelajaran ({missions.length})</span>
         </button>
         <button
           onClick={() => setActiveSubTab('groups')}
@@ -523,36 +523,22 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-emerald-600 font-bold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Misi Aktif
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (onOpenEditMissionModal) {
-                          onOpenEditMissionModal(m);
-                        }
-                      }}
-                      className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-                      title="Edit misi pembelajaran ini"
-                    >
-                      <Edit className="w-3 h-3 text-blue-600" />
-                      <span>Edit</span>
-                    </button>
-                  </div>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
+                  <span className="text-emerald-600 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Misi Aktif
+                  </span>
                   <button
                     type="button"
                     onClick={() => {
-                      setSelectedMissionForQuiz(m.id);
-                      setIsAiQuizModalOpen(true);
+                      if (onOpenEditMissionModal) {
+                        onOpenEditMissionModal(m);
+                      }
                     }}
-                    className="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                    title="Generate paket soal berpikir kritis AI untuk misi ini"
+                    className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Edit misi pembelajaran ini"
                   >
-                    <Sparkles className="w-3 h-3 text-purple-600" />
-                    <span>Buat Soal AI</span>
+                    <Edit className="w-3 h-3 text-blue-600" />
+                    <span>Edit</span>
                   </button>
                 </div>
               </div>

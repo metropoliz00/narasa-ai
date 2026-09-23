@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StudentGroup, UserProfile } from '../types';
 import {
   X,
@@ -18,7 +18,9 @@ import {
   Eye,
   EyeOff,
   AtSign,
-  Copy
+  Copy,
+  Upload,
+  Camera
 } from 'lucide-react';
 
 interface GroupManagerModalProps {
@@ -86,6 +88,49 @@ export const GroupManagerModal: React.FC<GroupManagerModalProps> = ({
   const [email, setEmail] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileProcess = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Format file tidak didukung. Harap pilih gambar dengan format JPG, PNG, atau WEBP.');
+      return;
+    }
+    const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
+    if (file.size > MAX_FILE_SIZE) {
+      alert('Ukuran foto terlalu besar. Maksimal adalah 1 MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setAvatar(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileProcess(e.dataTransfer.files[0]);
+    }
+  };
 
   useEffect(() => {
     if (existingGroup) {
@@ -321,49 +366,37 @@ export const GroupManagerModal: React.FC<GroupManagerModalProps> = ({
           </div>
 
           {/* 2. Login Credentials Configuration (Username & Password by Teacher) */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 border border-blue-200/80 space-y-3.5">
-            <div className="flex items-center gap-2">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3.5">
+            <div className="flex items-center gap-2 border-b border-slate-200/50 pb-2">
               <KeyRound className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-bold text-blue-950">
-                Pengaturan Kredensial Akun Login Kelompok (Settingan Guru)
+              <span className="text-xs font-bold text-slate-800">
+                Kredensial Akun Login Kelompok
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Username Field */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                    <AtSign className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Username Akun Kelompok *</span>
-                  </label>
-                  <span className="text-[10px] text-blue-600 font-medium">Sesuai Nama Kelompok</span>
-                </div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
-                    placeholder="cth: kelompok1_garuda"
-                    className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-blue-200 bg-white text-xs font-mono font-bold text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <span className="absolute right-2.5 top-2.5 text-slate-400 text-xs font-mono">@</span>
-                </div>
-                <p className="text-[10px] text-slate-500">
-                  Digunakan murid untuk login langsung menggunakan nama kelompok.
-                </p>
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                  <AtSign className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Username Kelompok *</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                  placeholder="cth: kelompok1_garuda"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
 
               {/* Password Field */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Password Akun Kelompok *</span>
-                  </label>
-                  <span className="text-[10px] text-emerald-600 font-bold">Settingan Guru</span>
-                </div>
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Password Kelompok *</span>
+                </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -371,25 +404,25 @@ export const GroupManagerModal: React.FC<GroupManagerModalProps> = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Masukkan password..."
-                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-blue-200 bg-white text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
                 {/* Quick Password Presets */}
-                <div className="flex items-center gap-1.5 pt-0.5">
-                  <span className="text-[10px] text-slate-400">Pilihan cepat:</span>
+                <div className="flex items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-slate-400 font-bold">Pilihan cepat:</span>
                   {['123456', 'kelompok123', 'sdn01hebat'].map((preset) => (
                     <button
                       key={preset}
                       type="button"
                       onClick={() => setPassword(preset)}
-                      className="px-1.5 py-0.5 rounded-md text-[10px] bg-white hover:bg-blue-100 text-slate-600 border border-slate-200 font-mono transition-colors"
+                      className="px-2 py-0.5 rounded-lg text-[9px] bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-600 border border-slate-200 font-bold transition-all cursor-pointer shadow-3xs"
                     >
                       {preset}
                     </button>
@@ -433,27 +466,65 @@ export const GroupManagerModal: React.FC<GroupManagerModalProps> = ({
             </div>
           </div>
 
-          {/* 4. Avatar Selection */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Pilih Lambang / Foto Kelompok</label>
-            <div className="flex items-center gap-3 overflow-x-auto py-1">
-              {AVATAR_OPTIONS.map((avUrl, idx) => (
+          {/* 4. Group Photo Direct Upload */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Camera className="w-4 h-4 text-blue-600" />
+                <span>Foto Profil / Logo Kelompok</span>
+              </label>
+              <span className="text-[10px] font-bold text-slate-400">
+                Format: JPG, PNG, WEBP (Maks 1 MB)
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="relative shrink-0">
+                <img
+                  src={avatar}
+                  alt="Preview Foto Kelompok"
+                  className="w-16 h-16 rounded-2xl object-cover ring-2 ring-blue-500/20 bg-white"
+                />
                 <button
-                  key={idx}
                   type="button"
-                  onClick={() => setAvatar(avUrl)}
-                  className={`relative shrink-0 rounded-2xl overflow-hidden border-2 transition-all ${
-                    avatar === avUrl ? 'border-blue-600 scale-105 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'
-                  }`}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 bg-slate-900/40 hover:bg-slate-900/60 transition-colors rounded-2xl flex flex-col items-center justify-center text-white text-[9px] font-bold gap-1 cursor-pointer"
                 >
-                  <img src={avUrl} alt="Avatar" className="w-12 h-12 object-cover" referrerPolicy="no-referrer" />
-                  {avatar === avUrl && (
-                    <span className="absolute inset-0 bg-blue-600/30 flex items-center justify-center text-white">
-                      <Check className="w-4 h-4" />
-                    </span>
-                  )}
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Ganti</span>
                 </button>
-              ))}
+              </div>
+
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`flex-1 w-full p-4 rounded-xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center ${
+                  isDragging
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-slate-300 hover:border-blue-400 bg-white'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleFileProcess(e.target.files[0]);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-transform active:scale-95 cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Pilih / Upload Foto Kelompok</span>
+                </button>
+              </div>
             </div>
           </div>
 
