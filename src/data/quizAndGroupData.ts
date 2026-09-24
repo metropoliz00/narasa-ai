@@ -1,4 +1,5 @@
 import { StudentGroup, ConceptQuiz, QuizSubmission, UserProfile, GroupObservationRecord, PresentationSettings } from '../types';
+import { getDefaultAvatar } from './avatarData';
 
 export const INITIAL_STUDENT_GROUPS: StudentGroup[] = [
   {
@@ -335,7 +336,7 @@ export const INITIAL_QUIZ_SUBMISSIONS: QuizSubmission[] = [
     subject: 'IPAS',
     userId: 'user-student-1',
     userName: 'Adit Pratama',
-    userAvatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=150&auto=format&fit=crop&q=80',
+    userAvatar: getDefaultAvatar('student', 'male'),
     isGroup: false,
     className: 'Kelas V-A',
     classId: 'V-A',

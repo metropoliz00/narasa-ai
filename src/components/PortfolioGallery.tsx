@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { StudentActivitySession } from '../types';
+import {
+  StudentActivitySession,
+  UserProfile,
+  StudentGroup,
+  GroupObservationRecord
+} from '../types';
+import { StudentPortfolioReportModal } from './StudentPortfolioReportModal';
 import {
   FolderKanban,
   Search,
@@ -13,21 +19,44 @@ import {
   Lightbulb,
   ExternalLink,
   Filter,
-  ChevronDown
+  ChevronDown,
+  Printer
 } from 'lucide-react';
 
 interface PortfolioGalleryProps {
   sessions: StudentActivitySession[];
   onOpenSessionPresentation: (session: StudentActivitySession) => void;
+  users?: UserProfile[];
+  currentUser?: UserProfile;
+  groups?: StudentGroup[];
+  groupObservations?: GroupObservationRecord[];
 }
 
 export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
   sessions,
-  onOpenSessionPresentation
+  onOpenSessionPresentation,
+  users = [],
+  currentUser = {
+    id: 'student-1',
+    name: 'Siswa Narasa',
+    email: 'siswa@narasa.sch.id',
+    role: 'student',
+    schoolName: 'SDN 01 Nusantara',
+    schoolId: 'SDN01',
+    className: 'Kelas V-A',
+    classId: 'class-5a',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'
+  },
+  groups = [],
+  groupObservations = []
 }) => {
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDetailSession, setActiveDetailSession] = useState<StudentActivitySession | null>(null);
+
+  // Print Report Modal state
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [printTargetSessionId, setPrintTargetSessionId] = useState<string | null>(null);
 
   const subjects = ['all', ...Array.from(new Set(sessions.map((s) => s.subject)))];
 
@@ -39,6 +68,11 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
       s.learningBridge.detectedObject.toLowerCase().includes(searchQuery.toLowerCase());
     return matchSubj && matchSearch;
   });
+
+  const handleOpenPrintModal = (sessionId?: string) => {
+    setPrintTargetSessionId(sessionId || null);
+    setIsPrintModalOpen(true);
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 text-left">
@@ -58,10 +92,20 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
           </p>
         </div>
 
-        {/* Filter controls */}
+        {/* Filter controls & Print Action */}
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          {/* Global Print Portfolio Button */}
+          <button
+            onClick={() => handleOpenPrintModal('all')}
+            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
+            title="Cetak Laporan Lengkap Portofolio (PDF)"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Cetak Rekap Portofolio (PDF)</span>
+          </button>
+
           {/* Subject Dropdown */}
-          <div className="relative min-w-[160px]">
+          <div className="relative min-w-[150px]">
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
@@ -77,7 +121,7 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
           </div>
 
           {/* Search bar */}
-          <div className="relative flex-1 md:w-48">
+          <div className="relative flex-1 md:w-44">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -121,9 +165,14 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
             {/* Content Details */}
             <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
               <div className="space-y-1.5">
-                <h3 className="text-base font-bold text-[#25324B] group-hover:text-[#4F8EF7] transition-colors line-clamp-1">
-                  {session.imageLabel}
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-[#25324B] group-hover:text-[#4F8EF7] transition-colors line-clamp-1">
+                    {session.imageLabel}
+                  </h3>
+                  <span className="text-[10px] font-bold text-slate-400 font-mono">
+                    {session.studentName}
+                  </span>
+                </div>
                 <p className="text-xs text-slate-500 line-clamp-2">
                   {session.missionTitle}
                 </p>
@@ -141,10 +190,19 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
               <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
                 <button
                   onClick={() => setActiveDetailSession(session)}
-                  className="flex-1 py-2 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                  className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center justify-center gap-1 transition-colors"
+                  title="Lihat Detail Proses"
                 >
                   <Eye className="w-3.5 h-3.5" />
-                  <span>Lihat Proses</span>
+                  <span className="hidden sm:inline">Proses</span>
+                </button>
+                <button
+                  onClick={() => handleOpenPrintModal(session.id)}
+                  className="p-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center gap-1 transition-colors"
+                  title="Cetak Lembar Portofolio PDF"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>PDF</span>
                 </button>
                 <button
                   onClick={() => onOpenSessionPresentation(session)}
@@ -217,7 +275,19 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+              <button
+                onClick={() => {
+                  const s = activeDetailSession;
+                  setActiveDetailSession(null);
+                  handleOpenPrintModal(s.id);
+                }}
+                className="px-4 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center gap-1.5 transition-colors"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Cetak Dokumen Portofolio (PDF)</span>
+              </button>
+
               <button
                 onClick={() => {
                   const s = activeDetailSession;
@@ -233,6 +303,18 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
           </div>
         </div>
       )}
+
+      {/* PRINT PORTFOLIO REPORT MODAL */}
+      <StudentPortfolioReportModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        sessions={sessions}
+        users={users}
+        currentUser={currentUser}
+        groups={groups}
+        groupObservations={groupObservations}
+        initialSelectedSessionId={printTargetSessionId}
+      />
     </div>
   );
 };

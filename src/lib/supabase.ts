@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { UserProfile, LearningMission, StudentActivitySession, TeacherInsight, AssessmentRecord } from '../types';
+import { UserProfile, LearningMission, StudentActivitySession, TeacherInsight, AssessmentRecord, SchoolProfile } from '../types';
 import { INITIAL_SYSTEM_USERS, DEFAULT_MISSIONS, INITIAL_COMPLETED_SESSION, TEACHER_INSIGHTS, ASSESSMENT_DATA } from '../data/mockData';
+import { getDefaultAvatar, UserGender } from '../data/avatarData';
 
 // Universal Environment Variable Resolver for Supabase
 export function getSupabaseConfig(): { url: string; anonKey: string } {
@@ -103,7 +104,17 @@ export async function dbFetchUsers(): Promise<UserProfile[]> {
       const saved = localStorage.getItem('narasa_users_data');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((u: UserProfile) => {
+            const isUnsplash = !u.avatar || u.avatar.includes('unsplash.com');
+            const gender: UserGender = u.gender || 'male';
+            return {
+              ...u,
+              gender,
+              avatar: isUnsplash ? getDefaultAvatar(u.role, gender) : u.avatar
+            };
+          });
+        }
       }
     } catch (e) {}
     return INITIAL_SYSTEM_USERS;
@@ -125,25 +136,31 @@ export async function dbFetchUsers(): Promise<UserProfile[]> {
       return [];
     }
 
-    return data.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      role: row.role,
-      avatar: row.avatar || 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=150&auto=format&fit=crop&q=80',
-      schoolName: row.school_name,
-      schoolId: row.school_id || 'SDN01',
-      className: row.class_name,
-      classId: row.class_id || 'V-A',
-      email: row.email,
-      status: row.status,
-      nisnNip: row.nisn_nip,
-      username: row.username || undefined,
-      password: row.password || undefined,
-      phone: row.phone,
-      joinedDate: row.joined_date,
-      isGroup: row.is_group || false,
-      groupMembers: Array.isArray(row.group_members) ? row.group_members : []
-    }));
+    return data.map((row: any) => {
+      const gender: UserGender = row.gender || 'male';
+      const isUnsplash = !row.avatar || row.avatar.includes('unsplash.com');
+      const avatar = isUnsplash ? getDefaultAvatar(row.role, gender) : row.avatar;
+      return {
+        id: row.id,
+        name: row.name,
+        role: row.role,
+        gender,
+        avatar,
+        schoolName: row.school_name,
+        schoolId: row.school_id || 'SDN01',
+        className: row.class_name,
+        classId: row.class_id || 'V-A',
+        email: row.email,
+        status: row.status,
+        nisnNip: row.nisn_nip,
+        username: row.username || undefined,
+        password: row.password || undefined,
+        phone: row.phone,
+        joinedDate: row.joined_date,
+        isGroup: row.is_group || false,
+        groupMembers: Array.isArray(row.group_members) ? row.group_members : []
+      };
+    });
   } catch (err) {
     console.error('Error in dbFetchUsers:', err);
     return [];
@@ -218,6 +235,160 @@ export async function dbDeleteUser(userId: string): Promise<boolean> {
     return !error;
   } catch (err) {
     console.error('Error deleting user from Supabase:', err);
+    return false;
+  }
+}
+
+// ==========================================
+// SCHOOLS & SETTINGS REPOSITORY
+// ==========================================
+export async function dbFetchSchools(): Promise<SchoolProfile[]> {
+  const client = getSupabaseClient();
+  if (!client) {
+    try {
+      const saved = localStorage.getItem('narasa_schools_profile_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  }
+
+  try {
+    const { data, error } = await client
+      .from('schools')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.warn('Supabase schools fetch error:', error.message);
+      return [];
+    }
+
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    return data.map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      npsn: row.npsn || '',
+      level: row.level || 'SD / MI',
+      status: row.status || 'Negeri',
+      accreditation: row.accreditation || 'A (Unggul)',
+      curriculum: row.curriculum || 'Kurikulum Merdeka (Fase A, B, C)',
+      headmaster: row.headmaster || '',
+      headmasterNip: row.headmaster_nip || '',
+      supervisorName: row.supervisor_name || '',
+      supervisorNip: row.supervisor_nip || '',
+      phone: row.phone || '',
+      email: row.email || '',
+      website: row.website || '',
+      address: row.address || '',
+      rtRw: row.rt_rw || '',
+      village: row.village || '',
+      district: row.district || '',
+      city: row.city || '',
+      province: row.province || '',
+      postalCode: row.postal_code || '',
+      motto: row.motto || '',
+      logoUrl: row.logo_url || '',
+      academicYear: row.academic_year || '2024/2025',
+      activeSemester: row.active_semester || 'Ganjil',
+      category: row.category || '',
+      updatedAt: row.updated_at || new Date().toISOString()
+    }));
+  } catch (err) {
+    console.error('Error in dbFetchSchools:', err);
+    return [];
+  }
+}
+
+export async function dbUpsertSchool(school: SchoolProfile): Promise<boolean> {
+  // Always persist to local storage first
+  try {
+    const saved = localStorage.getItem('narasa_schools_profile_data');
+    let currentSchools: SchoolProfile[] = saved ? JSON.parse(saved) : [];
+    const exists = currentSchools.some((s) => s.id === school.id);
+    if (exists) {
+      currentSchools = currentSchools.map((s) => (s.id === school.id ? school : s));
+    } else {
+      currentSchools = [...currentSchools, school];
+    }
+    localStorage.setItem('narasa_schools_profile_data', JSON.stringify(currentSchools));
+  } catch (e) {}
+
+  const client = getSupabaseClient();
+  if (!client) return true;
+
+  try {
+    const payload = {
+      id: school.id,
+      name: school.name,
+      npsn: school.npsn,
+      level: school.level,
+      status: school.status,
+      accreditation: school.accreditation,
+      curriculum: school.curriculum,
+      headmaster: school.headmaster,
+      headmaster_nip: school.headmasterNip,
+      supervisor_name: school.supervisorName || null,
+      supervisor_nip: school.supervisorNip || null,
+      phone: school.phone,
+      email: school.email,
+      website: school.website || null,
+      address: school.address,
+      rt_rw: school.rtRw || null,
+      village: school.village || null,
+      district: school.district || null,
+      city: school.city,
+      province: school.province,
+      postal_code: school.postalCode,
+      motto: school.motto || null,
+      logo_url: school.logoUrl || null,
+      academic_year: school.academicYear,
+      active_semester: school.activeSemester,
+      category: school.category || null,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await client.from('schools').upsert(payload, { onConflict: 'id' });
+    if (error) {
+      console.warn('Supabase upsert school error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error upserting school to Supabase:', err);
+    return false;
+  }
+}
+
+export async function dbDeleteSchool(schoolId: string): Promise<boolean> {
+  // 1. Remove from local storage
+  try {
+    const saved = localStorage.getItem('narasa_schools_profile_data');
+    if (saved) {
+      const currentSchools: SchoolProfile[] = JSON.parse(saved);
+      const filtered = currentSchools.filter((s) => s.id !== schoolId);
+      localStorage.setItem('narasa_schools_profile_data', JSON.stringify(filtered));
+    }
+  } catch (e) {}
+
+  // 2. Remove from Supabase if connected
+  const client = getSupabaseClient();
+  if (!client) return true;
+
+  try {
+    const { error } = await client.from('schools').delete().eq('id', schoolId);
+    if (error) {
+      console.warn('Supabase delete school error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error deleting school from Supabase:', err);
     return false;
   }
 }
@@ -400,7 +571,8 @@ export async function dbUpsertSession(session: StudentActivitySession): Promise<
 export async function syncAllToSupabase(
   users: UserProfile[],
   missions: LearningMission[],
-  sessions: StudentActivitySession[]
+  sessions: StudentActivitySession[],
+  schools?: SchoolProfile[]
 ): Promise<{ success: boolean; message: string; details: any }> {
   const client = getSupabaseClient();
   if (!client) {
@@ -412,9 +584,17 @@ export async function syncAllToSupabase(
   }
 
   try {
+    let syncedSchools = 0;
     let syncedUsers = 0;
     let syncedMissions = 0;
     let syncedSessions = 0;
+
+    // 0. Sync Schools
+    const schoolsToSync = schools || (await dbFetchSchools());
+    for (const sch of schoolsToSync) {
+      const ok = await dbUpsertSchool(sch);
+      if (ok) syncedSchools++;
+    }
 
     // 1. Sync Users
     for (const u of users) {
@@ -436,8 +616,8 @@ export async function syncAllToSupabase(
 
     return {
       success: true,
-      message: `Sinkronisasi Supabase Sukses: ${syncedUsers} User, ${syncedMissions} Misi, ${syncedSessions} Karya Murid berhasil disimpan ke database.`,
-      details: { syncedUsers, syncedMissions, syncedSessions }
+      message: `Sinkronisasi Supabase Sukses: ${syncedSchools} Data Sekolah, ${syncedUsers} User, ${syncedMissions} Misi, ${syncedSessions} Karya Murid berhasil disimpan ke database.`,
+      details: { syncedSchools, syncedUsers, syncedMissions, syncedSessions }
     };
   } catch (err: any) {
     return {

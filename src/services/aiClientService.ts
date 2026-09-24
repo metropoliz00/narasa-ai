@@ -5,6 +5,7 @@ import {
   PresentationSlide,
   PeerQuestion
 } from '../types';
+import { getDefaultAvatar } from '../data/avatarData';
 
 function getAuthHeaders() {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -71,44 +72,114 @@ export const AIClientService = {
         questions: [
           {
             id: 'q-fb-1',
-            stage: 'challenge',
-            title: 'Tantangan Pemecahan Masalah',
-            question: `Berdasarkan objek ${objectHint || 'yang kamu amati'}, temukan pola keteraturan atau angka yang dapat dihubungkan dengan materi ${mission.material}!`,
+            stage: 'real_problem',
+            title: '1. Masalah Nyata',
+            question: `Berdasarkan objek ${objectHint || 'yang kamu amati'}, temukan masalah nyata atau tantangan menarik di sekitarmu yang berkaitan dengan materi ${mission.material}!`,
             inputType: 'text',
-            conceptTag: 'Penalaran Utama',
+            conceptTag: 'Masalah Autentik',
             scaffolding: {
-              level1: 'Amati kembali foto dengan teliti. Bagian mana yang membentuk pola berulang?',
-              level2: 'Kaitkan pola tersebut dengan materi yang telah diajarkan guru di kelas.',
-              level3: 'Pecah menjadi langkah: Tuliskan informasi angka yang kamu lihat, lalu hitung polanya.',
-              level4: 'Bayangkan kegiatan serupa di rumah atau saat bermain bersama teman.'
+              level1: 'Amati kembali foto dengan teliti. Apa situasi atau masalah nyata yang terlihat?',
+              level2: 'Kaitkan situasi tersebut dengan materi yang telah diajarkan guru di kelas.',
+              level3: 'Pecah menjadi langkah: Tuliskan informasi apa yang terjadi dan mengapa ini penting dipecahkan.',
+              level4: 'Bayangkan kejadian sehari-hari yang membutuhkan keteraturan atau pembagian.'
             }
           },
           {
             id: 'q-fb-2',
-            stage: 'reasoning',
-            title: 'Alasan dan Cara Berpikir',
-            question: 'Mengapa kamu memilih jawaban tersebut? Jelaskan langkah pemikiranmu!',
+            stage: 'ask_inquire',
+            title: '2. Bertanya & Mencari Informasi',
+            question: `Apa pertanyaan penyelidikan utama yang kamu ajukan? Konsep sains, rumus, atau data apa dari materi ${mission.material} yang perlu kamu ketahui?`,
             inputType: 'text',
-            conceptTag: 'Alasan Logis',
+            conceptTag: 'Inkuiri & Eksplorasi',
             scaffolding: {
-              level1: 'Sebutkan alasan utamamu secara singkat.',
-              level2: 'Apakah ada aturan atau rumus tertentu yang kamu gunakan?',
-              level3: 'Uraikan kalimatmu: "Saya memilih jawaban ini karena..."',
-              level4: 'Beri contoh sederhana yang mendukung alasanmu.'
+              level1: 'Tuliskan satu pertanyaan kunci yang membuatmu penasaran.',
+              level2: 'Sebutkan konsep atau aturan utama yang relevan dari materi guru.',
+              level3: 'Uraikan informasi yang sudah diketahui dan apa yang masih perlu dicari tahu.',
+              level4: 'Contoh: Berapa interval waktu berulang? Atau berapa faktor pembaginya?'
             }
           },
           {
             id: 'q-fb-3',
-            stage: 'evidence',
-            title: 'Bukti & Verifikasi',
-            question: 'Apa bukti dari foto atau langkah yang memastikan jawabanmu benar dan masuk akal?',
+            stage: 'design_solution',
+            title: '3. Merancang Solusi',
+            question: 'Rancanglah ide solusi atau strategi berpikir logis untuk menyelesaikan masalah tersebut! Bagaimana rencana kerjamu?',
             inputType: 'text',
-            conceptTag: 'Bukti Nyata',
+            conceptTag: 'Desain Solusi',
             scaffolding: {
-              level1: 'Tunjukkan bagian dari foto yang membuktikan jawabanmu.',
-              level2: 'Periksa kembali hasil perhitunganmu apakah sudah pas.',
-              level3: 'Tuliskan langkah pengujian ulang jawabanmu.',
-              level4: 'Pastikan hasilnya masuk akal dalam kehidupan nyata.'
+              level1: 'Tuliskan ide utama pemecahan masalahmu.',
+              level2: 'Gunakan langkah terstruktur: Langkah 1, Langkah 2, Langkah 3.',
+              level3: 'Pilih metode yang paling efektif berdasarkan konsep yang dipelajari.',
+              level4: 'Contoh: Menata jadwal bersama atau membuat pola kelompok yang pas.'
+            }
+          },
+          {
+            id: 'q-fb-4',
+            stage: 'prototype',
+            title: '4. Membuat Produk/Prototipe',
+            question: 'Bagaimana kamu mewujudkan ide tersebut dalam bentuk produk nyata, model matematis, skema, atau prototipe sederhana?',
+            inputType: 'text',
+            conceptTag: 'Realisasi Prototipe',
+            scaffolding: {
+              level1: 'Sebutkan bentuk prototipe yang dibuat (tabel, diagram, model fisik, atau jadwal).',
+              level2: 'Tuliskan bahan atau komponen utama penyusun prototipe.',
+              level3: 'Jelaskan cara membuat atau menyusun model tersebut.',
+              level4: 'Bayangkan membuat bagan sederhana di buku atau peraga mini.'
+            }
+          },
+          {
+            id: 'q-fb-5',
+            stage: 'testing',
+            title: '5. Menguji',
+            question: 'Bagaimana cara kamu menguji prototipe atau model solusimu? Apa kriteria keberhasilan yang kamu periksa?',
+            inputType: 'text',
+            conceptTag: 'Uji Coba & Eksperimen',
+            scaffolding: {
+              level1: 'Lakukan uji coba: apakah solusimu bekerja sesuai harapan?',
+              level2: 'Tentukan tolok ukur pengujian, misalnya ketepatan waktu atau keadilan pembagian.',
+              level3: 'Catat apa yang terjadi saat prototipe/model diuji coba.',
+              level4: 'Uji dengan skenario nyata apakah tidak ada sisa atau keterlambatan.'
+            }
+          },
+          {
+            id: 'q-fb-6',
+            stage: 'data_analysis',
+            title: '6. Menganalisis Data',
+            question: 'Tuliskan data angka, tabel, atau bukti hasil pengujianmu! Bagaimana analisis perhitungan matematikamu?',
+            inputType: 'text',
+            conceptTag: 'Analisis Data & Bukti',
+            scaffolding: {
+              level1: 'Tunjukkan angka atau hasil hitung dari pengujian.',
+              level2: 'Bandingkan data sebelum dan sesudah solusi diterapkan.',
+              level3: 'Tuliskan rumus atau operasi hitung pendukung.',
+              level4: 'Pastikan data membuktikan bahwa masalah nyata telah terpecahkan.'
+            }
+          },
+          {
+            id: 'q-fb-7',
+            stage: 'improvement',
+            title: '7. Memperbaiki',
+            question: 'Apa kelemahan yang ditemukan dari pengujian dan langkah perbaikan (iterasi) apa yang kamu lakukan agar solusi makin sempurna?',
+            inputType: 'text',
+            conceptTag: 'Iterasi & Penyempurnaan',
+            scaffolding: {
+              level1: 'Identifikasi bagian mana yang masih bisa ditingkatkan.',
+              level2: 'Pikirkan cara agar lebih hemat, lebih cepat, atau lebih akurat.',
+              level3: 'Tuliskan perubahan konkret yang kamu buat pada desain.',
+              level4: 'Evaluasi apakah perbaikan membuat hasilnya lebih memuaskan.'
+            }
+          },
+          {
+            id: 'q-fb-8',
+            stage: 'communication',
+            title: '8. Mengomunikasikan Hasil',
+            question: 'Apa kesimpulan akhir dan pesan utama dari proyek STEM ini yang siap kamu bagikan dan presentasikan ke teman-teman?',
+            inputType: 'text',
+            conceptTag: 'Komunikasi & Presentasi',
+            scaffolding: {
+              level1: 'Rangkum manfaat utama dari proyek yang telah kamu kerjakan.',
+              level2: 'Jelaskan bagaimana konsep STEM membantumu menyelesaikan masalah.',
+              level3: 'Siapkan 2-3 poin penting untuk disampaikan di depan kelas.',
+              level4: 'Tutup dengan kalimat ajakan yang ramah dan inspiratif.'
             }
           }
         ]
@@ -197,7 +268,7 @@ export const AIClientService = {
         return {
           id: `pq-${Date.now()}`,
           askerName: data.askerName || 'Gilang Ramadhan',
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+          avatar: getDefaultAvatar('student', 'male'),
           question: data.question,
           aiCoachHint: data.aiCoachHint,
           timestamp: 'Baru saja'
@@ -209,7 +280,7 @@ export const AIClientService = {
     return {
       id: `pq-${Date.now()}`,
       askerName: 'Gilang Ramadhan',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+      avatar: getDefaultAvatar('student', 'male'),
       question: 'Bagaimana kamu membuktikan jawabanmu agar teman-teman lain percaya?',
       aiCoachHint: 'Tunjukkan deret kelipatan atau langkah pembagian yang sudah kamu hitung di slide bukti.',
       timestamp: 'Baru saja'

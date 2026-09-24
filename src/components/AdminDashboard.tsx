@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { UserProfile, UserRole, LearningMission, StudentActivitySession } from '../types';
+import * as XLSX from 'xlsx';
+import { UserProfile, UserRole, LearningMission, StudentActivitySession, StudentGroup } from '../types';
 import { toast } from './Toast';
 import { NarasaLogo } from './NarasaLogo';
 import {
@@ -28,29 +29,28 @@ import {
   Download,
   UploadCloud,
   FileSpreadsheet,
-  Database,
-  Copy,
-  Check,
   RefreshCw,
-  Terminal,
-  Send,
-  AlertCircle,
-  Camera
+  Camera,
+  Building2
 } from 'lucide-react';
 import { UserAccountModal } from './UserAccountModal';
+import { SchoolSettingsManager } from './SchoolSettingsManager';
+import { getDefaultAvatar } from '../data/avatarData';
 import adminBannerBg from '../assets/images/literasi_numerasi_bright_bg_1789741597196.jpg';
-import { isSupabaseConfigured, testSupabaseConnection, syncAllToSupabase } from '../lib/supabase';
 
 interface AdminDashboardProps {
   users: UserProfile[];
   currentUser: UserProfile;
   missions?: LearningMission[];
   sessions?: StudentActivitySession[];
+  groups?: StudentGroup[];
+  initialTab?: 'accounts' | 'config' | 'schools' | 'school_settings';
   onAddUser: (userData: Omit<UserProfile, 'id'>) => void;
   onUpdateUser: (userData: UserProfile) => void;
   onDeleteUser: (userId: string) => void;
   onSwitchUser: (user: UserProfile) => void;
   onRefreshData?: () => void;
+  onUpdateSchoolName?: (schoolId: string, newSchoolName: string) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -58,23 +58,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
   missions = [],
   sessions = [],
+  groups = [],
+  initialTab,
   onAddUser,
   onUpdateUser,
   onDeleteUser,
   onSwitchUser,
-  onRefreshData
+  onRefreshData,
+  onUpdateSchoolName
 }) => {
-  const [activeTab, setActiveTab] = useState<'accounts' | 'config' | 'schools'>('accounts');
+  const [activeTab, setActiveTab] = useState<'accounts' | 'config' | 'schools' | 'school_settings'>(
+    initialTab || 'accounts'
+  );
+  const [selectedSchoolIdForEdit, setSelectedSchoolIdForEdit] = useState<string | undefined>(undefined);
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [accountFilterRole, setAccountFilterRole] = useState<'all' | UserRole>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-
-  // Supabase states
-  const [copiedSql, setCopiedSql] = useState(false);
-  const [isTestingDb, setIsTestingDb] = useState(false);
-  const [isSyncingDb, setIsSyncingDb] = useState(false);
-  const [dbTestResult, setDbTestResult] = useState<{ success: boolean; message: string; dataCount?: number } | null>(null);
-  const [dbSyncResult, setDbSyncResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // School Gemini API Key states
   const [schoolApiKey, setSchoolApiKey] = useState(() => localStorage.getItem('narasa_school_gemini_key') || '');
@@ -123,226 +128,167 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Excel / CSV Import ref
   const excelInputRef = useRef<HTMLInputElement | null>(null);
 
-  const isDbConfigured = isSupabaseConfigured();
+  // Template, Export & Import Handlers (Excel .xlsx with customized column widths & headers)
+  const handleDownloadTemplate = () => {
+    try {
+      const templateData = [
+        {
+          'Nama Lengkap': 'Budi Santoso',
+          'Peran': 'student',
+          'Username': 'budisantoso',
+          'Password': 'password123',
+          'Nama Sekolah': 'SDN 01 Nusantara',
+          'ID Sekolah': 'SDN01',
+          'Rombel / Kelas': 'Kelas V-A',
+          'ID Kelas': 'V-A',
+          'NISN / NIP': '0123456789',
+          'Nomor Telepon': '081234567890',
+          'Jenis Kelamin': 'male',
+          'Status Akun': 'active',
+          'Tipe Akun': 'Individu',
+          'Daftar Anggota Kelompok': ''
+        },
+        {
+          'Nama Lengkap': 'Kelompok Peneliti Cilik Garuda',
+          'Peran': 'student',
+          'Username': 'kelompokgaruda',
+          'Password': 'garuda2024',
+          'Nama Sekolah': 'SDN 01 Nusantara',
+          'ID Sekolah': 'SDN01',
+          'Rombel / Kelas': 'Kelas V-A',
+          'ID Kelas': 'V-A',
+          'NISN / NIP': 'KELOMPOK-01',
+          'Nomor Telepon': '081234567891',
+          'Jenis Kelamin': 'male',
+          'Status Akun': 'active',
+          'Tipe Akun': 'Kelompok',
+          'Daftar Anggota Kelompok': 'Budi Santoso; Siti Rahmawati; Ahmad Dani; Ayu Lestari'
+        },
+        {
+          'Nama Lengkap': 'Dra. Siti Aminah, M.Pd.',
+          'Peran': 'teacher',
+          'Username': 'sitiaminah',
+          'Password': 'guru2024',
+          'Nama Sekolah': 'SDN 01 Nusantara',
+          'ID Sekolah': 'SDN01',
+          'Rombel / Kelas': 'Wali Kelas V-A • Guru IPA',
+          'ID Kelas': 'V-A',
+          'NISN / NIP': '198001012005012001',
+          'Nomor Telepon': '081122334455',
+          'Jenis Kelamin': 'female',
+          'Status Akun': 'active',
+          'Tipe Akun': 'Individu',
+          'Daftar Anggota Kelompok': ''
+        },
+        {
+          'Nama Lengkap': 'Drs. Hendro Wibowo, M.Si.',
+          'Peran': 'school_admin',
+          'Username': 'hendrowibowo',
+          'Password': 'admin123',
+          'Nama Sekolah': 'SDN 01 Nusantara',
+          'ID Sekolah': 'SDN01',
+          'Rombel / Kelas': 'Admin Sekolah',
+          'ID Kelas': 'ALL',
+          'NISN / NIP': '197503121999031002',
+          'Nomor Telepon': '081399887766',
+          'Jenis Kelamin': 'male',
+          'Status Akun': 'active',
+          'Tipe Akun': 'Individu',
+          'Daftar Anggota Kelompok': ''
+        }
+      ];
 
-  const handleTestDatabase = async () => {
-    setIsTestingDb(true);
-    setDbTestResult(null);
-    const res = await testSupabaseConnection();
-    setDbTestResult(res);
-    setIsTestingDb(false);
-  };
+      const worksheet = XLSX.utils.json_to_sheet(templateData);
 
-  const handleSyncDatabase = async () => {
-    setIsSyncingDb(true);
-    setDbSyncResult(null);
-    const res = await syncAllToSupabase(users, missions, sessions);
-    setDbSyncResult(res);
-    setIsSyncingDb(false);
-    if (res.success && onRefreshData) {
-      onRefreshData();
+      // Set explicit optimal column widths for clean readability
+      worksheet['!cols'] = [
+        { wch: 34 }, // Nama Lengkap
+        { wch: 18 }, // Peran
+        { wch: 22 }, // Username
+        { wch: 18 }, // Password
+        { wch: 28 }, // Nama Sekolah
+        { wch: 14 }, // ID Sekolah
+        { wch: 28 }, // Rombel / Kelas
+        { wch: 12 }, // ID Kelas
+        { wch: 24 }, // NISN / NIP
+        { wch: 18 }, // Nomor Telepon
+        { wch: 16 }, // Jenis Kelamin
+        { wch: 14 }, // Status Akun
+        { wch: 16 }, // Tipe Akun
+        { wch: 45 }  // Daftar Anggota Kelompok
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Templat_Akun_Pengguna');
+      XLSX.writeFile(workbook, 'Template_Import_Akun_NARASA.xlsx');
+
+      toast.success(
+        'Templat Excel Berhasil Diunduh!',
+        'Gunakan file Template_Import_Akun_NARASA.xlsx untuk mengisi data akun siswa, kelompok, guru, atau admin.'
+      );
+    } catch (err) {
+      console.error('Download template error:', err);
+      toast.error('Gagal Mengunduh Templat', 'Terjadi kesalahan saat membuat file templat Excel.');
     }
   };
 
-  const fullSchemaSQL = `-- ==============================================================================
--- NARASA - SUPABASE POSTGRESQL DATABASE SCHEMA & MIGRATION
--- Platform Penalaran Kontekstual Berbasis Citra, Literasi, Numerasi & Presentasi
--- ==============================================================================
-
--- 1. EXTENSIONS
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- 2. ENUMS
-DO $$ BEGIN
-    CREATE TYPE user_role_enum AS ENUM ('student', 'teacher', 'school_admin', 'central_admin', 'admin');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE account_status_enum AS ENUM ('active', 'inactive');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE competency_enum AS ENUM ('literacy', 'numeracy', 'both');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
--- 3. TABLES DEFINITION
-
--- 3.1 SCHOOLS (Multi-Tenant & School Hierarchy)
-CREATE TABLE IF NOT EXISTS public.schools (
-    id VARCHAR(50) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    npsn VARCHAR(20) UNIQUE,
-    address TEXT,
-    city VARCHAR(100),
-    province VARCHAR(100),
-    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 3.2 CLASSES / ROMBEL
-CREATE TABLE IF NOT EXISTS public.classes (
-    id VARCHAR(50) PRIMARY KEY,
-    school_id VARCHAR(50) REFERENCES public.schools(id) ON DELETE CASCADE,
-    name VARCHAR(100) NOT NULL,
-    grade VARCHAR(20) NOT NULL,
-    phase VARCHAR(20) DEFAULT 'Fase C',
-    academic_year VARCHAR(20) DEFAULT '2024/2025',
-    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 3.3 USERS & PROFILES (Multi-Role: Siswa, Guru, Admin Sekolah, Admin Pusat)
-CREATE TABLE IF NOT EXISTS public.users (
-    id VARCHAR(100) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    role user_role_enum NOT NULL DEFAULT 'student',
-    email VARCHAR(255) UNIQUE NOT NULL,
-    avatar TEXT,
-    school_id VARCHAR(50) REFERENCES public.schools(id) ON DELETE SET NULL,
-    school_name VARCHAR(255) NOT NULL,
-    class_id VARCHAR(50),
-    class_name VARCHAR(255) NOT NULL,
-    nisn_nip VARCHAR(50),
-    username VARCHAR(100),
-    password VARCHAR(100),
-    phone VARCHAR(30),
-    status account_status_enum NOT NULL DEFAULT 'active',
-    is_group BOOLEAN DEFAULT FALSE,
-    group_members JSONB DEFAULT '[]'::jsonb,
-    joined_date VARCHAR(50) DEFAULT 'Juli 2024',
-    metadata JSONB DEFAULT '{}'::jsonb,
-    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 3.4 LEARNING MISSIONS
-CREATE TABLE IF NOT EXISTS public.learning_missions (
-    id VARCHAR(100) PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    grade VARCHAR(20) NOT NULL,
-    phase VARCHAR(20) NOT NULL,
-    subject VARCHAR(100) NOT NULL,
-    material VARCHAR(255) NOT NULL,
-    cp TEXT NOT NULL,
-    tp TEXT NOT NULL,
-    indicators JSONB DEFAULT '[]'::jsonb,
-    target_competency competency_enum NOT NULL DEFAULT 'both',
-    cognitive_level VARCHAR(20) DEFAULT 'C4-C6',
-    strict_curriculum_mode BOOLEAN DEFAULT TRUE,
-    features JSONB DEFAULT '{"adaptiveDifficulty": true, "scaffolding": true, "reasoning": true, "evidence": true, "reflection": true, "presentation": true, "peerQuestion": true}'::jsonb,
-    description TEXT,
-    is_active BOOLEAN DEFAULT TRUE,
-    suggested_objects JSONB DEFAULT '[]'::jsonb,
-    created_by VARCHAR(100) REFERENCES public.users(id) ON DELETE SET NULL,
-    school_id VARCHAR(50) REFERENCES public.schools(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 3.5 STUDENT ACTIVITY SESSIONS & PRESENTATIONS
-CREATE TABLE IF NOT EXISTS public.student_sessions (
-    id VARCHAR(100) PRIMARY KEY,
-    mission_id VARCHAR(100) REFERENCES public.learning_missions(id) ON DELETE CASCADE,
-    mission_title VARCHAR(255) NOT NULL,
-    subject VARCHAR(100) NOT NULL,
-    student_id VARCHAR(100) REFERENCES public.users(id) ON DELETE CASCADE,
-    student_name VARCHAR(255) NOT NULL,
-    image TEXT NOT NULL,
-    image_label VARCHAR(255) NOT NULL,
-    learning_bridge JSONB NOT NULL DEFAULT '{}'::jsonb,
-    answers JSONB NOT NULL DEFAULT '{}'::jsonb,
-    scaffolding_history JSONB NOT NULL DEFAULT '[]'::jsonb,
-    reflection JSONB NOT NULL DEFAULT '{}'::jsonb,
-    presentation JSONB NOT NULL DEFAULT '[]'::jsonb,
-    peer_questions JSONB NOT NULL DEFAULT '[]'::jsonb,
-    completed_at DATE DEFAULT CURRENT_DATE,
-    status VARCHAR(30) DEFAULT 'completed',
-    metrics JSONB NOT NULL DEFAULT '{"literacyScore": 85, "numeracyScore": 85, "reasoningScore": 85, "scaffoldingUsedCount": 0}'::jsonb,
-    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 4. ROW LEVEL SECURITY (RLS) POLICIES
-ALTER TABLE public.schools ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.learning_missions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_sessions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public All Access for Schools" ON public.schools FOR ALL USING (true);
-CREATE POLICY "Public All Access for Classes" ON public.classes FOR ALL USING (true);
-CREATE POLICY "Public All Access for Users" ON public.users FOR ALL USING (true);
-CREATE POLICY "Public All Access for Missions" ON public.learning_missions FOR ALL USING (true);
-CREATE POLICY "Public All Access for Student Sessions" ON public.student_sessions FOR ALL USING (true);
-
--- 5. INITIAL SEED DATA
-INSERT INTO public.schools (id, name, npsn, address, city, province)
-VALUES
-    ('SDN01', 'SDN 01 Nusantara', '20104050', 'Jl. Merdeka No. 45', 'Jakarta Pusat', 'DKI Jakarta'),
-    ('SDN02', 'SDN 02 Kenanga', '20104051', 'Jl. Melati No. 12', 'Bandung', 'Jawa Barat'),
-    ('CENTRAL', 'Pusat Data & Dinas Pendidikan Kota', '99999999', 'Gedung Kementrian Kebudayaan & Pendidikan', 'Jakarta', 'DKI Jakarta')
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO public.classes (id, school_id, name, grade, phase)
-VALUES
-    ('V-A', 'SDN01', 'Kelas V-A', '5', 'Fase C'),
-    ('V-B', 'SDN01', 'Kelas V-B', '5', 'Fase C'),
-    ('IV-A', 'SDN01', 'Kelas IV-A', '4', 'Fase B')
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO public.users (id, name, role, email, avatar, school_id, school_name, class_id, class_name, nisn_nip, username, password, phone, status, joined_date)
-VALUES
-    ('user-student-1', 'Adit Pratama', 'student', 'adit.pratama@siswa.sdn01.sch.id', 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=150&auto=format&fit=crop&q=80', 'SDN01', 'SDN 01 Nusantara', 'V-A', 'Kelas V-A', '0098451201', 'adit1', '123456', '0812-1122-3344', 'active', 'Juli 2024'),
-    ('user-student-2', 'Siti Rahma', 'student', 'siti.rahma@siswa.sdn01.sch.id', 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80', 'SDN01', 'SDN 01 Nusantara', 'V-A', 'Kelas V-A', '0098451202', 'siti2', '123456', '0812-2233-4455', 'active', 'Juli 2024'),
-    ('user-teacher-1', 'Pak Dedy, S.Pd.', 'teacher', 'dedy.guru@sdn01nusantara.sch.id', 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80', 'SDN01', 'SDN 01 Nusantara', 'V-A', 'Wali Kelas V-A • Guru IPA & Matematika', '198504122010011005', 'dedy123', '123456', '0812-3456-7890', 'active', 'Januari 2020'),
-    ('user-school-admin-1', 'Ibu Ratna, S.Kom.', 'school_admin', 'admin.sdn01@narasa.id', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80', 'SDN01', 'SDN 01 Nusantara', 'ALL', 'Admin Sekolah • SDN 01 Nusantara', '198009182006042008', 'adminsdn01', '123456', '0811-2233-4455', 'active', 'Januari 2019'),
-    ('user-central-admin-1', 'Pak Irfan Maulana, M.T.', 'central_admin', 'pusat@narasa.id', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80', 'CENTRAL', 'Pusat Data & Dinas Pendidikan Kota', 'ALL', 'Admin Pusat • Superadmin Nasional', '199302102019031001', 'adminpusat', 'admin123', '0812-9988-7766', 'active', 'Mei 2022')
-ON CONFLICT (id) DO NOTHING;
-`;
-
-  const handleCopyFullSql = () => {
-    navigator.clipboard.writeText(fullSchemaSQL);
-    setCopiedSql(true);
-    setTimeout(() => setCopiedSql(false), 2000);
-  };
-
-  // Template, Export & Import Handlers
-  const handleDownloadTemplate = () => {
-    const csvContent = "data:text/csv;charset=utf-8," + 
-      "name,role,schoolName,schoolId,className,classId,nisnNip,phone,status\n" +
-      "Budi Santoso,student,SDN 01 Nusantara,SDN01,Kelas V-A,V-A,0123456789,081234567890,active\n" +
-      "Siti Rahmawati,student,SDN 01 Nusantara,SDN01,Kelas V-B,V-B,0123456790,081234567891,active\n" +
-      "Dra. Siti Aminah M.Pd.,teacher,SDN 01 Nusantara,SDN01,Wali Kelas V-A,V-A,198001012005012001,081122334455,active";
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "template_import_akun_narasa.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const handleExportExcel = () => {
-    let csvContent = "data:text/csv;charset=utf-8,name,role,schoolName,schoolId,className,classId,nisnNip,phone,status\n";
-    users.forEach(u => {
-      csvContent += `"${u.name}","${u.role}","${u.schoolName}","${u.schoolId || ''}","${u.className}","${u.classId || ''}","${u.nisnNip || ''}","${u.phone || ''}","${u.status}"\n`;
-    });
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `data_akun_narasa_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const exportData = filteredUsers.map((u, idx) => {
+        const isGroup = u.isGroup || (u.groupMembers && u.groupMembers.length > 0);
+        return {
+          'No': idx + 1,
+          'Nama Lengkap': u.name,
+          'Peran': u.role,
+          'Username': u.username || u.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+          'Password': u.password || '123456',
+          'Nama Sekolah': u.schoolName || '',
+          'ID Sekolah': u.schoolId || '',
+          'Rombel / Kelas': u.className || '',
+          'ID Kelas': u.classId || '',
+          'NISN / NIP': u.nisnNip || '',
+          'Nomor Telepon': u.phone || '',
+          'Jenis Kelamin': u.gender || 'male',
+          'Status Akun': u.status || 'active',
+          'Tipe Akun': isGroup ? 'Kelompok' : 'Individu',
+          'Daftar Anggota Kelompok': (u.groupMembers || []).join('; ')
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+      // Set explicit column widths for clean export table
+      worksheet['!cols'] = [
+        { wch: 6 },  // No
+        { wch: 34 }, // Nama Lengkap
+        { wch: 18 }, // Peran
+        { wch: 22 }, // Username
+        { wch: 18 }, // Password
+        { wch: 28 }, // Nama Sekolah
+        { wch: 14 }, // ID Sekolah
+        { wch: 28 }, // Rombel / Kelas
+        { wch: 12 }, // ID Kelas
+        { wch: 24 }, // NISN / NIP
+        { wch: 18 }, // Nomor Telepon
+        { wch: 16 }, // Jenis Kelamin
+        { wch: 14 }, // Status Akun
+        { wch: 16 }, // Tipe Akun
+        { wch: 45 }  // Daftar Anggota Kelompok
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Data_Akun_Pengguna');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(workbook, `Data_Akun_Pengguna_NARASA_${dateStr}.xlsx`);
+
+      toast.success(
+        'Ekspor Excel Berhasil!',
+        `Berhasil mengekspor ${exportData.length} data akun ke file Data_Akun_Pengguna_NARASA_${dateStr}.xlsx.`
+      );
+    } catch (err) {
+      console.error('Export Excel error:', err);
+      toast.error('Gagal Ekspor Excel', 'Terjadi kesalahan saat mengekspor data ke Excel.');
+    }
   };
 
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -351,44 +297,86 @@ ON CONFLICT (id) DO NOTHING;
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (!text) return;
-      const lines = text.split('\n');
-      let addedCount = 0;
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(p => p.replace(/^"|"$/g, '').trim());
-        if (parts.length >= 2) {
-          const [name, role, schoolName, schoolId, className, classId, nisnNip, phone, status] = parts;
-          if (name) {
-            onAddUser({
-              name,
-              role: (role === 'student' || role === 'teacher' || role === 'admin') ? role as UserRole : 'student',
-              schoolName: schoolName || 'SDN 01 Nusantara',
-              schoolId: schoolId || 'SDN01',
-              className: className || 'Kelas V-A',
-              classId: classId || 'V-A',
-              nisnNip: nisnNip || '',
-              phone: phone || '',
-              status: (status === 'active' || status === 'inactive') ? status as any : 'active',
-              email: `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}@narasa.id`,
-              avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-              joinedDate: 'Juli 2024'
-            });
-            addedCount++;
-          }
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rawRows = XLSX.utils.sheet_to_json<any>(worksheet, { defval: '' });
+
+        if (!rawRows || rawRows.length === 0) {
+          toast.warning('File Excel Kosong', 'Tidak ada baris data yang ditemukan dalam file Excel.');
+          return;
+        }
+
+        let addedCount = 0;
+        rawRows.forEach((row: any) => {
+          // Normalize column headers (supports both Indonesian and English keys)
+          const name = (row['Nama Lengkap'] || row['nama'] || row['name'] || row['Nama'] || '').toString().trim();
+          if (!name) return;
+
+          const rawRole = (row['Peran'] || row['role'] || row['peran'] || 'student').toString().toLowerCase().trim();
+          let role: UserRole = 'student';
+          if (rawRole.includes('teacher') || rawRole.includes('guru')) role = 'teacher';
+          else if (rawRole.includes('school_admin') || rawRole.includes('admin sekolah')) role = 'school_admin';
+          else if (rawRole.includes('central_admin') || rawRole.includes('admin pusat') || rawRole === 'admin') role = 'central_admin';
+
+          const username = (row['Username'] || row['username'] || row['User Name'] || name.toLowerCase().replace(/[^a-z0-9]/g, '')).toString().replace(/^@/, '').trim();
+          const password = (row['Password'] || row['password'] || row['Kata Sandi'] || '123456').toString().trim();
+          const schoolName = (row['Nama Sekolah'] || row['schoolName'] || row['sekolah'] || 'SDN 01 Nusantara').toString().trim();
+          const schoolId = (row['ID Sekolah'] || row['schoolId'] || 'SDN01').toString().trim();
+          const className = (row['Rombel / Kelas'] || row['className'] || row['kelas'] || (role === 'student' ? 'Kelas V-A' : role === 'teacher' ? 'Wali Kelas V-A • Guru IPA' : 'Admin Sekolah')).toString().trim();
+          const classId = (row['ID Kelas'] || row['classId'] || (role === 'student' ? 'V-A' : role === 'teacher' ? 'V-A' : 'ALL')).toString().trim();
+          const nisnNip = (row['NISN / NIP'] || row['nisnNip'] || row['nisn'] || row['nip'] || '').toString().trim();
+          const phone = (row['Nomor Telepon'] || row['phone'] || row['telepon'] || row['no_hp'] || '').toString().trim();
+          
+          const rawGender = (row['Jenis Kelamin'] || row['gender'] || 'male').toString().toLowerCase().trim();
+          const gender: 'male' | 'female' = rawGender.includes('fem') || rawGender.includes('perempuan') || rawGender.includes('wanita') || rawGender === 'p' ? 'female' : 'male';
+          
+          const rawStatus = (row['Status Akun'] || row['status'] || 'active').toString().toLowerCase().trim();
+          const status: 'active' | 'inactive' = rawStatus.includes('inact') || rawStatus.includes('non') || rawStatus.includes('tidak') ? 'inactive' : 'active';
+
+          const rawType = (row['Tipe Akun'] || row['isGroup'] || '').toString().toLowerCase();
+          const rawMembers = (row['Daftar Anggota Kelompok'] || row['groupMembers'] || row['anggota'] || '').toString().trim();
+          const isGroup = rawType.includes('kelompok') || rawMembers.length > 0;
+          const groupMembers = rawMembers ? rawMembers.split(/[;,]/).map((m: string) => m.trim()).filter(Boolean) : undefined;
+
+          onAddUser({
+            name,
+            role,
+            username,
+            password,
+            schoolName,
+            schoolId,
+            className,
+            classId,
+            nisnNip,
+            phone,
+            gender,
+            status,
+            isGroup,
+            groupMembers,
+            email: `${username}@narasa.sch.id`,
+            avatar: getDefaultAvatar(role, gender),
+            joinedDate: 'Juli 2024'
+          });
+          addedCount++;
+        });
+
+        toast.success(
+          'Impor Excel Berhasil!',
+          `Berhasil mengimpor ${addedCount} data akun pengguna baru dari file Excel.`
+        );
+      } catch (err) {
+        console.error('Failed to parse Excel file:', err);
+        toast.error('Gagal Membaca File Excel', 'Format file Excel tidak valid atau rusak. Silakan gunakan templat resmi NARASA.');
+      } finally {
+        if (excelInputRef.current) {
+          excelInputRef.current.value = '';
         }
       }
-      toast.success(
-        'Impor Akun Berhasil!',
-        `Berhasil mengimpor ${addedCount} akun baru ke platform NARASA.`
-      );
-      if (excelInputRef.current) {
-        excelInputRef.current.value = '';
-      }
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   };
 
   // System config states
@@ -612,6 +600,21 @@ ON CONFLICT (id) DO NOTHING;
           <School className="w-4 h-4" />
           <span>Sekolah & Rombel Mitra</span>
         </button>
+
+        {/* Tab 4: Pengaturan Sekolah (Hanya untuk Admin Pusat & Admin Sekolah) */}
+        {(currentUser.role === 'central_admin' || currentUser.role === 'school_admin' || currentUser.role === 'admin') && (
+          <button
+            onClick={() => setActiveTab('school_settings')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeTab === 'school_settings'
+                ? 'bg-[#4F8EF7] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            <span>Pengaturan Sekolah</span>
+          </button>
+        )}
       </div>
 
       {/* 1. MANAJEMEN AKUN TAB */}
@@ -714,32 +717,32 @@ ON CONFLICT (id) DO NOTHING;
                 <div className="flex items-center gap-1.5 border-l border-slate-200 pl-2.5">
                   <button
                     onClick={handleDownloadTemplate}
-                    className="px-2.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-xs flex items-center gap-1 transition-colors"
-                    title="Unduh Templat CSV"
+                    className="px-2.5 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Unduh Templat Excel (.xlsx)"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span className="hidden lg:inline">Templat</span>
+                    <Download className="w-3.5 h-3.5 text-slate-600" />
+                    <span className="hidden lg:inline">Templat Excel</span>
                   </button>
                   <button
                     onClick={handleExportExcel}
-                    className="px-2.5 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-xs flex items-center gap-1 transition-colors"
-                    title="Ekspor Data ke CSV/Excel"
+                    className="px-2.5 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Ekspor Data ke Excel (.xlsx)"
                   >
-                    <FileSpreadsheet className="w-3.5 h-3.5" />
-                    <span className="hidden lg:inline">Ekspor</span>
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="hidden lg:inline">Ekspor Excel</span>
                   </button>
                   <button
                     onClick={() => excelInputRef.current?.click()}
-                    className="px-2.5 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs flex items-center gap-1 transition-colors"
-                    title="Impor Akun dari CSV/Excel"
+                    className="px-2.5 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Impor Akun dari Excel (.xlsx)"
                   >
-                    <UploadCloud className="w-3.5 h-3.5" />
-                    <span className="hidden lg:inline">Impor</span>
+                    <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="hidden lg:inline">Impor Excel</span>
                   </button>
                   <input
                     ref={excelInputRef}
                     type="file"
-                    accept=".csv,.xlsx,.xls"
+                    accept=".xlsx,.xls,.csv"
                     onChange={handleImportExcel}
                     className="hidden"
                   />
@@ -804,8 +807,17 @@ ON CONFLICT (id) DO NOTHING;
                                 </span>
                               </button>
                               <div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="font-bold text-[#25324B]">{u.name}</span>
+                                  {u.gender && (
+                                    <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-bold ${
+                                      u.gender === 'female'
+                                        ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                                        : 'bg-blue-50 text-blue-600 border border-blue-200'
+                                    }`}>
+                                      {u.gender === 'female' ? '👧 Putri' : '👦 Putra'}
+                                    </span>
+                                  )}
                                   {isCurrent && (
                                     <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 text-blue-700">
                                       Akun Anda
@@ -814,7 +826,7 @@ ON CONFLICT (id) DO NOTHING;
                                 </div>
                                 {u.nisnNip && (
                                   <span className="text-[10px] text-slate-500 font-mono block">
-                                    {u.role === 'student' ? 'NISN: ' : 'NIP: '}
+                                    {u.role === 'student' ? 'NISN: ' : 'NIP. '}
                                     {u.nisnNip}
                                   </span>
                                 )}
@@ -1276,9 +1288,35 @@ ON CONFLICT (id) DO NOTHING;
                   ))}
                 </ul>
               </div>
+
+              {/* Quick Settings Shortcut (Central Admin or Matching School Admin) */}
+              {(currentUser.role === 'central_admin' || currentUser.role === 'admin' || (currentUser.role === 'school_admin' && currentUser.schoolId === sch.id)) && (
+                <div className="pt-2 border-t border-slate-100 flex justify-end">
+                  <button
+                    onClick={() => {
+                      setSelectedSchoolIdForEdit(sch.id);
+                      setActiveTab('school_settings');
+                    }}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>Kelola Data Sekolah Ini</span>
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
+      )}
+
+      {/* 4. PENGATURAN SEKOLAH TAB (Hanya untuk Admin Pusat & Admin Sekolah) */}
+      {activeTab === 'school_settings' && (
+        <SchoolSettingsManager
+          currentUser={currentUser}
+          users={users}
+          initialSelectedSchoolId={selectedSchoolIdForEdit}
+          onUpdateSchoolName={onUpdateSchoolName}
+        />
       )}
 
       {/* Account Modal for Add / Edit */}

@@ -33,6 +33,7 @@ import {
   INITIAL_GROUP_OBSERVATIONS,
   DEFAULT_PRESENTATION_SETTINGS
 } from './data/quizAndGroupData';
+import { getDefaultAvatar, UserGender } from './data/avatarData';
 import { Navbar } from './components/Navbar';
 import { StudentBottomNav, StudentTab } from './components/StudentBottomNav';
 import { SchoolClassBadge } from './components/SchoolClassBadge';
@@ -82,6 +83,29 @@ import {
   X
 } from 'lucide-react';
 
+export const normalizeUserAvatar = (u: UserProfile): UserProfile => {
+  let gender: UserGender = u.gender || 'male';
+  if (!u.gender) {
+    const femaleKeywords = ['siti', 'nabila', 'ratna', 'rahma', 'zahra', 'putri', 'nurul', 'dewi', 'ibu', 'ani', 'rina', 'lia', 'ayu', 'fatimah', 'aisyah', 'anisa', 'fitri', 'wulan'];
+    const lower = (u.name || '').toLowerCase();
+    if (femaleKeywords.some((kw) => lower.includes(kw))) {
+      gender = 'female';
+    } else {
+      gender = 'male';
+    }
+  }
+
+  // Directly adjust default avatar if old unsplash or empty
+  const isOldUnsplash = !u.avatar || u.avatar.includes('unsplash.com');
+  const avatar = isOldUnsplash ? getDefaultAvatar(u.role, gender) : u.avatar;
+
+  return {
+    ...u,
+    gender,
+    avatar
+  };
+};
+
 export default function App() {
   // User Management state with localStorage persistence
   const [users, setUsers] = useState<UserProfile[]>(() => {
@@ -95,18 +119,21 @@ export default function App() {
               u.email !== 'maya.lestari@sdn01nusantara.sch.id' &&
               u.id !== 'user-teacher-2'
           );
-          if (filtered.length !== parsed.length) {
-            try {
-              localStorage.setItem('narasa_users_data', JSON.stringify(filtered));
-            } catch (e) {}
-          }
-          return filtered;
+          const normalized = filtered.map(normalizeUserAvatar);
+          try {
+            localStorage.setItem('narasa_users_data', JSON.stringify(normalized));
+          } catch (e) {}
+          return normalized;
         }
       }
     } catch (e) {
       console.error(e);
     }
-    return INITIAL_SYSTEM_USERS;
+    const initialNormalized = INITIAL_SYSTEM_USERS.map(normalizeUserAvatar);
+    try {
+      localStorage.setItem('narasa_users_data', JSON.stringify(initialNormalized));
+    } catch (e) {}
+    return initialNormalized;
   });
 
   const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
@@ -114,10 +141,10 @@ export default function App() {
       const savedUserId = localStorage.getItem('narasa_active_user_id');
       if (savedUserId && savedUserId !== 'user-teacher-2') {
         const found = INITIAL_SYSTEM_USERS.find(u => u.id === savedUserId && u.email !== 'maya.lestari@sdn01nusantara.sch.id');
-        if (found) return found;
+        if (found) return normalizeUserAvatar(found);
       }
     } catch (e) {}
-    return INITIAL_SYSTEM_USERS[0];
+    return normalizeUserAvatar(INITIAL_SYSTEM_USERS[0]);
   });
 
   const [currentRole, setCurrentRole] = useState<UserRole>(currentUser.role);
@@ -214,6 +241,35 @@ export default function App() {
   // Student Navigation Tab
   const [studentTab, setStudentTab] = useState<StudentTab>('home');
   const [studentSelectedSubjectId, setStudentSelectedSubjectId] = useState<string>('all');
+  const [adminTab, setAdminTab] = useState<'accounts' | 'config' | 'schools' | 'school_settings'>('accounts');
+
+  const handleNavigateToSchoolSettings = () => {
+    setAdminTab('school_settings');
+    if (currentRole !== 'admin' && currentRole !== 'school_admin' && currentRole !== 'central_admin') {
+      const adminUser = users.find((u) => u.role === 'school_admin' || u.role === 'central_admin' || u.role === 'admin') || currentUser;
+      handleLogin(adminUser);
+      setCurrentRole(adminUser.role);
+    }
+  };
+
+  const handleUpdateSchoolName = (schoolId: string, newSchoolName: string) => {
+    setUsers((prev) => {
+      const updated = prev.map((u) => {
+        if (u.schoolId === schoolId) {
+          return { ...u, schoolName: newSchoolName };
+        }
+        return u;
+      });
+      try {
+        localStorage.setItem('narasa_system_users', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    if (currentUser.schoolId === schoolId) {
+      setCurrentUser((prev) => ({ ...prev, schoolName: newSchoolName }));
+    }
+  };
 
   // Determine if presentation tab is allowed based on teacher setting and current user
   const isPresentationAllowed = (() => {
@@ -346,10 +402,11 @@ export default function App() {
 
   // User Account Actions
   const handleAddUser = (userData: Omit<UserProfile, 'id'>) => {
-    const newUser: UserProfile = {
+    const rawUser: UserProfile = {
       ...userData,
       id: `user-${userData.role}-${Date.now()}`
     };
+    const newUser = normalizeUserAvatar(rawUser);
     const updated = [newUser, ...users];
     setUsers(updated);
     try {
@@ -361,18 +418,19 @@ export default function App() {
   };
 
   const handleUpdateUser = (updatedUser: UserProfile) => {
-    const updated = users.map((u) => (u.id === updatedUser.id ? updatedUser : u));
+    const normalizedUser = normalizeUserAvatar(updatedUser);
+    const updated = users.map((u) => (u.id === normalizedUser.id ? normalizedUser : u));
     setUsers(updated);
-    if (currentUser.id === updatedUser.id) {
-      setCurrentUser(updatedUser);
-      setCurrentRole(updatedUser.role);
+    if (currentUser.id === normalizedUser.id) {
+      setCurrentUser(normalizedUser);
+      setCurrentRole(normalizedUser.role);
     }
     try {
       localStorage.setItem('narasa_users_data', JSON.stringify(updated));
     } catch (e) {}
-    toast.success('Profil Diperbarui', `Perubahan data "${updatedUser.name}" berhasil disimpan.`);
+    toast.success('Profil Diperbarui', `Perubahan data "${normalizedUser.name}" berhasil disimpan.`);
     // Background cloud database persist
-    dbUpsertUser(updatedUser).catch((e) => console.warn('Supabase update user:', e));
+    dbUpsertUser(normalizedUser).catch((e) => console.warn('Supabase update user:', e));
   };
 
   const handleDeleteUser = (userId: string) => {
@@ -562,7 +620,7 @@ export default function App() {
           {
             id: `pq-${Date.now()}`,
             askerName: 'Siti Rahma',
-            avatar: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=120&auto=format&fit=crop&q=80',
+            avatar: getDefaultAvatar('student', 'female'),
             question: `Apakah konsep ${activeMission.material} ini juga bisa kamu temukan di benda lain di rumahmu?`,
             aiCoachHint: 'Jawab dengan memberikan contoh nyata benda lain yang memiliki pola serupa.',
             timestamp: 'Baru saja'
@@ -831,6 +889,7 @@ export default function App() {
                 currentUser={currentUser}
                 missions={missions}
                 sessions={sessions}
+                groups={groups}
                 onAddUser={handleAddUser}
                 onUpdateUser={handleUpdateUser}
                 onDeleteUser={handleDeleteUser}
@@ -1191,6 +1250,10 @@ export default function App() {
                   <PortfolioGallery
                     sessions={sessions}
                     onOpenSessionPresentation={(s) => handleLaunchPresentation(s)}
+                    users={users}
+                    currentUser={currentUser}
+                    groups={groups}
+                    groupObservations={groupObservations}
                   />
                 )}
 

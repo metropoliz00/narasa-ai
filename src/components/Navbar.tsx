@@ -18,7 +18,8 @@ import {
   FolderKanban,
   Brain,
   Users,
-  Settings
+  Settings,
+  Building2
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -34,6 +35,7 @@ interface NavbarProps {
   onLogout: () => void;
   onOpenEditProfile: () => void;
   onNavigateToAdmin?: () => void;
+  onNavigateToSchoolSettings?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -48,7 +50,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLoginModal,
   onLogout,
   onOpenEditProfile,
-  onNavigateToAdmin
+  onNavigateToAdmin,
+  onNavigateToSchoolSettings
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -119,7 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-slate-500 hidden sm:block font-medium">
-                Platform Pembelajaran Kontekstual Berbasis Observasi
+                Platform Pembelajaran Kontekstual Berbantuan AI
               </p>
             </div>
           </div>
@@ -289,15 +292,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                           </h4>
                           {getRoleBadge(currentUser)}
                         </div>
-                        {currentUser.username ? (
+                        {currentUser.username && !currentUser.username.toLowerCase().includes('superadmin') && currentUser.role !== 'central_admin' && currentUser.role !== 'school_admin' && currentUser.role !== 'admin' ? (
                           <p className="text-xs text-blue-600 font-medium truncate">@{currentUser.username}</p>
                         ) : currentUser.nisnNip ? (
                           <p className="text-xs text-slate-500 font-mono truncate">
-                            {currentUser.role === 'student' ? `NISN: ${currentUser.nisnNip}` : `NIP: ${currentUser.nisnNip}`}
+                            {currentUser.role === 'student' ? `NISN: ${currentUser.nisnNip}` : `NIP. ${currentUser.nisnNip}`}
                           </p>
                         ) : null}
                         <p className="text-[11px] text-slate-400 truncate">
-                          {currentUser.className} • {currentUser.schoolName}
+                          {currentUser.className?.replace(/•?\s*Superadmin\s*Nasional/gi, '').replace(/\/\s*Superadmin/gi, '').trim()} • {currentUser.schoolName}
                         </p>
                       </div>
                     </div>
@@ -320,6 +323,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                           Pengaturan
                         </span>
                       </button>
+
+                      {/* Option: Pengaturan Sekolah (Hanya untuk Admin Pusat dan Admin Sekolah) */}
+                      {(currentUser.role === 'central_admin' || currentUser.role === 'school_admin' || currentUser.role === 'admin') && onNavigateToSchoolSettings && (
+                        <button
+                          onClick={() => {
+                            setIsDropdownOpen(false);
+                            onNavigateToSchoolSettings();
+                          }}
+                          className="w-full px-3 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/70 flex items-center justify-between transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Building2 className="w-4 h-4 text-emerald-600" />
+                            <span className="font-semibold text-slate-800">Pengaturan Sekolah</span>
+                          </div>
+                          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100/70 px-1.5 py-0.5 rounded-md border border-emerald-200">
+                            {currentUser.role === 'school_admin' ? 'Admin Sekolah' : 'Admin Pusat'}
+                          </span>
+                        </button>
+                      )}
                     </div>
 
                     {/* Divider & Logout Menu Item */}
@@ -333,7 +355,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       >
                         <div className="flex items-center gap-2.5">
                           <LogOut className="w-4 h-4" />
-                          <span>Keluar (Logout)</span>
+                          <span>Keluar</span>
                         </div>
                         <span className="text-[10px] text-slate-400 font-normal">Akhiri Sesi</span>
                       </button>

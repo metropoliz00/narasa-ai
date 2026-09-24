@@ -240,7 +240,7 @@ export const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({
                       </div>
                       {u.nisnNip && (
                         <p className="text-[10px] text-slate-400 font-mono">
-                          {u.role === 'student' ? 'NISN: ' : 'NIP: '}
+                          {u.role === 'student' ? 'NISN: ' : 'NIP. '}
                           {u.nisnNip}
                         </p>
                       )}

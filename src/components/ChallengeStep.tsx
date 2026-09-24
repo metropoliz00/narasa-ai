@@ -1,31 +1,36 @@
-import React, { useState } from 'react';
-import { ExplorationQuestion, ScaffoldingLevels, AILearningBridgeResult } from '../types';
+import React, { useState, useMemo } from 'react';
+import { ExplorationQuestion, ScaffoldingLevels, AILearningBridgeResult, STEMStage, STEM_STAGES_CONFIG, StudentAnswers } from '../types';
 import {
+  Globe,
+  Search,
+  PenTool,
+  Wrench,
+  FlaskConical,
+  BarChart2,
+  RefreshCw,
+  Megaphone,
   Brain,
   HelpCircle,
   Lightbulb,
   ArrowRight,
+  ArrowLeft,
   Sparkles,
-  ChevronDown,
   Volume2,
-  CheckCircle,
+  CheckCircle2,
   Layers,
-  Search,
-  MessageSquare,
-  X
+  Check,
+  Compass,
+  AlertCircle
 } from 'lucide-react';
 
 interface ChallengeStepProps {
   questions: ExplorationQuestion[];
   learningBridge: AILearningBridgeResult;
   photoUrl: string;
-  onCompleteChallenge: (answers: {
-    challengeAnswer: string;
-    reason: string;
-    evidence: string;
-    strategy: string;
-    conclusion: string;
-  }, scaffoldingUsed: { questionId: string; level: 1 | 2 | 3 | 4; hintText: string; requestedAt: string }[]) => void;
+  onCompleteChallenge: (
+    answers: StudentAnswers,
+    scaffoldingUsed: { questionId: string; level: 1 | 2 | 3 | 4; hintText: string; requestedAt: string }[]
+  ) => void;
 }
 
 export const ChallengeStep: React.FC<ChallengeStepProps> = ({
@@ -36,12 +41,17 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
-  // Form states
-  const [challengeAnswer, setChallengeAnswer] = useState('');
-  const [reason, setReason] = useState('');
-  const [evidence, setEvidence] = useState('');
-  const [strategy, setStrategy] = useState('');
-  const [conclusion, setConclusion] = useState('');
+  // Form states for all 8 STEM steps
+  const [stemAnswers, setStemAnswers] = useState<Record<string, string>>({
+    real_problem: '',
+    ask_inquire: '',
+    design_solution: '',
+    prototype: '',
+    testing: '',
+    data_analysis: '',
+    improvement: '',
+    communication: ''
+  });
 
   // Scaffolding state
   const [showScaffolding, setShowScaffolding] = useState(false);
@@ -50,7 +60,107 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
     { questionId: string; level: 1 | 2 | 3 | 4; hintText: string; requestedAt: string }[]
   >([]);
 
-  const activeQuestion = questions[currentStepIndex] || questions[0];
+  // Build the complete 8 STEM questions list, merging AI questions or constructing tailored defaults
+  const stemQuestions: ExplorationQuestion[] = useMemo(() => {
+    return STEM_STAGES_CONFIG.map((stageCfg, idx) => {
+      // Check if provided questions already have an item matching this stage
+      const existing = questions.find(
+        (q) => q.stage === stageCfg.id || (idx === 0 && q.stage === 'challenge') || (idx === 5 && q.stage === 'evidence') || (idx === 6 && q.stage === 'reasoning')
+      );
+
+      if (existing) {
+        return {
+          ...existing,
+          stage: stageCfg.id,
+          title: existing.title || stageCfg.title,
+          question: existing.question || stageCfg.guidingPrompt,
+          conceptTag: existing.conceptTag || stageCfg.title
+        };
+      }
+
+      // Generate contextual question matching the object & material
+      let stageQuestion = stageCfg.guidingPrompt;
+      let tag = stageCfg.title;
+      const obj = learningBridge.detectedObject || 'objek yang diamati';
+      const mat = learningBridge.material || 'materi pembelajaran';
+
+      switch (stageCfg.id) {
+        case 'real_problem':
+          stageQuestion = `Berdasarkan pengamatan pada foto ${obj}, jelaskan masalah nyata atau kebutuhan apa di lingkungan sekolah/sehari-hari yang ingin kamu pecahkan menggunakan konsep ${mat}!`;
+          tag = 'Identifikasi Masalah Autentik';
+          break;
+        case 'ask_inquire':
+          stageQuestion = `Apa pertanyaan penyelidikan utama yang kamu ajukan? Informasi, data angka, atau konsep apa saja yang kamu perlukan dari materi ${mat}?`;
+          tag = 'Inkuiri & Eksplorasi Konsep';
+          break;
+        case 'design_solution':
+          stageQuestion = `Rancanglah ide solusi atau strategi logis untuk menyelesaikan masalah pada ${obj}. Bagaimana rencana langkah demi langkah yang kamu susun?`;
+          tag = 'Rancangan Solusi Kritis';
+          break;
+        case 'prototype':
+          stageQuestion = `Bagaimana kamu mewujudkan solusi tersebut ke dalam bentuk produk nyata, model matematis, skema kerja, atau prototipe sederhana?`;
+          tag = 'Pembuatan Prototipe/Model';
+          break;
+        case 'testing':
+          stageQuestion = `Lakukan pengujian terhadap prototipe atau model solusimu! Bagaimana kamu menguji ketepatan dan efektivitasnya dalam memecahkan masalah?`;
+          tag = 'Uji Coba & Eksperimen';
+          break;
+        case 'data_analysis':
+          stageQuestion = `Berdasarkan hasil pengujian, tuliskan data angka, hasil hitung, atau bukti observasi yang kamu peroleh. Apa makna data tersebut?`;
+          tag = 'Analisis Data & Bukti';
+          break;
+        case 'improvement':
+          stageQuestion = `Apakah ada kendala saat pengujian? Apa ide perbaikan atau penyempurnaan (iterasi) yang kamu lakukan agar solusimu lebih optimal?`;
+          tag = 'Evaluasi & Iterasi Desain';
+          break;
+        case 'communication':
+          stageQuestion = `Rangkum kesimpulan akhir dari proyek STEM ini! Apa pesan kunci dan manfaat solusi yang siap kamu sampaikan ke teman-teman di kelas?`;
+          tag = 'Komunikasi Hasil & Presentasi';
+          break;
+      }
+
+      return {
+        id: `q-stem-${stageCfg.id}`,
+        stage: stageCfg.id,
+        title: stageCfg.title,
+        question: stageQuestion,
+        inputType: 'text',
+        conceptTag: tag,
+        scaffolding: {
+          level1: `Petunjuk Awal: Fokus pada ${stageCfg.title.toLowerCase()} dari objek ${obj}. Apa yang terlihat paling jelas?`,
+          level2: `Pertanyaan Penuntun: Bagaimana konsep ${mat} bisa membantumu di tahap ${stageCfg.title.toLowerCase()} ini?`,
+          level3: `Langkah Kecil: Tuliskan satu poin utama dulu, lalu tambahkan penjelasan alasan secara teratur.`,
+          level4: `Contoh Sederhana: Bayangkan kamu sedang menceritakan ide ${stageCfg.title.toLowerCase()} ini kepada teman sebangkumu.`
+        }
+      };
+    });
+  }, [questions, learningBridge]);
+
+  const activeQuestion = stemQuestions[currentStepIndex] || stemQuestions[0];
+  const activeStageConfig = STEM_STAGES_CONFIG[currentStepIndex] || STEM_STAGES_CONFIG[0];
+
+  const getStageIcon = (stageId: STEMStage, className = 'w-4 h-4') => {
+    switch (stageId) {
+      case 'real_problem':
+        return <Globe className={className} />;
+      case 'ask_inquire':
+        return <Search className={className} />;
+      case 'design_solution':
+        return <PenTool className={className} />;
+      case 'prototype':
+        return <Wrench className={className} />;
+      case 'testing':
+        return <FlaskConical className={className} />;
+      case 'data_analysis':
+        return <BarChart2 className={className} />;
+      case 'improvement':
+        return <RefreshCw className={className} />;
+      case 'communication':
+        return <Megaphone className={className} />;
+      default:
+        return <Brain className={className} />;
+    }
+  };
 
   const handleNextLevelScaffold = () => {
     if (currentScaffoldLevel < 4) {
@@ -62,8 +172,8 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
 
   const handleOpenScaffolding = () => {
     setShowScaffolding(true);
-    if (scaffoldingHistory.length === 0) {
-      recordScaffold(1);
+    if (!scaffoldingHistory.some((h) => h.questionId === activeQuestion.id && h.level === currentScaffoldLevel)) {
+      recordScaffold(currentScaffoldLevel);
     }
   };
 
@@ -81,7 +191,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
   };
 
   const getHintText = (scaffolding: ScaffoldingLevels | undefined, level: number): string => {
-    if (!scaffolding) return 'Perhatikan kembali detail objek di foto.';
+    if (!scaffolding) return 'Perhatikan kembali detail objek di foto dan konsep materi.';
     switch (level) {
       case 1:
         return scaffolding.level1;
@@ -106,199 +216,249 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
     }
   };
 
+  const currentAnswerValue = stemAnswers[activeStageConfig.id] || '';
+
+  const handleUpdateCurrentAnswer = (val: string) => {
+    setStemAnswers((prev) => ({
+      ...prev,
+      [activeStageConfig.id]: val
+    }));
+  };
+
+  const handleGoToStep = (idx: number) => {
+    if (idx >= 0 && idx < stemQuestions.length) {
+      setCurrentStepIndex(idx);
+      setShowScaffolding(false);
+      setCurrentScaffoldLevel(1);
+    }
+  };
+
   const handleAdvance = () => {
-    if (currentStepIndex < questions.length - 1) {
+    if (currentStepIndex < stemQuestions.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
       setShowScaffolding(false);
       setCurrentScaffoldLevel(1);
     } else {
-      // Completed all questions -> submit
-      onCompleteChallenge(
-        {
-          challengeAnswer: challengeAnswer.trim() || 'Jawaban dihitung berdasarkan keteraturan waktu pada foto jam.',
-          reason: reason.trim() || 'Saya memilih konsep KPK karena ada jadwal yang berulang.',
-          evidence: evidence.trim() || 'Bukti kelipatan 4 dan 6 bertemu pada angka 12.',
-          strategy: strategy.trim() || 'Menuliskan deret kelipatan secara terurut.',
-          conclusion: conclusion.trim() || 'Interval waktu teratur dapat disinkronkan dengan KPK.'
-        },
-        scaffoldingHistory
-      );
+      // Completed all 8 STEM questions -> submit structured response
+      const rp = stemAnswers.real_problem.trim() || 'Identifikasi masalah nyata pada objek foto.';
+      const ai = stemAnswers.ask_inquire.trim() || 'Pertanyaan penyelidikan dan pengumpulan informasi konsep.';
+      const ds = stemAnswers.design_solution.trim() || 'Rancangan rencana solusi terstruktur.';
+      const pt = stemAnswers.prototype.trim() || 'Pembuatan model atau prototipe solusi.';
+      const ts = stemAnswers.testing.trim() || 'Uji coba prototipe sesuai kriteria.';
+      const da = stemAnswers.data_analysis.trim() || 'Analisis data kuantitatif dan bukti pengujian.';
+      const im = stemAnswers.improvement.trim() || 'Penyempurnaan dan perbaikan iteratif prototipe.';
+      const cm = stemAnswers.communication.trim() || 'Kesimpulan dan pesan presentasi untuk kelas.';
+
+      const formattedAnswers: StudentAnswers = {
+        // 8 STEM stages
+        realProblem: rp,
+        askInquire: ai,
+        designSolution: ds,
+        prototype: pt,
+        testing: ts,
+        dataAnalysis: da,
+        improvement: im,
+        communication: cm,
+        // Compatibility fields
+        challengeAnswer: `${rp} | Solusi: ${ds}`,
+        reason: `${ai} | Evaluasi: ${im}`,
+        evidence: `${da} | Pengujian: ${ts}`,
+        strategy: ds,
+        conclusion: cm
+      };
+
+      onCompleteChallenge(formattedAnswers, scaffoldingHistory);
     }
   };
 
   const currentHint = getHintText(activeQuestion?.scaffolding, currentScaffoldLevel);
-
-  // Microcopy by question stage
-  const getStageHeader = () => {
-    switch (activeQuestion.stage) {
-      case 'challenge':
-        return {
-          badge: 'Tahap 1: Tantangan Utama',
-          title: 'Apa jawabanmu?',
-          placeholder: 'Tuliskan jawaban lengkapmu di sini...',
-          microcopy: 'Lihat lebih dekat pada foto objek. Temukan informasi angka atau karakteristiknya!'
-        };
-      case 'reasoning':
-        return {
-          badge: 'Tahap 2: Alasan & Cara Berpikir',
-          title: 'Mengapa kamu memilih jawaban tersebut?',
-          placeholder: 'Jelaskan mengapa kamu memilih cara/jawaban itu...',
-          microcopy: 'Sekarang pikirkan: Ceritakan apa alasan di balik pilihanmu dengan kata-katamu sendiri.'
-        };
-      case 'evidence':
-        return {
-          badge: 'Tahap 3: Bukti & Verifikasi',
-          title: 'Tunjukkan bukti yang mendukung!',
-          placeholder: 'Tuliskan langkah perhitungan, tabel, atau detail foto yang membuktikan jawabanmu...',
-          microcopy: 'Tunjukkan buktinya! Bagaimana kamu memastikan jawabanmu masuk akal?'
-        };
-      default:
-        return {
-          badge: 'Tantangan Penalaran',
-          title: 'Pemecahan Masalah',
-          placeholder: 'Tuliskan jawabanmu...',
-          microcopy: 'Selesaikan dengan cermat!'
-        };
-    }
-  };
-
-  const stageMeta = getStageHeader();
-
-  const getCurrentInputValue = () => {
-    if (currentStepIndex === 0) return challengeAnswer;
-    if (currentStepIndex === 1) return reason;
-    return evidence;
-  };
-
-  const setCurrentInputValue = (val: string) => {
-    if (currentStepIndex === 0) setChallengeAnswer(val);
-    else if (currentStepIndex === 1) setReason(val);
-    else setEvidence(val);
-  };
+  const isCurrentStepFilled = currentAnswerValue.trim().length >= 3;
+  const answeredCount = Object.values(stemAnswers).filter((v) => v.trim().length >= 3).length;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Progress Bar & Header */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl bg-blue-100 text-[#4F8EF7] flex items-center justify-center font-bold text-sm">
+    <div className="max-w-4xl mx-auto space-y-6 text-left">
+      {/* 8-Step STEM Workflow Stepper Bar */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
               {currentStepIndex + 1}
-            </span>
+            </div>
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                {stageMeta.badge}
-              </span>
-              <h2 className="text-base sm:text-lg font-bold text-[#25324B] font-display">
-                {activeQuestion.title}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
+                  <Compass className="w-3.5 h-3.5 text-blue-500" />
+                  Pola Berpikir STEM
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                  Tahap {currentStepIndex + 1} dari 8
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold text-[#25324B] font-display flex items-center gap-2">
+                {getStageIcon(activeStageConfig.id, 'w-5 h-5 text-indigo-600')}
+                {activeStageConfig.title}
               </h2>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-              Langkah {currentStepIndex + 1} dari {questions.length}
+            <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              {answeredCount} dari 8 Tahap Terisi
             </span>
           </div>
         </div>
 
-        {/* Step Progress indicators */}
-        <div className="grid grid-cols-3 gap-2">
-          {questions.map((q, idx) => (
-            <div
-              key={q.id}
-              className={`h-2 rounded-full transition-all ${
-                idx <= currentStepIndex
-                  ? 'bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC]'
-                  : 'bg-slate-200'
-              }`}
-            />
-          ))}
+        {/* 8 Interactive Step Pills */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5">
+          {STEM_STAGES_CONFIG.map((stage, idx) => {
+            const isFilled = (stemAnswers[stage.id] || '').trim().length >= 3;
+            const isCurrent = idx === currentStepIndex;
+
+            return (
+              <button
+                key={stage.id}
+                type="button"
+                onClick={() => handleGoToStep(idx)}
+                className={`p-2 rounded-2xl border text-left transition-all flex flex-col justify-between min-h-[58px] cursor-pointer ${
+                  isCurrent
+                    ? 'border-blue-600 bg-blue-50/90 ring-2 ring-blue-400/20 shadow-xs'
+                    : isFilled
+                    ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50'
+                    : 'border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-500'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                      isCurrent
+                        ? 'bg-blue-600 text-white'
+                        : isFilled
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {idx + 1}
+                  </span>
+                  {isFilled && <Check className="w-3 h-3 text-emerald-600 shrink-0" />}
+                </div>
+                <span
+                  className={`text-[11px] font-bold line-clamp-1 mt-1 ${
+                    isCurrent ? 'text-blue-900' : isFilled ? 'text-emerald-900' : 'text-slate-600'
+                  }`}
+                  title={stage.title}
+                >
+                  {stage.title}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Main Question Card with Photo Context */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-5">
-        {/* Context Photo Thumbnail Strip */}
-        <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+      {/* Main STEM Question Card with Photo Context */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
+        {/* Context Photo Strip */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
           <img
             src={photoUrl}
             alt="Objek kontekstual"
-            className="w-16 h-16 rounded-xl object-cover border border-slate-200 shrink-0"
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-200 shrink-0 shadow-xs"
           />
-          <div className="text-xs sm:text-sm text-slate-600 leading-snug">
-            <span className="font-bold text-[#25324B] block">
-              Konteks: {learningBridge.detectedObject}
-            </span>
-            <span>{learningBridge.context}</span>
+          <div className="space-y-1 text-xs sm:text-sm text-slate-700 leading-snug">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-[#25324B]">
+                Konteks: {learningBridge.detectedObject}
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                {learningBridge.material}
+              </span>
+            </div>
+            <p className="text-slate-500 text-xs">
+              {learningBridge.learningBridge}
+            </p>
           </div>
         </div>
 
-        {/* Question Text Box */}
-        <div className="bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-white p-5 rounded-2xl border border-blue-100 space-y-2 relative">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-base sm:text-lg font-bold text-[#25324B] leading-relaxed">
-              {activeQuestion.question}
-            </p>
+        {/* Question Text Box with Stage Explainer */}
+        <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-purple-50/40 p-5 sm:p-6 rounded-2xl border border-blue-200 space-y-3 relative">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700 bg-blue-100/80 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+              {getStageIcon(activeStageConfig.id, 'w-3.5 h-3.5')}
+              {activeStageConfig.badge}
+            </span>
             <button
               onClick={() => handleReadAloud(activeQuestion.question)}
-              className="p-2 rounded-xl text-blue-600 hover:bg-blue-100/60 transition-colors shrink-0"
-              title="Bacakan Soal"
+              className="p-2 rounded-xl text-blue-700 hover:bg-blue-100 transition-colors shrink-0 flex items-center gap-1 text-xs font-bold"
+              title="Dengarkan Soal"
             >
-              <Volume2 className="w-5 h-5" />
+              <Volume2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Bacakan</span>
             </button>
           </div>
-          <p className="text-xs text-blue-700 font-medium italic">
-            💡 {stageMeta.microcopy}
+
+          <p className="text-base sm:text-lg font-bold text-[#25324B] leading-relaxed">
+            {activeQuestion.question}
           </p>
+
+          <div className="pt-1 border-t border-blue-200/60 flex items-center gap-1.5 text-xs text-blue-800 font-medium">
+            <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <span>{activeStageConfig.microcopy}</span>
+          </div>
         </div>
 
         {/* Answer Input */}
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center justify-between">
-            <span>Jawaban / Penjelasanmu:</span>
+            <span className="flex items-center gap-1.5">
+              <PenTool className="w-3.5 h-3.5 text-blue-600" />
+              Tuliskan Pemikiran / Solusi untuk Tahap Ini:
+            </span>
             <span className="text-[11px] text-slate-400 lowercase font-normal">
-              kata-katamu sendiri
+              {currentAnswerValue.length} karakter
             </span>
           </label>
           <textarea
             rows={4}
-            value={getCurrentInputValue()}
-            onChange={(e) => setCurrentInputValue(e.target.value)}
-            placeholder={stageMeta.placeholder}
-            className="w-full p-4 rounded-2xl border border-slate-200 focus:border-[#4F8EF7] focus:ring-3 focus:ring-blue-100 outline-none text-sm text-slate-800 transition-all resize-none shadow-xs"
+            value={currentAnswerValue}
+            onChange={(e) => handleUpdateCurrentAnswer(e.target.value)}
+            placeholder={activeStageConfig.placeholder}
+            className="w-full p-4 rounded-2xl border border-slate-300 focus:border-[#4F8EF7] focus:ring-3 focus:ring-blue-100 outline-none text-sm text-slate-800 transition-all resize-none shadow-xs"
           />
         </div>
 
         {/* Scaffolding Assistant Card (Adaptive 4-level tutoring) */}
         {!showScaffolding ? (
           <button
+            type="button"
             onClick={handleOpenScaffolding}
-            className="w-full py-2.5 px-4 rounded-xl border border-dashed border-purple-300 bg-purple-50/60 hover:bg-purple-100/80 text-purple-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all"
+            className="w-full py-3 px-4 rounded-2xl border border-dashed border-purple-300 bg-purple-50/70 hover:bg-purple-100/90 text-purple-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <Lightbulb className="w-4 h-4 text-amber-500" />
-            <span>Merasa kesulitan? Minta Bantuan Tutor Adaptif</span>
+            <span>Merasa kesulitan di tahap {activeStageConfig.title}? Minta Bantuan Tutor Adaptif</span>
           </button>
         ) : (
           <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200 p-5 rounded-2xl space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold text-xs">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
                   L{currentScaffoldLevel}
                 </span>
                 <div>
                   <h4 className="text-xs sm:text-sm font-bold text-purple-900">
                     Bantuan Adaptif Level {currentScaffoldLevel}:{' '}
-                    {currentScaffoldLevel === 1 && 'Petunjuk Kecil'}
+                    {currentScaffoldLevel === 1 && 'Petunjuk Awal'}
                     {currentScaffoldLevel === 2 && 'Pertanyaan Penuntun'}
                     {currentScaffoldLevel === 3 && 'Langkah Kecil'}
-                    {currentScaffoldLevel === 4 && 'Contoh Analog'}
+                    {currentScaffoldLevel === 4 && 'Contoh Analog Sederhana'}
                   </h4>
                   <p className="text-[10px] text-purple-600">
-                    Petunjuk berpikir mandiri tanpa memberi jawaban langsung
+                    Petunjuk berpikir mandiri tanpa memberi contekan jawaban langsung
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => handleReadAloud(currentHint)}
                 className="p-1.5 rounded-lg text-purple-700 hover:bg-purple-200/50"
                 title="Dengarkan Petunjuk"
@@ -307,17 +467,18 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
               </button>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-800 bg-white/80 p-3.5 rounded-xl border border-purple-100 leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-slate-800 bg-white/90 p-4 rounded-xl border border-purple-100 leading-relaxed font-medium shadow-2xs">
               “{currentHint}”
             </p>
 
             {currentScaffoldLevel < 4 && (
               <div className="flex justify-end pt-1">
                 <button
+                  type="button"
                   onClick={handleNextLevelScaffold}
-                  className="text-xs font-bold text-purple-700 hover:text-purple-900 underline flex items-center gap-1"
+                  className="text-xs font-bold text-purple-700 hover:text-purple-900 underline flex items-center gap-1 cursor-pointer"
                 >
-                  <span>Masih belum paham? Naikkan ke Bantuan Level {currentScaffoldLevel + 1}</span>
+                  <span>Masih butuh bantuan? Naikkan ke Level {currentScaffoldLevel + 1}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -325,24 +486,35 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
           </div>
         )}
 
-        {/* Action Button */}
-        <div className="pt-3 flex items-center justify-between">
-          <div className="text-xs text-slate-400">
-            {scaffoldingHistory.length > 0 && (
-              <span className="flex items-center gap-1 text-purple-600 font-medium">
-                <Lightbulb className="w-3 h-3 text-amber-500" /> {scaffoldingHistory.length} petunjuk dibuka
-              </span>
+        {/* Action Controls */}
+        <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {currentStepIndex > 0 && (
+              <button
+                type="button"
+                onClick={() => handleGoToStep(currentStepIndex - 1)}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Tahap Sebelumnya</span>
+              </button>
             )}
           </div>
-          <button
-            onClick={handleAdvance}
-            className="py-3 px-6 rounded-2xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all flex items-center gap-2 text-sm sm:text-base active:scale-98"
-          >
-            <span>
-              {currentStepIndex < questions.length - 1 ? 'Lanjut ke Alasan / Bukti' : 'Selesai & Refleksi'}
-            </span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              onClick={handleAdvance}
+              className="w-full sm:w-auto py-3 px-6 rounded-2xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:scale-98 cursor-pointer"
+            >
+              <span>
+                {currentStepIndex < stemQuestions.length - 1
+                  ? `Lanjut ke Tahap ${currentStepIndex + 2}: ${STEM_STAGES_CONFIG[currentStepIndex + 1]?.title}`
+                  : 'Selesai 8 Tahap STEM & Masuk Refleksi'}
+              </span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

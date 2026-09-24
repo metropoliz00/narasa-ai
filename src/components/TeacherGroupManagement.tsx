@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { StudentGroup, UserProfile, QuizSubmission, StudentActivitySession, GroupObservationRecord, LearningMission } from '../types';
 import { GroupManagerModal, formatGroupUsername } from './GroupManagerModal';
 import { GroupObservationModal } from './GroupObservationModal';
@@ -220,20 +221,49 @@ export const TeacherGroupManagement: React.FC<TeacherGroupManagementProps> = ({
   };
 
   const handleExportGroupsCSV = () => {
-    let csv = 'Nama Kelompok,Username,Password (Setting Guru),Kelas,Ketua,Jumlah Anggota,Daftar Anggota\n';
-    groups.forEach((g) => {
-      const uName = g.username || formatGroupUsername(g.name);
-      const pass = g.password || '123456';
-      csv += `"${g.name}","@${uName}","${pass}","${g.className}","${g.leaderName || '-'}","${g.memberNames.length}","${g.memberNames.join('; ')}"\n`;
-    });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Daftar_Kelompok_Belajar_${currentUser.classId || 'Semua'}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const exportData = groups.map((g, idx) => {
+        const uName = g.username || formatGroupUsername(g.name);
+        const pass = g.password || '123456';
+        return {
+          'No': idx + 1,
+          'Nama Kelompok': g.name,
+          'Username': `@${uName}`,
+          'Password (Setting Guru)': pass,
+          'Kelas / Rombel': g.className,
+          'Ketua Kelompok': g.leaderName || '-',
+          'Jumlah Anggota': g.memberNames.length,
+          'Daftar Anggota Kelompok': g.memberNames.join('; '),
+          'Motto / Semboyan': g.motto || '-'
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      worksheet['!cols'] = [
+        { wch: 6 },  // No
+        { wch: 32 }, // Nama Kelompok
+        { wch: 22 }, // Username
+        { wch: 24 }, // Password
+        { wch: 18 }, // Kelas / Rombel
+        { wch: 22 }, // Ketua Kelompok
+        { wch: 16 }, // Jumlah Anggota
+        { wch: 45 }, // Daftar Anggota Kelompok
+        { wch: 30 }  // Motto / Semboyan
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Daftar_Kelompok_Belajar');
+      const filename = `Daftar_Kelompok_Belajar_${currentUser.classId || 'Semua'}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+
+      toast.success(
+        'Ekspor Excel Berhasil!',
+        `Berhasil mengekspor ${exportData.length} data kelompok ke file ${filename}.`
+      );
+    } catch (err) {
+      console.error('Export group excel error:', err);
+      toast.error('Gagal Ekspor Excel', 'Terjadi kendala saat mengekspor data kelompok.');
+    }
   };
 
   const handleOpenObservationModal = (group: StudentGroup) => {

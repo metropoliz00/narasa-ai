@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { toast } from './Toast';
 import {
   StudentGroup,
@@ -290,31 +291,58 @@ export const GroupObservationModal: React.FC<GroupObservationModalProps> = ({
   };
 
   const handleExportCSV = () => {
-    const selectedMission = missions.find((m) => m.id === selectedMissionId);
-    let csv = `RUBRIK OBSERVASI AKTIVITAS KELOMPOK\n`;
-    csv += `Kelompok,${group.name}\n`;
-    csv += `Kelas,${group.className}\n`;
-    csv += `Guru Penilai,${currentUser.name}\n`;
-    csv += `Misi / Aktivitas,${selectedMission?.title || activityTopic}\n`;
-    csv += `Tanggal Observasi,${new Date().toLocaleDateString('id-ID')}\n`;
-    csv += `Kekompakan Tim,${groupCohesion}/4\n`;
-    csv += `Kualitas Tugas,${taskQuality}/4\n`;
-    csv += `Rata-rata Kelompok,${averageGroupScore}\n`;
-    csv += `Catatan Umum Guru,"${groupNotes.replace(/"/g, '""')}"\n\n`;
+    try {
+      const selectedMission = missions.find((m) => m.id === selectedMissionId);
+      const exportData = memberScores.map((m, idx) => ({
+        'No': idx + 1,
+        'Nama Anggota': m.studentName,
+        'Peran Tim': m.isLeader ? 'Ketua Kelompok' : 'Anggota',
+        'Kelompok': group.name,
+        'Kelas': group.className,
+        'Misi / Aktivitas': selectedMission?.title || activityTopic,
+        'Guru Penilai': currentUser.name,
+        'Keaktifan (1-4)': m.indicators.participation,
+        'Kerjasama (1-4)': m.indicators.collaboration,
+        'Nalar Kritis (1-4)': m.indicators.criticalThinking,
+        'Tanggung Jawab (1-4)': m.indicators.responsibility,
+        'Komunikasi (1-4)': m.indicators.communication,
+        'Total Skor (100)': m.totalScore,
+        'Predikat': m.predicate,
+        'Catatan Kualitatif Guru': m.notes || groupNotes || '-'
+      }));
 
-    csv += `No,Nama Anggota,Peran,Keaktifan,Kerjasama,Nalar Kritis,Tanggung Jawab,Komunikasi,Total Skor (100),Predikat,Catatan Observasi\n`;
-    memberScores.forEach((m, idx) => {
-      csv += `${idx + 1},"${m.studentName}",${m.isLeader ? 'Ketua Kelompok' : 'Anggota'},${m.indicators.participation},${m.indicators.collaboration},${m.indicators.criticalThinking},${m.indicators.responsibility},${m.indicators.communication},${m.totalScore},"${m.predicate}","${(m.notes || '').replace(/"/g, '""')}"\n`;
-    });
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      worksheet['!cols'] = [
+        { wch: 6 },  // No
+        { wch: 28 }, // Nama Anggota
+        { wch: 18 }, // Peran Tim
+        { wch: 26 }, // Kelompok
+        { wch: 16 }, // Kelas
+        { wch: 34 }, // Misi / Aktivitas
+        { wch: 26 }, // Guru Penilai
+        { wch: 16 }, // Keaktifan
+        { wch: 16 }, // Kerjasama
+        { wch: 18 }, // Nalar Kritis
+        { wch: 20 }, // Tanggung Jawab
+        { wch: 18 }, // Komunikasi
+        { wch: 16 }, // Total Skor
+        { wch: 14 }, // Predikat
+        { wch: 45 }  // Catatan Kualitatif Guru
+      ];
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Rubrik_Observasi_${group.name.replace(/\s+/g, '_')}_${group.className}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Rubrik_Observasi');
+      const filename = `Rubrik_Observasi_${group.name.replace(/\s+/g, '_')}_${group.className}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+
+      toast.success(
+        'Ekspor Excel Berhasil!',
+        `Berhasil mengekspor rubrik observasi ke file ${filename}.`
+      );
+    } catch (err) {
+      console.error('Export observation excel error:', err);
+      toast.error('Gagal Ekspor Excel', 'Terjadi kesalahan saat mengekspor rubrik observasi.');
+    }
   };
 
   const selectedMission = missions.find((m) => m.id === selectedMissionId);

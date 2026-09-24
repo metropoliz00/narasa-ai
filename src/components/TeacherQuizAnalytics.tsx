@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { ConceptQuiz, QuizSubmission, UserProfile } from '../types';
 import { ConceptQuizPlayer } from './ConceptQuizPlayer';
 import { QuizEditorModal } from './QuizEditorModal';
@@ -109,22 +110,58 @@ export const TeacherQuizAnalytics: React.FC<TeacherQuizAnalyticsProps> = ({
   const needsGradingCount = classSubmissions.filter((s) => s.needsManualGrading).length;
 
   const handleExportCSV = () => {
-    let csv = 'Nama Murid/Kelompok,Tipe,Anggota Tim,Kuis/Materi,Mata Pelajaran,Skor Nilai,Status Koreksi,Predikat,Literasi,Numerasi,Penalaran,Waktu Selesai\n';
-    filteredSubmissions.forEach((s) => {
-      const typeStr = s.isGroup ? 'Kelompok Belajar' : 'Individu';
-      const membersStr = s.groupMembers ? s.groupMembers.join('; ') : '-';
-      const gradingStr = s.needsManualGrading ? 'Menunggu Koreksi Guru' : s.isGradedByTeacher ? 'Telah Dikoreksi Guru' : 'Otomatis';
-      csv += `"${s.userName}","${typeStr}","${membersStr}","${s.quizTitle}","${s.subject}","${s.score}","${gradingStr}","${s.predicate}","${s.literacyScore}%","${s.numeracyScore}%","${s.reasoningScore}%","${s.completedAt}"\n`;
-    });
+    try {
+      const exportData = filteredSubmissions.map((s, idx) => {
+        const typeStr = s.isGroup ? 'Kelompok Belajar' : 'Individu';
+        const membersStr = s.groupMembers ? s.groupMembers.join('; ') : '-';
+        const gradingStr = s.needsManualGrading ? 'Menunggu Koreksi Guru' : s.isGradedByTeacher ? 'Telah Dikoreksi Guru' : 'Otomatis';
+        return {
+          'No': idx + 1,
+          'Nama Murid / Kelompok': s.userName,
+          'Tipe': typeStr,
+          'Anggota Tim': membersStr,
+          'Kuis / Materi': s.quizTitle,
+          'Mata Pelajaran': s.subject,
+          'Skor Nilai': s.score,
+          'Predikat': s.predicate,
+          'Status Koreksi': gradingStr,
+          'Skor Literasi (%)': `${s.literacyScore}%`,
+          'Skor Numerasi (%)': `${s.numeracyScore}%`,
+          'Skor Penalaran (%)': `${s.reasoningScore}%`,
+          'Waktu Selesai': s.completedAt
+        };
+      });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Rekap_Nilai_Uji_Pemahaman_${currentUser.classId || 'Kelas'}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      worksheet['!cols'] = [
+        { wch: 6 },  // No
+        { wch: 30 }, // Nama Murid / Kelompok
+        { wch: 18 }, // Tipe
+        { wch: 35 }, // Anggota Tim
+        { wch: 32 }, // Kuis / Materi
+        { wch: 20 }, // Mata Pelajaran
+        { wch: 12 }, // Skor Nilai
+        { wch: 14 }, // Predikat
+        { wch: 24 }, // Status Koreksi
+        { wch: 18 }, // Skor Literasi (%)
+        { wch: 18 }, // Skor Numerasi (%)
+        { wch: 20 }, // Skor Penalaran (%)
+        { wch: 24 }  // Waktu Selesai
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekap_Nilai_Kuis');
+      const filename = `Rekap_Nilai_Uji_Pemahaman_${currentUser.classId || 'Kelas'}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+
+      toast.success(
+        'Ekspor Excel Berhasil!',
+        `Berhasil mengekspor ${exportData.length} data nilai kuis ke file ${filename}.`
+      );
+    } catch (err) {
+      console.error('Export quiz grades excel error:', err);
+      toast.error('Gagal Ekspor Excel', 'Terjadi kesalahan saat mengekspor rekap nilai.');
+    }
   };
 
   const openGradingModal = (sub: QuizSubmission) => {

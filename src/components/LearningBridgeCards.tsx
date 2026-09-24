@@ -262,6 +262,59 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
           </div>
         </div>
 
+        {/* Card: 🧬 Pola Berpikir STEM (8 Tahap Inkuiri & Rekayasa) */}
+        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-5 sm:p-6 border border-indigo-500/30 shadow-md space-y-4 md:col-span-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                STEM
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white tracking-wide uppercase flex items-center gap-2">
+                  <span>Pola Berpikir STEM (8 Tahap Inkuiri & Rekayasa)</span>
+                </h3>
+                <p className="text-[11px] text-indigo-300">Alur bertahap dari masalah autentik hingga solusi teruji</p>
+              </div>
+            </div>
+            <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 self-start sm:self-auto">
+              Science • Tech • Engineering • Math
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 pt-1">
+            {[
+              { step: 1, title: 'Masalah Nyata', desc: 'Identifikasi fakta & konteks foto', icon: '🌍' },
+              { step: 2, title: 'Bertanya & Cari Info', desc: 'Inkuiri & konsep sains/matematika', icon: '❓' },
+              { step: 3, title: 'Rancang Solusi', desc: 'Sketsa rencana & strategi logis', icon: '📐' },
+              { step: 4, title: 'Buat Prototipe', desc: 'Model kerja / produk nyata', icon: '🛠️' },
+              { step: 5, title: 'Menguji', desc: 'Uji coba & simulasi kriteria', icon: '🧪' },
+              { step: 6, title: 'Analisis Data', desc: 'Data hitungan & bukti empiris', icon: '📊' },
+              { step: 7, title: 'Memperbaiki', desc: 'Iterasi & optimasi desain', icon: '🔄' },
+              { step: 8, title: 'Komunikasi', desc: 'Presentasi & bagikan manfaat', icon: '📢' },
+            ].map((st) => (
+              <div
+                key={st.step}
+                className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-2.5 flex flex-col justify-between transition-all group"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-black w-5 h-5 rounded-md bg-indigo-500/40 text-indigo-200 flex items-center justify-center">
+                      {st.step}
+                    </span>
+                    <span className="text-base">{st.icon}</span>
+                  </div>
+                  <h4 className="text-xs font-bold text-white leading-tight group-hover:text-blue-300 transition-colors">
+                    {st.title}
+                  </h4>
+                </div>
+                <p className="text-[10px] text-slate-300 leading-tight mt-1 opacity-80">
+                  {st.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Card: 📖 Ringkasan Materi Sederhana untuk Murid */}
         {bridgeResult.simpleMaterialSummary && (
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-emerald-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3 md:col-span-2">

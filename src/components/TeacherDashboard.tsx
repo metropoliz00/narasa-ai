@@ -21,6 +21,7 @@ import { TeacherGroupManagement } from './TeacherGroupManagement';
 import { TeacherQuizAnalytics } from './TeacherQuizAnalytics';
 import { AICriticalQuizGeneratorModal } from './AICriticalQuizGeneratorModal';
 import { IndividualLoginCardsModal } from './IndividualLoginCardsModal';
+import { StudentPortfolioReportModal } from './StudentPortfolioReportModal';
 import { toast } from './Toast';
 import teacherBannerBg from '../assets/images/literasi_numerasi_bright_bg_1789741597196.jpg';
 import {
@@ -133,6 +134,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [selectedMissionForQuiz, setSelectedMissionForQuiz] = useState<string | undefined>(undefined);
   const [isPrintIndividualModalOpen, setIsPrintIndividualModalOpen] = useState(false);
   const [selectedStudentForPrint, setSelectedStudentForPrint] = useState<string | null>(null);
+  const [isPrintPortfolioModalOpen, setIsPrintPortfolioModalOpen] = useState(false);
+  const [printPortfolioTargetSessionId, setPrintPortfolioTargetSessionId] = useState<string | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
 
@@ -550,17 +553,29 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {/* Tab 2: Submissions Stream */}
       {activeSubTab === 'submissions' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">
-              Karya & Refleksi Murid yang Telah Masuk
+              Karya & Refleksi Murid yang Telah Masuk ({sessions.length})
             </h3>
-            <button
-              onClick={onOpenClassroomPresentation}
-              className="text-xs font-bold text-purple-600 hover:underline flex items-center gap-1"
-            >
-              <Tv className="w-3.5 h-3.5" />
-              <span>Buka Presentasi Layar Kelas</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setPrintPortfolioTargetSessionId('all');
+                  setIsPrintPortfolioModalOpen(true);
+                }}
+                className="px-3.5 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Cetak Rekap Portofolio (PDF)</span>
+              </button>
+              <button
+                onClick={onOpenClassroomPresentation}
+                className="text-xs font-bold text-purple-600 hover:underline flex items-center gap-1"
+              >
+                <Tv className="w-3.5 h-3.5" />
+                <span>Buka Presentasi Layar Kelas</span>
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
@@ -593,8 +608,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-end md:self-center">
-                  <div className="text-right hidden sm:block">
+                <div className="flex items-center gap-2.5 self-end md:self-center">
+                  <div className="text-right hidden sm:block mr-2">
                     <span className="text-xs font-bold text-[#25324B] block">
                       Skor Penalaran: {session.metrics.reasoningScore}%
                     </span>
@@ -604,16 +619,28 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   </div>
 
                   <button
+                    onClick={() => {
+                      setPrintPortfolioTargetSessionId(session.id);
+                      setIsPrintPortfolioModalOpen(true);
+                    }}
+                    className="px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
+                    title="Cetak Laporan Portofolio PDF"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>PDF</span>
+                  </button>
+
+                  <button
                     onClick={() => onViewSessionDetail(session)}
-                    className="px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-white text-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs"
+                    className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-white text-slate-700 font-bold text-xs flex items-center gap-1.5 shadow-2xs"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>Periksa Alur</span>
+                    <span>Alur</span>
                   </button>
 
                   <button
                     onClick={onOpenClassroomPresentation}
-                    className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs flex items-center gap-1.5"
+                    className="px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs flex items-center gap-1.5"
                   >
                     <Play className="w-3.5 h-3.5 fill-purple-700" />
                     <span>Tayangkan</span>
@@ -929,7 +956,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           </span>
                         </button>
                         <div className="space-y-0.5">
-                          <h4 className="font-bold text-[#25324B] text-sm">{student.name}</h4>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="font-bold text-[#25324B] text-sm">{student.name}</h4>
+                            {student.gender && (
+                              <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
+                                student.gender === 'female' ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-blue-50 text-blue-600 border border-blue-200'
+                              }`}>
+                                {student.gender === 'female' ? '👧 Putri' : '👦 Putra'}
+                              </span>
+                            )}
+                          </div>
                           <div className="pt-0.5">
                             <SchoolClassBadge classNameStr={student.className} schoolNameStr={student.schoolName} size="sm" />
                           </div>
@@ -1193,6 +1229,18 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* STUDENT / GROUP PORTFOLIO PRINTABLE REPORT MODAL */}
+      <StudentPortfolioReportModal
+        isOpen={isPrintPortfolioModalOpen}
+        onClose={() => setIsPrintPortfolioModalOpen(false)}
+        sessions={sessions}
+        users={users}
+        currentUser={currentUser}
+        groups={groups}
+        groupObservations={groupObservations}
+        initialSelectedSessionId={printPortfolioTargetSessionId}
+      />
     </div>
   );
 };

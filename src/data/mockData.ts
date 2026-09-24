@@ -7,6 +7,14 @@ import {
   TeacherInsight,
   AssessmentRecord
 } from '../types';
+import studentBoy1 from '../assets/avatars/student_boy_1.jpg';
+import studentBoy2 from '../assets/avatars/student_boy_2.jpg';
+import studentGirlHijab from '../assets/avatars/student_girl_hijab.jpg';
+import studentGirlRibbon from '../assets/avatars/student_girl_ribbon.jpg';
+import teacherMale from '../assets/avatars/teacher_male.jpg';
+import teacherFemale from '../assets/avatars/teacher_female.jpg';
+import adminMale from '../assets/avatars/admin_male.jpg';
+import adminFemale from '../assets/avatars/admin_female.jpg';
 
 export const INITIAL_SYSTEM_USERS: UserProfile[] = [
   // 1. SISWA
@@ -14,7 +22,8 @@ export const INITIAL_SYSTEM_USERS: UserProfile[] = [
     id: 'user-student-1',
     name: 'Adit Pratama',
     role: 'student',
-    avatar: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=150&auto=format&fit=crop&q=80',
+    gender: 'male',
+    avatar: studentBoy1,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Kelas V-A',
@@ -28,7 +37,8 @@ export const INITIAL_SYSTEM_USERS: UserProfile[] = [
     id: 'user-student-2',
     name: 'Siti Rahma',
     role: 'student',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
+    gender: 'female',
+    avatar: studentGirlHijab,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Kelas V-A',
@@ -42,7 +52,8 @@ export const INITIAL_SYSTEM_USERS: UserProfile[] = [
     id: 'user-student-3',
     name: 'Budi Santoso',
     role: 'student',
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
+    gender: 'male',
+    avatar: studentBoy2,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Kelas V-B',
@@ -56,7 +67,8 @@ export const INITIAL_SYSTEM_USERS: UserProfile[] = [
     id: 'user-student-4',
     name: 'Nabila Zahra',
     role: 'student',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    gender: 'female',
+    avatar: studentGirlRibbon,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Kelas IV-A',
@@ -70,7 +82,8 @@ export const INITIAL_SYSTEM_USERS: UserProfile[] = [
     id: 'user-student-5',
     name: 'Rizki Pratama',
     role: 'student',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    gender: 'male',
+    avatar: studentBoy1,
     schoolName: 'SDN 02 Kenanga',
     schoolId: 'SDN02',
     className: 'Kelas V-A',
@@ -86,7 +99,8 @@ export const INITIAL_SYSTEM_USERS: UserProfile[] = [
     id: 'user-teacher-1',
     name: 'Pak Dedy, S.Pd.',
     role: 'teacher',
-    avatar: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
+    gender: 'male',
+    avatar: teacherMale,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Wali Kelas V-A • Guru IPA & Matematika',
@@ -101,7 +115,8 @@ export const INITIAL_SYSTEM_USERS: UserProfile[] = [
     id: 'user-teacher-3',
     name: 'Pak Hendra Wijaya, S.Pd.',
     role: 'teacher',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    gender: 'male',
+    avatar: teacherMale,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Guru Kelas IV • Tematik & PJOK',
@@ -118,7 +133,8 @@ export const INITIAL_SYSTEM_USERS: UserProfile[] = [
     id: 'user-school-admin-1',
     name: 'Ibu Ratna, S.Kom.',
     role: 'school_admin',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    gender: 'female',
+    avatar: adminFemale,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Admin Sekolah • SDN 01 Nusantara',
@@ -133,10 +149,11 @@ export const INITIAL_SYSTEM_USERS: UserProfile[] = [
     id: 'user-central-admin-1',
     name: 'Pak Irfan Maulana, M.T.',
     role: 'central_admin',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    gender: 'male',
+    avatar: adminMale,
     schoolName: 'Pusat Data & Dinas Pendidikan Kota',
     schoolId: 'CENTRAL',
-    className: 'Admin Pusat • Superadmin Nasional',
+    className: 'Admin Pusat Nasional',
     classId: 'ALL',
     email: 'pusat@narasa.id',
     status: 'active',
@@ -848,7 +865,7 @@ export const INITIAL_COMPLETED_SESSION: StudentActivitySession = {
     {
       id: 'pq-1',
       askerName: 'Siti Rahma',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80',
+      avatar: studentGirlHijab,
       question: 'Adit, bagaimana kalau bel yang satu berbunyi tiap 4 menit dan yang satu lagi tiap 5 menit? Kapan ketemunya?',
       presenterAnswer: 'Karena 4 dan 5 tidak punya faktor prima persekutuan selain 1, maka KPK-nya langsung dikalikan: 4 × 5 = 20 menit! Jadi ketemunya menit ke-20.',
       aiCoachHint: 'Jawaban Adit sudah sangat tepat! Mengalikan dua bilangan yang saling prima adalah strategi cepat mencari KPK.',
@@ -857,7 +874,7 @@ export const INITIAL_COMPLETED_SESSION: StudentActivitySession = {
     {
       id: 'pq-2',
       askerName: 'Budi Santoso',
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=120&auto=format&fit=crop&q=80',
+      avatar: studentBoy2,
       question: 'Kalau setelah pukul 08.12, kapan bunyi bersama lagi untuk kedua kalinya?',
       presenterAnswer: 'Tinggal ditambah 12 menit lagi dari 08.12, jadi pukul 08.24 (atau kelipatan kedua dari 12, yaitu 24 menit).',
       aiCoachHint: 'Bagus sekali! Kelipatan persekutuan berikutnya selalu mengikuti pola interval KPK tersebut.',

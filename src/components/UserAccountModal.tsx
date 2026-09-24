@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, UserRole } from '../types';
 import { toast } from './Toast';
 import {
+  getDefaultAvatar,
+  UserGender
+} from '../data/avatarData';
+import {
   X,
   User,
   GraduationCap,
@@ -31,27 +35,6 @@ interface UserAccountModalProps {
   currentUser?: UserProfile;
 }
 
-const DEFAULT_AVATARS: Record<UserRole, string[]> = {
-  student: [
-    'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80'
-  ],
-  teacher: [
-    'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80'
-  ],
-  school_admin: [
-    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
-  ],
-  central_admin: [
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80'
-  ],
-  admin: [
-    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80'
-  ]
-};
-
 export const UserAccountModal: React.FC<UserAccountModalProps> = ({
   isOpen,
   onClose,
@@ -61,6 +44,7 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
   currentUser
 }) => {
   const [role, setRole] = useState<UserRole>(defaultRole);
+  const [gender, setGender] = useState<UserGender>('male');
   const [name, setName] = useState('');
   const [schoolName, setSchoolName] = useState('SDN 01 Nusantara');
   const [schoolId, setSchoolId] = useState('SDN01');
@@ -69,7 +53,7 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
   const [nisnNip, setNisnNip] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
-  const [avatar, setAvatar] = useState(DEFAULT_AVATARS[defaultRole]?.[0] || DEFAULT_AVATARS.student[0]);
+  const [avatar, setAvatar] = useState(getDefaultAvatar(defaultRole, 'male'));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -89,7 +73,9 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
     setFileError(null);
     setPhotoInfo(null);
     if (editingUser) {
+      const userGender: UserGender = editingUser.gender || 'male';
       setRole(editingUser.role);
+      setGender(userGender);
       setName(editingUser.name);
       setSchoolName(editingUser.schoolName);
       setSchoolId(editingUser.schoolId || 'SDN01');
@@ -98,12 +84,16 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
       setNisnNip(editingUser.nisnNip || '');
       setPhone(editingUser.phone || '');
       setStatus(editingUser.status || 'active');
-      setAvatar(editingUser.avatar || DEFAULT_AVATARS[editingUser.role]?.[0] || DEFAULT_AVATARS.student[0]);
+      const isOldUnsplash = !editingUser.avatar || editingUser.avatar.includes('unsplash.com');
+      const defaultAv = getDefaultAvatar(editingUser.role, userGender);
+      setAvatar(isOldUnsplash ? defaultAv : editingUser.avatar);
       setUsername(editingUser.username || '');
       setPassword(editingUser.password || '123456');
     } else {
       const initialRole = defaultRole;
+      const initialGender: UserGender = 'male';
       setRole(initialRole);
+      setGender(initialGender);
       setName('');
       if (isSchoolAdminLoggedIn && currentUser) {
         setSchoolName(currentUser.schoolName);
@@ -117,18 +107,29 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
       setNisnNip('');
       setPhone('');
       setStatus('active');
-      setAvatar(DEFAULT_AVATARS[initialRole]?.[0] || DEFAULT_AVATARS.student[0]);
+      setAvatar(getDefaultAvatar(initialRole, initialGender));
       setUsername('');
       setPassword('123456');
     }
   }, [editingUser, defaultRole, isOpen, currentUser, isSchoolAdminLoggedIn]);
 
+  const handleGenderChange = (newGender: UserGender) => {
+    setGender(newGender);
+    // Langsung sesuaikan secara default avatarnya
+    setAvatar(getDefaultAvatar(role, newGender));
+    setPhotoInfo(null);
+    setFileError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleRoleChange = (newRole: UserRole) => {
     setRole(newRole);
+    // Langsung sesuaikan secara default avatarnya
+    setAvatar(getDefaultAvatar(newRole, gender));
+    setPhotoInfo(null);
+    setFileError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!editingUser) {
-      setAvatar(DEFAULT_AVATARS[newRole]?.[0] || DEFAULT_AVATARS.student[0]);
-      setPhotoInfo(null);
-      setFileError(null);
       if (newRole === 'student') {
         setClassName('Kelas V-A');
         setClassId('V-A');
@@ -139,7 +140,7 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
         setClassName('Admin Sekolah');
         setClassId('ALL');
       } else {
-        setClassName('Admin Pusat / Superadmin');
+        setClassName('Admin Pusat');
         setClassId('ALL');
         setSchoolName('Pusat Data Pendidikan');
         setSchoolId('CENTRAL');
@@ -214,24 +215,25 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
   };
 
   const handleResetAvatar = () => {
-    const defaultAv = DEFAULT_AVATARS[role]?.[0] || DEFAULT_AVATARS.student[0];
+    const defaultAv = getDefaultAvatar(role, gender);
     setAvatar(defaultAv);
     setPhotoInfo(null);
     setFileError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    toast.info('Foto Direset', 'Foto profil kembali ke avatar ilustrasi bawaan.');
+    toast.info('Foto Direset', 'Foto profil kembali ke avatar karakter bawaan.');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const finalAvatar = avatar || DEFAULT_AVATARS[role]?.[0] || DEFAULT_AVATARS.student[0];
+    const finalAvatar = avatar || getDefaultAvatar(role, gender);
 
     onSave({
       id: editingUser?.id,
       name: name.trim(),
       role,
+      gender,
       avatar: finalAvatar,
       schoolName: schoolName.trim(),
       schoolId: schoolId.trim(),
@@ -382,73 +384,59 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
                 <span className="leading-tight font-medium">{fileError}</span>
               </div>
             )}
+          </div>
 
-            {/* Preset Avatar Selection */}
-            <div className="pt-2 border-t border-slate-200/70">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-bold text-slate-500 uppercase">
-                  Atau Pilih Avatar Pilihan:
-                </span>
-                {DEFAULT_AVATARS[role] && avatar !== DEFAULT_AVATARS[role][0] && (
-                  <button
-                    type="button"
-                    onClick={handleResetAvatar}
-                    className="text-[10px] text-blue-600 hover:underline flex items-center gap-1 font-medium cursor-pointer"
-                  >
-                    <RefreshCw className="w-2.5 h-2.5" />
-                    <span>Reset Default</span>
-                  </button>
-                )}
+          {/* Peran & Jenis Kelamin */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {!isSelf ? (
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[#25324B] uppercase block">
+                  Peran Pengguna <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={role}
+                  disabled={isSchoolAdminLoggedIn && editingUser?.role === 'school_admin'}
+                  onChange={(e) => handleRoleChange(e.target.value as UserRole)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-semibold text-xs text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-[#4F8EF7] outline-none"
+                >
+                  <option value="student">🎓 Murid</option>
+                  <option value="teacher">📚 Guru</option>
+                  <option value="school_admin">🏫 Admin Sekolah</option>
+                  {!isSchoolAdminLoggedIn && <option value="central_admin">⚙️ Admin Pusat</option>}
+                </select>
               </div>
-              <div className="flex items-center gap-2 overflow-x-auto py-0.5">
-                {(DEFAULT_AVATARS[role] || DEFAULT_AVATARS.student).map((avUrl, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setAvatar(avUrl);
-                      setPhotoInfo(null);
-                      setFileError(null);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                    }}
-                    className={`relative shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
-                      avatar === avUrl
-                        ? 'border-blue-600 scale-105 shadow-sm'
-                        : 'border-transparent opacity-60 hover:opacity-100'
-                    }`}
-                    title={`Pilih avatar bawaan ${idx + 1}`}
-                  >
-                    <img src={avUrl} alt={`Avatar ${idx + 1}`} className="w-9 h-9 object-cover" />
-                    {avatar === avUrl && (
-                      <span className="absolute inset-0 bg-blue-600/30 flex items-center justify-center text-white">
-                        <Check className="w-3 h-3" />
-                      </span>
-                    )}
-                  </button>
-                ))}
+            ) : null}
+
+            <div className={`space-y-1 ${isSelf ? 'sm:col-span-2' : ''}`}>
+              <label className="text-[11px] font-bold text-[#25324B] uppercase block">
+                Jenis Kelamin <span className="text-rose-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleGenderChange('male')}
+                  className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    gender === 'male'
+                      ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-2xs font-extrabold'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>👦 Laki-laki</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleGenderChange('female')}
+                  className={`py-2 px-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    gender === 'female'
+                      ? 'bg-rose-50 border-rose-400 text-rose-700 shadow-2xs font-extrabold'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>👧 Perempuan</span>
+                </button>
               </div>
             </div>
           </div>
-
-          {/* Peran Pengguna */}
-          {!isSelf && (
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-[#25324B] uppercase block">
-                Peran Pengguna <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={role}
-                disabled={isSchoolAdminLoggedIn && editingUser?.role === 'school_admin'}
-                onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-[#4F8EF7] outline-none"
-              >
-                <option value="student">🎓 Murid</option>
-                <option value="teacher">📚 Guru</option>
-                <option value="school_admin">🏫 Admin Sekolah</option>
-                {!isSchoolAdminLoggedIn && <option value="central_admin">⚙️ Admin Pusat</option>}
-              </select>
-            </div>
-          )}
 
           {/* Full Name */}
           <div className="space-y-1">
@@ -459,7 +447,22 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
               type="text"
               required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setName(val);
+                if (!editingUser && !photoInfo) {
+                  const femaleKeywords = ['siti', 'nabila', 'ratna', 'rahma', 'zahra', 'putri', 'nurul', 'dewi', 'ibu', 'ani', 'rina', 'lia', 'ayu', 'fatimah', 'aisyah', 'anisa', 'fitri', 'wulan'];
+                  const maleKeywords = ['adit', 'budi', 'rizki', 'ahmad', 'fajar', 'pak', 'hendra', 'dedy', 'irfan', 'dani', 'agus', 'bayu', 'dimas', 'taufik', 'arif'];
+                  const words = val.toLowerCase().split(/\s+/);
+                  if (words.some((w) => femaleKeywords.some((kw) => w.includes(kw)))) {
+                    setGender('female');
+                    setAvatar(getDefaultAvatar(role, 'female'));
+                  } else if (words.some((w) => maleKeywords.some((kw) => w.includes(kw)))) {
+                    setGender('male');
+                    setAvatar(getDefaultAvatar(role, 'male'));
+                  }
+                }
+              }}
               placeholder="Masukkan Nama Lengkap"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-[#4F8EF7] outline-none"
             />
@@ -624,19 +627,35 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
               </div>
             </>
           ) : (
-            /* Beautiful Read-only Info Card for School/Class Affiliation */
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 flex flex-col gap-2.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            /* Editable Card for School/Class Affiliation */
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                 Afiliasi Sekolah & Kelas Anda
               </span>
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div className="space-y-0.5">
-                  <span className="text-slate-400 font-medium block">Sekolah</span>
-                  <span className="text-slate-800 font-bold block">{schoolName}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 block">
+                    Sekolah / Instansi
+                  </label>
+                  <input
+                    type="text"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    placeholder="Contoh: SDN 01 Nusantara / Pusat Data"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-[#4F8EF7] outline-none"
+                  />
                 </div>
-                <div className="space-y-0.5">
-                  <span className="text-slate-400 font-medium block">Kelas / Rombel</span>
-                  <span className="text-slate-800 font-bold block">{className}</span>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-700 block">
+                    Kelas / Rombel / Jabatan
+                  </label>
+                  <input
+                    type="text"
+                    value={className}
+                    onChange={(e) => setClassName(e.target.value)}
+                    placeholder="Contoh: Kelas V-A / Admin Pusat"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white font-semibold text-slate-800 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-[#4F8EF7] outline-none"
+                  />
                 </div>
               </div>
             </div>

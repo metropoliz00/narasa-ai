@@ -53,19 +53,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleQuickSelect = (user: UserProfile) => {
-    setIdentifier(user.username || user.nisnNip || user.name);
-    setPassword('123456');
-    const cleanName = user.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim();
-    setSuccessMsg(`Memilih akun: ${cleanName}`);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onSelectUser(user);
-      onClose();
-    }, 400);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -90,7 +77,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     );
 
     if (!found) {
-      const msg = 'Akun tidak ditemukan. Periksa kembali Username atau NISN/NIP Anda.';
+      const msg = 'Akun tidak ditemukan. Periksa kembali Username atau Password Anda.';
       setErrorMsg(msg);
       toast.error('Akun Tidak Ditemukan', msg);
       return;
@@ -192,36 +179,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600"
+                className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-          </div>
-
-          {/* Quick Demo Selector */}
-          <div className="pt-2">
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-              Atau Pilih Cepat Akun Demo:
-            </label>
-            <select
-              value=""
-              onChange={(e) => {
-                const u = users.find((item) => item.id === e.target.value);
-                if (u) handleQuickSelect(u);
-              }}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-            >
-              <option value="" disabled>-- Pilih Akun Cepat --</option>
-              {users.map((u) => {
-                const displayName = u.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim();
-                return (
-                  <option key={u.id} value={u.id}>
-                    {displayName}
-                  </option>
-                );
-              })}
-            </select>
           </div>
 
           {/* Submit Button */}
