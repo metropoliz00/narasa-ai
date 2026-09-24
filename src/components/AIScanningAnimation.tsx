@@ -105,7 +105,7 @@ export const AIScanningAnimation: React.FC<AIScanningAnimationProps> = ({
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
-            <span>Batalkan & Tutup</span>
+            <span>Tutup</span>
           </button>
         </div>
       )}

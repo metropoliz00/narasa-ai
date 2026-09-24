@@ -61,61 +61,39 @@ app.post("/api/test-gemini-key", async (req, res) => {
   }
 });
 
-// Helper to call Gemini with model pooling, exponential backoff, and fallback models for 503 / high demand spikes
+// Helper to call Gemini with model pooling, exponential backoff, and instant fallback for 503 / high demand spikes
 async function callGeminiWithFallback(
   client: GoogleGenAI,
   options: {
     contents: any;
     config?: any;
   },
-  timeoutMs: number = 25000
+  timeoutMs: number = 20000
 ) {
   // Candidate models list per official guidelines with robust failover
-  const candidateModels = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+  const candidateModels = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"];
   let lastError: any = null;
 
   for (let i = 0; i < candidateModels.length; i++) {
     const model = candidateModels[i];
-    // Try up to 2 attempts per model with jittered exponential backoff
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const generatePromise = client.models.generateContent({
-          model,
-          contents: options.contents,
-          config: options.config,
-        });
+    try {
+      const generatePromise = client.models.generateContent({
+        model,
+        contents: options.contents,
+        config: options.config,
+      });
 
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Timeout: ${model} exceeded ${timeoutMs}ms`)), timeoutMs)
-        );
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout: ${model} exceeded ${timeoutMs}ms`)), timeoutMs)
+      );
 
-        const response: any = await Promise.race([generatePromise, timeoutPromise]);
-        return response;
-      } catch (err: any) {
-        lastError = err;
-        const errMsg = String(err?.message || err || "");
-        console.warn(`[Gemini API] Request with model ${model} (attempt ${attempt}) encountered: ${errMsg.slice(0, 150)}`);
-
-        const isTemporaryDemand =
-          err?.status === 503 ||
-          err?.status === 429 ||
-          err?.code === 503 ||
-          err?.code === 429 ||
-          errMsg.includes("Timeout") ||
-          errMsg.includes("503") ||
-          errMsg.includes("high demand") ||
-          errMsg.includes("UNAVAILABLE") ||
-          errMsg.includes("RESOURCE_EXHAUSTED");
-
-        if (isTemporaryDemand && attempt < 2) {
-          // Fast backoff before retry or failover
-          const delay = 600 + Math.random() * 400;
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        }
-        // Immediately fall over to next candidate model in pool
-        break;
-      }
+      const response: any = await Promise.race([generatePromise, timeoutPromise]);
+      return response;
+    } catch (err: any) {
+      lastError = err;
+      const errMsg = String(err?.message || err || "");
+      console.info(`[Gemini API] Model ${model} unavailable or busy (${errMsg.slice(0, 80)}...), falling over to next model in pool.`);
+      // Continue loop to try next model in pool immediately
     }
   }
   throw lastError;
@@ -162,7 +140,7 @@ app.post("/api/analyze-vision", async (req, res) => {
       return res.status(400).json({ error: "Learning mission is required." });
     }
 
-    const client = getAiClient();
+    const client = getAiClient(req);
 
     // If Gemini client is available and image/description is provided
     if (client) {
@@ -335,7 +313,7 @@ Kembalikan HANYA format JSON valid tanpa tanda kutip markdown, sesuai skema:
 app.post("/api/scaffold-hint", async (req, res) => {
   try {
     const { question, currentAnswer, currentLevel, mission } = req.body;
-    const client = getAiClient();
+    const client = getAiClient(req);
 
     if (client && question) {
       try {
@@ -520,7 +498,7 @@ app.post("/api/generate-presentation", async (req, res) => {
 app.post("/api/polish-slide", async (req, res) => {
   try {
     const { title, content, notes } = req.body;
-    const client = getAiClient();
+    const client = getAiClient(req);
 
     if (client) {
       try {
@@ -567,7 +545,7 @@ Kembalikan JSON:
 app.post("/api/peer-question", async (req, res) => {
   try {
     const { topic, context } = req.body;
-    const client = getAiClient();
+    const client = getAiClient(req);
 
     if (client) {
       try {
@@ -796,7 +774,7 @@ app.post("/api/generate-critical-thinking-quiz", async (req, res) => {
       cfg.true_false.count +
       cfg.essay.count;
 
-    const client = getAiClient();
+    const client = getAiClient(req);
     if (client) {
       try {
         const prompt = `
