@@ -1462,12 +1462,34 @@ export default function App() {
                       )}
                       <PresentationEditor
                         slides={
-                          sessions.some(s => s.studentId === currentUser?.id && s.status === 'completed')
-                            ? activeSlides
-                            : []
+                          (() => {
+                            const studentSession = sessions
+                              .filter(s => s.studentId === currentUser?.id && s.status === 'completed')
+                              .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0];
+                            return studentSession?.presentation || [];
+                          })()
                         }
-                        onUpdateSlides={setActiveSlides}
-                        onLaunchPresentation={() => setIsPlayingFullscreen(true)}
+                        onUpdateSlides={(newSlides) => {
+                          // Find latest session and update it
+                          const studentSession = sessions
+                            .filter(s => s.studentId === currentUser?.id && s.status === 'completed')
+                            .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0];
+                          
+                          if (studentSession) {
+                            const updatedSession = { ...studentSession, presentation: newSlides };
+                            setSessions(sessions.map(s => s.id === studentSession.id ? updatedSession : s));
+                            dbUpsertSession(updatedSession).catch(console.error);
+                          }
+                        }}
+                        onLaunchPresentation={() => {
+                          const studentSession = sessions
+                            .filter(s => s.studentId === currentUser?.id && s.status === 'completed')
+                            .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0];
+                          if (studentSession) {
+                            setActiveSessionForViewer(studentSession);
+                            setIsPlayingFullscreen(true);
+                          }
+                        }}
                         currentUser={currentUser}
                       />
                     </div>
