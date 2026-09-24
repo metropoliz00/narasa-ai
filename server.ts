@@ -599,15 +599,24 @@ app.post("/api/generate-presentation", async (req, res) => {
 // 4. Polish Slide Text with AI (✨ Rapiikan dengan AI)
 app.post("/api/polish-slide", async (req, res) => {
   try {
-    const { title, content, notes } = req.body;
+    const { title, content, notes, studentName, schoolName, className } = req.body;
     const client = getAiClient(req);
+
+    const activeStudent = (studentName || "Siswa").replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim();
+    const firstName = activeStudent.split(" ")[0] || activeStudent;
+    const activeSchool = schoolName || "SDN 01 Nusantara";
+    const activeClass = className || "Kelas V";
 
     if (client) {
       try {
         const prompt = `
 Anda adalah asisten presentasi di NARASA AI untuk siswa SD.
 Tolong rapikan kalimat slide berikut agar lebih rapi, terstruktur, mudah dibaca, dan menarik didengar saat dipresentasikan di depan kelas.
-PENTING: JANGAN ubah gagasan atau inti pemikiran siswa. Hanya perbaiki tata bahasa, kejelasan, dan keramahan bahasa anak SD.
+PENTING:
+- JANGAN ubah gagasan atau inti pemikiran siswa. Hanya perbaiki tata bahasa, kejelasan, dan keramahan bahasa anak SD.
+- IDENTITAS SISWA PEMILIK AKUN: "${activeStudent}" (Nama Panggilan: "${firstName}").
+- SEKOLAH: "${activeSchool}", KELAS: "${activeClass}".
+- Pastikan setiap penyebutan nama presenter atau salam diri ("Halo nama saya...", "Petualangan...", "Karya...") MENGGUNAKAN NAMA SISWA INI: "${activeStudent}" atau "${firstName}". JANGAN PERNAH gunakan nama lain seperti "Adit" jika siswa bukan Adit!
 
 Judul: "${title}"
 Konten: "${content}"
@@ -626,17 +635,71 @@ Kembalikan JSON:
         });
         const parsed = JSON.parse(resp.text?.trim() || "{}");
         if (parsed.polishedContent) {
-          return res.json(parsed);
+          let polishedTitle = parsed.polishedTitle || title;
+          let polishedContent = parsed.polishedContent || content;
+          let polishedNotes = parsed.polishedNotes || notes;
+
+          if (activeStudent && !activeStudent.toLowerCase().includes("adit")) {
+            polishedTitle = polishedTitle
+              .replace(/Petualangan Adit/gi, `Petualangan ${firstName}`)
+              .replace(/Adit Pratama/gi, activeStudent)
+              .replace(/\bAdit\b/g, firstName);
+
+            polishedContent = polishedContent
+              .replace(/Nama saya Adit Pratama/gi, `Nama saya ${activeStudent}`)
+              .replace(/Saya Adit Pratama/gi, `Saya ${activeStudent}`)
+              .replace(/Nama saya Adit/gi, `Nama saya ${activeStudent}`)
+              .replace(/Saya Adit/gi, `Saya ${firstName}`)
+              .replace(/Adit Pratama/gi, activeStudent)
+              .replace(/— Adit Pratama/gi, `— ${activeStudent}`)
+              .replace(/— Adit/gi, `— ${activeStudent}`)
+              .replace(/\bAdit\b/g, firstName);
+
+            polishedNotes = polishedNotes
+              .replace(/Adit Pratama/gi, activeStudent)
+              .replace(/\bAdit\b/g, firstName);
+          }
+
+          return res.json({
+            polishedTitle,
+            polishedContent,
+            polishedNotes
+          });
         }
       } catch (_e) {
         // Fallback to simple slide polisher
       }
     }
 
+    let fallbackTitle = title;
+    let fallbackContent = content.trim() + (content.endsWith(".") ? "" : ".");
+    let fallbackNotes = notes || "Bicaralah dengan suara jelas, tatap teman-temanmu, dan tersenyumlah.";
+
+    if (activeStudent && !activeStudent.toLowerCase().includes("adit")) {
+      fallbackTitle = fallbackTitle
+        .replace(/Petualangan Adit/gi, `Petualangan ${firstName}`)
+        .replace(/Adit Pratama/gi, activeStudent)
+        .replace(/\bAdit\b/g, firstName);
+
+      fallbackContent = fallbackContent
+        .replace(/Nama saya Adit Pratama/gi, `Nama saya ${activeStudent}`)
+        .replace(/Saya Adit Pratama/gi, `Saya ${activeStudent}`)
+        .replace(/Nama saya Adit/gi, `Nama saya ${activeStudent}`)
+        .replace(/Saya Adit/gi, `Saya ${firstName}`)
+        .replace(/Adit Pratama/gi, activeStudent)
+        .replace(/— Adit Pratama/gi, `— ${activeStudent}`)
+        .replace(/— Adit/gi, `— ${activeStudent}`)
+        .replace(/\bAdit\b/g, firstName);
+
+      fallbackNotes = fallbackNotes
+        .replace(/Adit Pratama/gi, activeStudent)
+        .replace(/\bAdit\b/g, firstName);
+    }
+
     res.json({
-      polishedTitle: title,
-      polishedContent: content.trim() + (content.endsWith(".") ? "" : "."),
-      polishedNotes: notes || "Bicaralah dengan suara jelas, tatap teman-temanmu, dan tersenyumlah."
+      polishedTitle: fallbackTitle,
+      polishedContent: fallbackContent,
+      polishedNotes: fallbackNotes
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

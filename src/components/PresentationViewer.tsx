@@ -43,6 +43,9 @@ export const PresentationViewer: React.FC<PresentationViewerProps> = ({
 
   const activeSlide = slides[currentSlideIndex] || slides[0];
 
+  // If no slides are available, do not render the viewer canvas to avoid errors
+  if (!activeSlide) return null;
+
   const toggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {

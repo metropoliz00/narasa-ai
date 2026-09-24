@@ -173,7 +173,7 @@ export default function App() {
     } catch (e) {}
     return DEFAULT_MISSIONS;
   });
-  const [sessions, setSessions] = useState<StudentActivitySession[]>([INITIAL_COMPLETED_SESSION]);
+  const [sessions, setSessions] = useState<StudentActivitySession[]>([]);
   const [activeMission, setActiveMission] = useState<LearningMission | null>(null);
 
   const handleToggleMissionActive = (missionId: string) => {
@@ -403,9 +403,9 @@ export default function App() {
   const [scaffoldingHistory, setScaffoldingHistory] = useState<{ questionId: string; level: 1 | 2 | 3 | 4; hintText: string; requestedAt: string }[]>([]);
 
   // Active Presentation States
-  const [activeSlides, setActiveSlides] = useState<PresentationSlide[]>(INITIAL_COMPLETED_SESSION.presentation);
+  const [activeSlides, setActiveSlides] = useState<PresentationSlide[]>([]);
   const [isPlayingFullscreen, setIsPlayingFullscreen] = useState(false);
-  const [activeSessionForViewer, setActiveSessionForViewer] = useState<StudentActivitySession | null>(INITIAL_COMPLETED_SESSION);
+  const [activeSessionForViewer, setActiveSessionForViewer] = useState<StudentActivitySession | null>(null);
 
   // Teacher Modals
   const [isNewMissionModalOpen, setIsNewMissionModalOpen] = useState(false);
@@ -705,7 +705,7 @@ export default function App() {
       const generatedSlides = await AIClientService.generateAutoPresentation(tempSession);
       const finalSession: StudentActivitySession = {
         ...tempSession,
-        presentation: generatedSlides.length > 0 ? generatedSlides : INITIAL_COMPLETED_SESSION.presentation
+        presentation: generatedSlides.length > 0 ? generatedSlides : []
       };
 
       setSessions([finalSession, ...sessions]);
@@ -1462,12 +1462,13 @@ export default function App() {
                       )}
                       <PresentationEditor
                         slides={
-                          activeSlides.length > 0
+                          sessions.some(s => s.studentId === currentUser?.id && s.status === 'completed')
                             ? activeSlides
-                            : sessions[0]?.presentation || []
+                            : []
                         }
                         onUpdateSlides={setActiveSlides}
                         onLaunchPresentation={() => setIsPlayingFullscreen(true)}
+                        currentUser={currentUser}
                       />
                     </div>
                   ) : (

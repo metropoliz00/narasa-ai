@@ -235,13 +235,16 @@ export const AIClientService = {
   async polishSlide(
     title: string,
     content: string,
-    notes: string
+    notes: string,
+    studentName?: string,
+    schoolName?: string,
+    className?: string
   ): Promise<{ polishedTitle: string; polishedContent: string; polishedNotes: string }> {
     try {
       const response = await fetch('/api/polish-slide', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ title, content, notes })
+        body: JSON.stringify({ title, content, notes, studentName, schoolName, className })
       });
       if (response.ok) {
         return await response.json();
@@ -251,7 +254,7 @@ export const AIClientService = {
     }
     return {
       polishedTitle: title,
-      polishedContent: content.trim() + ' (Rapi)',
+      polishedContent: content.trim(),
       polishedNotes: notes || 'Bicaralah dengan percaya diri dan jelaskan dengan ramah.'
     };
   },

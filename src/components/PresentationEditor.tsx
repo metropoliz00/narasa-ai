@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { PresentationSlide } from '../types';
+import React, { useState, useEffect } from 'react';
+import { PresentationSlide, UserProfile } from '../types';
 import { AIClientService } from '../services/aiClientService';
+import { adaptSlidesToUser } from '../utils/presentationUtils';
+import { toast } from './Toast';
 import {
   Sparkles,
   Play,
@@ -15,23 +17,43 @@ import {
   Layout,
   Check,
   Loader2,
-  FileText
+  FileText,
+  UserCheck,
+  BookOpen
 } from 'lucide-react';
 
 interface PresentationEditorProps {
   slides: PresentationSlide[];
   onUpdateSlides: (slides: PresentationSlide[]) => void;
   onLaunchPresentation: () => void;
+  currentUser?: UserProfile;
 }
 
 export const PresentationEditor: React.FC<PresentationEditorProps> = ({
   slides,
   onUpdateSlides,
-  onLaunchPresentation
+  onLaunchPresentation,
+  currentUser
 }) => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isPolishing, setIsPolishing] = useState(false);
   const [polishSuccessMessage, setPolishSuccessMessage] = useState(false);
+
+  // Automatically adapt slides to the active user whenever currentUser is passed or changes
+  useEffect(() => {
+    if (currentUser?.name) {
+      const adapted = adaptSlidesToUser(slides, currentUser);
+      const isDifferent = adapted.some((s, i) =>
+        s.title !== slides[i]?.title ||
+        s.subtitle !== slides[i]?.subtitle ||
+        s.content !== slides[i]?.content ||
+        s.speakingNotes !== slides[i]?.speakingNotes
+      );
+      if (isDifferent) {
+        onUpdateSlides(adapted);
+      }
+    }
+  }, [currentUser?.id, currentUser?.name, currentUser?.schoolName, currentUser?.className]);
 
   const activeSlide = slides[currentSlideIndex] || slides[0];
 
@@ -52,7 +74,10 @@ export const PresentationEditor: React.FC<PresentationEditorProps> = ({
       const result = await AIClientService.polishSlide(
         activeSlide.title,
         activeSlide.content,
-        activeSlide.speakingNotes
+        activeSlide.speakingNotes,
+        currentUser?.name,
+        currentUser?.schoolName,
+        currentUser?.className
       );
       handleUpdateActiveSlide({
         title: result.polishedTitle || activeSlide.title,
@@ -114,32 +139,39 @@ export const PresentationEditor: React.FC<PresentationEditorProps> = ({
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Top Action Bar */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="p-1.5 rounded-xl bg-purple-100 text-[#7C5CFC]">
               <Edit3 className="w-5 h-5" />
             </span>
             <h2 className="text-lg sm:text-xl font-bold text-[#25324B] font-display">
               Studio Presentasi Murid
             </h2>
+            {currentUser && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Akun: {currentUser.name}
+              </span>
+            )}
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Rangkuman foto, bukti, dan refleksimu telah disusun menjadi {slides.length} slide siap tampil.
+          <p className="text-xs text-slate-500 mt-1">
+            Rangkuman karya dan refleksi milik <strong className="text-slate-800 font-semibold">{currentUser?.name || 'Murid'}</strong> ({currentUser?.className || 'Kelas V'} {currentUser?.schoolName || 'SDN 01 Nusantara'}) telah disusun menjadi {slides.length} slide siap tampil.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap">
+          {/* Buttons */}
           <button
             onClick={handleAddSlide}
-            className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-50 text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors"
+            className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-50 text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah Slide</span>
           </button>
           <button
             onClick={onLaunchPresentation}
-            className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold hover:shadow-lg hover:shadow-blue-500/25 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98"
+            className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold hover:shadow-lg hover:shadow-blue-500/25 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
           >
             <Play className="w-4 h-4 fill-white" />
             <span>Mulai Tampil (Mode Tayang)</span>
@@ -221,129 +253,137 @@ export const PresentationEditor: React.FC<PresentationEditorProps> = ({
         </div>
 
         {/* Right: Active Slide Editor Canvas (Col 8) */}
-        <div className="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-md space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700">
-                Slide {activeSlide.slideNumber} dari {slides.length}
-              </span>
-            </div>
-
-            {/* Rapiikan Kalimat Button */}
-            <button
-              onClick={handlePolishWithAI}
-              disabled={isPolishing}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-all flex items-center gap-1.5"
-            >
-              {isPolishing ? (
-                <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
-              ) : (
-                <Edit3 className="w-3.5 h-3.5 text-purple-600" />
-              )}
-              <span>Rapiikan Kalimat</span>
-            </button>
-          </div>
-
-          {polishSuccessMessage && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600" />
-              <span>Teks slide berhasil dirapikan agar lebih jelas saat dipresentasikan!</span>
-            </div>
-          )}
-
-          {/* Slide Title Input */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-600 uppercase">Judul Slide</label>
-            <input
-              type="text"
-              value={activeSlide.title}
-              onChange={(e) => handleUpdateActiveSlide({ title: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-base text-[#25324B] focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
-            />
-          </div>
-
-          {/* Slide Subtitle Input */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-600 uppercase">Subjudul / Topik</label>
-            <input
-              type="text"
-              value={activeSlide.subtitle || ''}
-              onChange={(e) => handleUpdateActiveSlide({ subtitle: e.target.value })}
-              placeholder="Tambahkan subjudul..."
-              className="w-full px-4 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
-            />
-          </div>
-
-          {/* Slide Content Box */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-600 uppercase">Isi Teks Slide</label>
-            <textarea
-              rows={4}
-              value={activeSlide.content}
-              onChange={(e) => handleUpdateActiveSlide({ content: e.target.value })}
-              className="w-full p-4 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none resize-none leading-relaxed"
-            />
-          </div>
-
-          {/* Optional Bullets */}
-          {activeSlide.bullets && activeSlide.bullets.length > 0 && (
-            <div className="space-y-2 p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
-              <label className="text-xs font-bold text-slate-600 uppercase">Poin-Poin Ringkas</label>
-              <div className="space-y-1.5">
-                {activeSlide.bullets.map((b, bIdx) => (
-                  <div key={bIdx} className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#4F8EF7] shrink-0" />
-                    <input
-                      type="text"
-                      value={b}
-                      onChange={(e) => {
-                        const newBullets = [...(activeSlide.bullets || [])];
-                        newBullets[bIdx] = e.target.value;
-                        handleUpdateActiveSlide({ bullets: newBullets });
-                      }}
-                      className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-700 bg-white"
-                    />
-                  </div>
-                ))}
+        {activeSlide ? (
+          <div className="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-md space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700">
+                  Slide {activeSlide.slideNumber} dari {slides.length}
+                </span>
               </div>
-            </div>
-          )}
 
-          {/* 🎙️ Bantuan Berbicara (Speaking Notes) */}
-          <div className="bg-amber-50/80 border border-amber-200 p-4 rounded-2xl space-y-2">
-            <div className="flex items-center gap-2 text-amber-900 font-bold text-xs sm:text-sm">
-              <Volume2 className="w-4 h-4 text-amber-600" />
-              <span>🎙️ Bantuan Berbicara (Presenter Notes)</span>
+              {/* Rapiikan Kalimat Button */}
+              <button
+                onClick={handlePolishWithAI}
+                disabled={isPolishing}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-all flex items-center gap-1.5"
+              >
+                {isPolishing ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                ) : (
+                  <Edit3 className="w-3.5 h-3.5 text-purple-600" />
+                )}
+                <span>Rapiikan Kalimat</span>
+              </button>
             </div>
-            <textarea
-              rows={2}
-              value={activeSlide.speakingNotes}
-              onChange={(e) => handleUpdateActiveSlide({ speakingNotes: e.target.value })}
-              className="w-full p-3 rounded-xl border border-amber-200/80 bg-white/90 text-xs text-slate-700 focus:border-amber-400 outline-none resize-none"
-              placeholder="Tuliskan petunjuk apa yang harus kamu katakan saat slide ini muncul..."
-            />
-          </div>
 
-          {/* Navigation Controls */}
-          <div className="flex items-center justify-between pt-2">
-            <button
-              onClick={() => setCurrentSlideIndex((prev) => Math.max(0, prev - 1))}
-              disabled={currentSlideIndex === 0}
-              className="px-4 py-2 rounded-xl border border-slate-200 font-bold text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40 flex items-center gap-1.5"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Slide Sebelumnya
-            </button>
-            <button
-              onClick={() => setCurrentSlideIndex((prev) => Math.min(slides.length - 1, prev + 1))}
-              disabled={currentSlideIndex === slides.length - 1}
-              className="px-4 py-2 rounded-xl bg-blue-50 text-blue-700 font-bold text-xs hover:bg-blue-100 disabled:opacity-40 flex items-center gap-1.5"
-            >
-              Slide Berikutnya
-              <ChevronRight className="w-4 h-4" />
-            </button>
+            {polishSuccessMessage && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Teks slide berhasil dirapikan agar lebih jelas saat dipresentasikan!</span>
+              </div>
+            )}
+
+            {/* Slide Title Input */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 uppercase">Judul Slide</label>
+              <input
+                type="text"
+                value={activeSlide.title}
+                onChange={(e) => handleUpdateActiveSlide({ title: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 font-bold text-base text-[#25324B] focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+              />
+            </div>
+
+            {/* Slide Subtitle Input */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 uppercase">Subjudul / Topik</label>
+              <input
+                type="text"
+                value={activeSlide.subtitle || ''}
+                onChange={(e) => handleUpdateActiveSlide({ subtitle: e.target.value })}
+                placeholder="Tambahkan subjudul..."
+                className="w-full px-4 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+              />
+            </div>
+
+            {/* Slide Content Box */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-600 uppercase">Isi Teks Slide</label>
+              <textarea
+                rows={4}
+                value={activeSlide.content}
+                onChange={(e) => handleUpdateActiveSlide({ content: e.target.value })}
+                className="w-full p-4 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none resize-none leading-relaxed"
+              />
+            </div>
+
+            {/* Optional Bullets */}
+            {activeSlide.bullets && activeSlide.bullets.length > 0 && (
+              <div className="space-y-2 p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                <label className="text-xs font-bold text-slate-600 uppercase">Poin-Poin Ringkas</label>
+                <div className="space-y-1.5">
+                  {activeSlide.bullets.map((b, bIdx) => (
+                    <div key={bIdx} className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#4F8EF7] shrink-0" />
+                      <input
+                        type="text"
+                        value={b}
+                        onChange={(e) => {
+                          const newBullets = [...(activeSlide.bullets || [])];
+                          newBullets[bIdx] = e.target.value;
+                          handleUpdateActiveSlide({ bullets: newBullets });
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs text-slate-700 bg-white"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 🎙️ Bantuan Berbicara (Speaking Notes) */}
+            <div className="bg-amber-50/80 border border-amber-200 p-4 rounded-2xl space-y-2">
+              <div className="flex items-center gap-2 text-amber-900 font-bold text-xs sm:text-sm">
+                <Volume2 className="w-4 h-4 text-amber-600" />
+                <span>🎙️ Bantuan Berbicara (Presenter Notes)</span>
+              </div>
+              <textarea
+                rows={2}
+                value={activeSlide.speakingNotes}
+                onChange={(e) => handleUpdateActiveSlide({ speakingNotes: e.target.value })}
+                className="w-full p-3 rounded-xl border border-amber-200/80 bg-white/90 text-xs text-slate-700 focus:border-amber-400 outline-none resize-none"
+                placeholder="Tuliskan petunjuk apa yang harus kamu katakan saat slide ini muncul..."
+              />
+            </div>
+
+            {/* Navigation Controls */}
+            <div className="flex items-center justify-between pt-2">
+              <button
+                onClick={() => setCurrentSlideIndex((prev) => Math.max(0, prev - 1))}
+                disabled={currentSlideIndex === 0}
+                className="px-4 py-2 rounded-xl border border-slate-200 font-bold text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40 flex items-center gap-1.5"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Slide Sebelumnya
+              </button>
+              <button
+                onClick={() => setCurrentSlideIndex((prev) => Math.min(slides.length - 1, prev + 1))}
+                disabled={currentSlideIndex === slides.length - 1}
+                className="px-4 py-2 rounded-xl bg-blue-50 text-blue-700 font-bold text-xs hover:bg-blue-100 disabled:opacity-40 flex items-center gap-1.5"
+              >
+                Slide Berikutnya
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="lg:col-span-8 p-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50 flex flex-col items-center justify-center gap-3">
+             <BookOpen className="w-10 h-10 text-slate-400" />
+             <p className="text-slate-500 font-medium">Belum ada materi presentasi.</p>
+             <p className="text-slate-400 text-xs">Selesaikan misi belajarmu terlebih dahulu untuk membuat presentasi otomatis!</p>
+          </div>
+        )}
       </div>
     </div>
   );
