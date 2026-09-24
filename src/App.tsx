@@ -21,6 +21,7 @@ import {
   DEMO_USERS,
   INITIAL_SYSTEM_USERS,
   DEFAULT_MISSIONS,
+  FREE_EXPLORATION_MISSION,
   INITIAL_COMPLETED_SESSION,
   CLASS_STUDENTS_PROFILES,
   TEACHER_INSIGHTS,
@@ -80,7 +81,11 @@ import {
   ShieldCheck,
   CheckCircle2,
   Mic,
-  X
+  X,
+  Award,
+  Trophy,
+  TrendingUp,
+  Activity
 } from 'lucide-react';
 
 export const normalizeUserAvatar = (u: UserProfile): UserProfile => {
@@ -158,9 +163,36 @@ export default function App() {
   const [accountModalDefaultRole, setAccountModalDefaultRole] = useState<UserRole>('student');
 
   // Missions & Sessions state
-  const [missions, setMissions] = useState<LearningMission[]>(DEFAULT_MISSIONS);
+  const [missions, setMissions] = useState<LearningMission[]>(() => {
+    try {
+      const saved = localStorage.getItem('narasa_missions_data_v3');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return DEFAULT_MISSIONS;
+  });
   const [sessions, setSessions] = useState<StudentActivitySession[]>([INITIAL_COMPLETED_SESSION]);
-  const [activeMission, setActiveMission] = useState<LearningMission>(DEFAULT_MISSIONS[0]);
+  const [activeMission, setActiveMission] = useState<LearningMission | null>(null);
+
+  const handleToggleMissionActive = (missionId: string) => {
+    setMissions((prev) => {
+      const updated = prev.map((m) => (m.id === missionId ? { ...m, isActive: !m.isActive } : m));
+      try {
+        localStorage.setItem('narasa_missions_data_v3', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+    const target = missions.find((m) => m.id === missionId);
+    if (target) {
+      if (!target.isActive) {
+        toast.success('Misi Diaktifkan untuk Murid', target.title);
+      } else {
+        toast.info('Misi Dinonaktifkan', target.title);
+      }
+    }
+  };
 
   // Student Groups & Concept Quizzes State
   const [groups, setGroups] = useState<StudentGroup[]>(() => {
@@ -241,6 +273,36 @@ export default function App() {
   // Student Navigation Tab
   const [studentTab, setStudentTab] = useState<StudentTab>('home');
   const [studentSelectedSubjectId, setStudentSelectedSubjectId] = useState<string>('all');
+
+  // Student progress metrics
+  const studentSessions = sessions.filter((s) => s.studentId === currentUser.id);
+  const studentCompletedSessions = studentSessions.filter((s) => s.status === 'completed');
+  const studentQuizSubmissions = quizSubmissions.filter((qs) => qs.userId === currentUser.id);
+
+  const totalLit = studentCompletedSessions.reduce((acc, s) => acc + (s.metrics?.literacyScore || 0), 0);
+  const avgLit = studentCompletedSessions.length > 0 ? Math.round(totalLit / studentCompletedSessions.length) : 0;
+
+  const totalNum = studentCompletedSessions.reduce((acc, s) => acc + (s.metrics?.numeracyScore || 0), 0);
+  const avgNum = studentCompletedSessions.length > 0 ? Math.round(totalNum / studentCompletedSessions.length) : 0;
+
+  const totalReason = studentCompletedSessions.reduce((acc, s) => acc + (s.metrics?.reasoningScore || 0), 0);
+  const avgReason = studentCompletedSessions.length > 0 ? Math.round(totalReason / studentCompletedSessions.length) : 0;
+
+  const totalScaffoldingUsed = studentCompletedSessions.reduce((acc, s) => acc + (s.metrics?.scaffoldingUsedCount || 0), 0);
+
+  const hasCompletedData = studentCompletedSessions.length > 0;
+
+  const getPredicateInfo = (score: number, hasData: boolean) => {
+    if (!hasData) return { label: 'Belum Ada Data', color: 'text-slate-400 bg-slate-50 border-slate-200' };
+    if (score >= 85) return { label: 'Sangat Mahir', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+    if (score >= 70) return { label: 'Mahir', color: 'text-blue-700 bg-blue-50 border-blue-200' };
+    if (score >= 50) return { label: 'Cakap', color: 'text-amber-700 bg-amber-50 border-amber-200' };
+    return { label: 'Perlu Bimbingan', color: 'text-rose-700 bg-rose-50 border-rose-200' };
+  };
+
+  const studentLitPred = getPredicateInfo(avgLit, hasCompletedData);
+  const studentNumPred = getPredicateInfo(avgNum, hasCompletedData);
+  const studentReasonPred = getPredicateInfo(avgReason, hasCompletedData);
   const [adminTab, setAdminTab] = useState<'accounts' | 'config' | 'schools' | 'school_settings'>('accounts');
 
   const handleNavigateToSchoolSettings = () => {
@@ -554,11 +616,13 @@ export default function App() {
     setIsCameraOpen(false);
     setIsScanning(true);
 
+    const targetMission = activeMission || FREE_EXPLORATION_MISSION;
+
     try {
       // Call AI Vision Analysis
       const bridgeResult = await AIClientService.analyzeImage(
         imageDataUrl,
-        activeMission,
+        targetMission,
         objectNameHint
       );
       setActiveLearningBridge(bridgeResult);
@@ -602,13 +666,14 @@ export default function App() {
     setIsReflectionOpen(false);
 
     if (activeLearningBridge && currentCapturedImage && completedStudentAnswers) {
+      const currentMissionTarget = activeMission || FREE_EXPLORATION_MISSION;
       const tempSession: StudentActivitySession = {
         id: `session-${Date.now()}`,
         studentId: currentUser.id,
         studentName: currentUser.name,
-        missionId: activeMission.id,
-        missionTitle: activeMission.title,
-        subject: activeMission.subject,
+        missionId: currentMissionTarget.id,
+        missionTitle: currentMissionTarget.title,
+        subject: currentMissionTarget.subject,
         image: currentCapturedImage,
         imageLabel: currentImageLabel,
         learningBridge: activeLearningBridge,
@@ -621,7 +686,7 @@ export default function App() {
             id: `pq-${Date.now()}`,
             askerName: 'Siti Rahma',
             avatar: getDefaultAvatar('student', 'female'),
-            question: `Apakah konsep ${activeMission.material} ini juga bisa kamu temukan di benda lain di rumahmu?`,
+            question: `Apakah konsep ${currentMissionTarget.material} ini juga bisa kamu temukan di benda lain di rumahmu?`,
             aiCoachHint: 'Jawab dengan memberikan contoh nyata benda lain yang memiliki pola serupa.',
             timestamp: 'Baru saja'
           }
@@ -746,10 +811,13 @@ export default function App() {
           // Open demo pedagogical journey directly without switching account or logging in
           handleConfirmPhoto(
             'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800&auto=format&fit=crop&q=80',
-            'Jam Dinding Analog Kelas V'
+            'Pola Susunan Undakan Tangga & Ubin Sekolah'
           );
         }}
-        onStartExploration={() => setIsCameraOpen(true)}
+        onStartExploration={() => {
+          setActiveMission(null);
+          setIsCameraOpen(true);
+        }}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onLogout={handleLogout}
         onOpenEditProfile={() => {
@@ -779,7 +847,7 @@ export default function App() {
                     ← Kembali ke Kartu Jembatan Pembelajaran
                   </button>
                   <span className="text-xs font-bold text-[#4F8EF7] bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-                    Misi: {activeMission.title}
+                    Misi: {activeMission?.title || 'Eksplorasi Kontekstual'}
                   </span>
                 </div>
                 <ChallengeStep
@@ -806,7 +874,7 @@ export default function App() {
                   </button>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-[#4F8EF7] bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-                      Misi: {activeMission.title}
+                      Misi: {activeMission?.title || 'Eksplorasi Kontekstual'}
                     </span>
                   </div>
                 </div>
@@ -879,6 +947,7 @@ export default function App() {
                 onDeleteGroup={handleDeleteGroup}
                 onUpdateQuizSubmission={handleUpdateQuizSubmission}
                 onAddCustomQuiz={handleSaveConceptQuiz}
+                onToggleMissionActive={handleToggleMissionActive}
               />
             )}
 
@@ -901,8 +970,9 @@ export default function App() {
         {/* ==================== STUDENT VIEW ==================== */}
         {currentRole === 'student' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-            {/* 1. STUDENT HOME TAB */}
-            {studentTab === 'home' && (
+            <div key={studentTab} className="animate-tab-fade space-y-6">
+              {/* 1. STUDENT HOME TAB */}
+              {studentTab === 'home' && (
                   <div className="space-y-6 text-left">
                     {/* Hero Student Banner (With Relevant Literacy & Numeracy Visual Background on Light Theme) */}
                     <div className="rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-md relative overflow-hidden group border border-slate-200/90 bg-white">
@@ -958,8 +1028,27 @@ export default function App() {
                           Foto Lingkungan Sekitar, Bangun Penalaran!
                         </h1>
                         <p className="text-xs sm:text-sm text-slate-700 max-w-xl leading-relaxed">
-                          Misi aktifmu: <strong className="text-blue-700">{activeMission.title}</strong> ({activeMission.subject}). Potret benda nyata di sekitarmu dan temukan keteraturan sains serta matematikanya!
+                          Eksplorasi fenomena nyata di sekitarmu melalui fotografi kontekstual. Amati objek di sekitar, temukan keteraturan sains serta pola numerasi, lalu kembangkan penalaran kritismu!
                         </p>
+                        <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                          <button
+                            onClick={() => {
+                              setActiveMission(null);
+                              setIsCameraOpen(true);
+                            }}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+                          >
+                            <Camera className="w-4 h-4" />
+                            <span>Ambil Foto Eksplorasi</span>
+                          </button>
+                          <button
+                            onClick={() => setStudentTab('explore')}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/90 hover:bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:text-blue-600 transition-all cursor-pointer shadow-2xs"
+                          >
+                            <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Pilih Misi Belajar</span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* 5-Step Process Explainer (Clean Light Pills) */}
@@ -972,78 +1061,150 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Active Learning Mission Card (Photo Action is inside this mission) */}
+                    {/* 1.1 DASBOR PROGRES & KEMAMPUAN BELAJAR */}
                     <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs space-y-4">
-                      <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
                         <div className="flex items-center gap-2">
-                          <span className="p-1.5 rounded-xl bg-blue-50 text-blue-600">
-                            <BookOpen className="w-5 h-5" />
+                          <span className="p-1.5 rounded-xl bg-indigo-50 text-[#7C5CFC]">
+                            <Trophy className="w-5 h-5 text-[#7C5CFC]" />
                           </span>
                           <div>
-                            <h2 className="text-base sm:text-lg font-bold text-[#25324B] font-display leading-none">
-                              Misi Belajar Aktif
+                            <h2 className="text-base sm:text-lg font-extrabold text-[#25324B] font-display leading-none flex items-center gap-1.5">
+                              Dasbor Progres & Kemampuan Belajarmu
+                              <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200 font-bold uppercase tracking-wider animate-pulse">Live</span>
                             </h2>
                             <span className="text-[11px] text-slate-400 font-medium">
-                              Dari Guru: Pak Dedy
+                              Analisis tingkat kedalaman pemahaman kognitif secara real-time
                             </span>
                           </div>
                         </div>
-                        <button
-                          onClick={() => setStudentTab('explore')}
-                          className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 py-1 px-2.5 rounded-lg hover:bg-blue-50 transition-colors"
-                        >
-                          <span>Pilih Misi Lain</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                          <span className="text-[10px] font-bold text-slate-600">Sinkronisasi Profil</span>
+                        </div>
                       </div>
 
-                      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-4">
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
-                              {activeMission.subject}
+                      {/* 3 Main Capabilities Progress */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* 1. Literasi Sains */}
+                        <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/40 via-white to-white border border-emerald-100 space-y-2 text-left">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-800 flex items-center gap-1">
+                              <span className="p-1 rounded-md bg-emerald-100 text-emerald-700 text-xs">🌱</span>
+                              Literasi Sains
                             </span>
-                            <span className="text-xs text-slate-500 font-medium">
-                              {activeMission.grade} • {activeMission.phase}
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${studentLitPred.color}`}>
+                              {studentLitPred.label}
                             </span>
                           </div>
-                          <h3 className="text-base sm:text-lg font-bold text-[#25324B]">
-                            {activeMission.title}
-                          </h3>
-                          <p className="text-xs text-slate-600">
-                            Materi: <strong>{activeMission.material}</strong>
+                          <div className="flex items-baseline gap-1.5 pt-1">
+                            <span className="text-2xl font-black text-emerald-950">{avgLit}</span>
+                            <span className="text-[10px] font-bold text-slate-400">/ 100</span>
+                          </div>
+                          {/* Progress Bar */}
+                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${avgLit}%` }}></div>
+                          </div>
+                          <p className="text-[10px] text-slate-500 leading-tight italic pt-0.5">
+                            Mengamati detail objek nyata & mengaitkan fenomena lingkungan dengan konsep ilmiah secara logis.
                           </p>
-                          <p className="text-xs text-slate-500 leading-relaxed">
-                            Tujuan: {activeMission.tp}
-                          </p>
-
-                          {activeMission.suggestedObjects && activeMission.suggestedObjects.length > 0 && (
-                            <div className="pt-2">
-                              <span className="text-[11px] font-bold text-slate-600 block mb-1">
-                                Rekomendasi Benda Sekitar yang Bisa Difoto:
-                              </span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {activeMission.suggestedObjects.map((obj, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 text-[11px] font-medium"
-                                  >
-                                    {obj}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
 
-                        <div className="pt-2">
-                          <button
-                            onClick={() => setIsCameraOpen(true)}
-                            className="w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-xl bg-[#4F8EF7] hover:bg-blue-600 active:scale-98 text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-sm transition-all"
-                          >
-                            <Camera className="w-5 h-5" />
-                            <span>Ambil Foto untuk Misi Ini</span>
-                          </button>
+                        {/* 2. Numerasi Kontekstual */}
+                        <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/40 via-white to-white border border-blue-100 space-y-2 text-left">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-blue-800 flex items-center gap-1">
+                              <span className="p-1 rounded-md bg-blue-100 text-blue-700 text-xs">📐</span>
+                              Numerasi Kontekstual
+                            </span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${studentNumPred.color}`}>
+                              {studentNumPred.label}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-1.5 pt-1">
+                            <span className="text-2xl font-black text-blue-950">{avgNum}</span>
+                            <span className="text-[10px] font-bold text-slate-400">/ 100</span>
+                          </div>
+                          {/* Progress Bar */}
+                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${avgNum}%` }}></div>
+                          </div>
+                          <p className="text-[10px] text-slate-500 leading-tight italic pt-0.5">
+                            Mengenali pola matematika, menghitung data empiris, dan menarik relasi kuantitatif dari foto sekitar.
+                          </p>
+                        </div>
+
+                        {/* 3. Penalaran Kritis & HOTS */}
+                        <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50/40 via-white to-white border border-purple-100 space-y-2 text-left">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-purple-800 flex items-center gap-1">
+                              <span className="p-1 rounded-md bg-purple-100 text-purple-700 text-xs">💡</span>
+                              Penalaran Kritis & HOTS
+                            </span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${studentReasonPred.color}`}>
+                              {studentReasonPred.label}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-1.5 pt-1">
+                            <span className="text-2xl font-black text-purple-950">{avgReason}</span>
+                            <span className="text-[10px] font-bold text-slate-400">/ 100</span>
+                          </div>
+                          {/* Progress Bar */}
+                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div className="bg-purple-500 h-full transition-all duration-500" style={{ width: `${avgReason}%` }}></div>
+                          </div>
+                          <p className="text-[10px] text-slate-500 leading-tight italic pt-0.5">
+                            Merancang solusi inovatif, membangun prototipe rekayasa, mengevaluasi desain, dan berargumen logis.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Stat Summary Metrics Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                        {/* Misi Selesai */}
+                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-3 border border-slate-200/50 flex items-center gap-3 transition-colors text-left">
+                          <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                            <FolderKanban className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider">Misi Selesai</span>
+                            <strong className="text-xs font-extrabold text-slate-800">{studentCompletedSessions.length} Aktivitas</strong>
+                          </div>
+                        </div>
+
+                        {/* Kuis Diikuti */}
+                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-3 border border-slate-200/50 flex items-center gap-3 transition-colors text-left">
+                          <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <Brain className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider">Kuis Diikuti</span>
+                            <strong className="text-xs font-extrabold text-slate-800">{studentQuizSubmissions.length} Asesmen</strong>
+                          </div>
+                        </div>
+
+                        {/* Tutor Bantuan (Scaffolding) */}
+                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-3 border border-slate-200/50 flex items-center gap-3 transition-colors text-left">
+                          <div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                            <HelpCircle className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider">Bantuan Tutor</span>
+                            <strong className="text-xs font-extrabold text-slate-800">{totalScaffoldingUsed} Petunjuk</strong>
+                          </div>
+                        </div>
+
+                        {/* Pencapaian Lencana */}
+                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-3 border border-slate-200/50 flex items-center gap-3 transition-colors text-left">
+                          <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                            <Award className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider">Pencapaian</span>
+                            <strong className="text-xs font-extrabold text-slate-800">
+                              {studentCompletedSessions.length >= 3 ? 'Bintang 3 🌟' : studentCompletedSessions.length >= 1 ? 'Bintang 1 ⭐' : 'Pionir Belajar'}
+                            </strong>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1177,7 +1338,7 @@ export default function App() {
                       {missions
                         .filter((m) => studentSelectedSubjectId === 'all' || m.idMapel === studentSelectedSubjectId)
                         .map((m) => {
-                          const isCurrent = m.id === activeMission.id;
+                          const isCurrent = activeMission ? m.id === activeMission.id : false;
                         return (
                           <div
                             key={m.id}
@@ -1192,9 +1353,17 @@ export default function App() {
                                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700">
                                   {m.subject} • {m.grade}
                                 </span>
-                                {isCurrent && (
+                                {isCurrent ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                                    Sedang Dipilih
+                                  </span>
+                                ) : m.isActive ? (
                                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                    Sedang Aktif
+                                    Diaktifkan Guru
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500">
+                                    Belum Diaktifkan
                                   </span>
                                 )}
                               </div>
@@ -1227,16 +1396,22 @@ export default function App() {
                             </div>
 
                             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                              <button
-                                onClick={() => {
-                                  setActiveMission(m);
-                                  setIsCameraOpen(true);
-                                }}
-                                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold text-xs flex items-center justify-center gap-2 hover:shadow-md transition-all"
-                              >
-                                <Camera className="w-4 h-4" />
-                                <span>Pilih Misi & Mulai Foto</span>
-                              </button>
+                              {m.isActive ? (
+                                <button
+                                  onClick={() => {
+                                    setActiveMission(m);
+                                    setIsCameraOpen(true);
+                                  }}
+                                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold text-xs flex items-center justify-center gap-2 hover:shadow-md transition-all cursor-pointer"
+                                >
+                                  <Camera className="w-4 h-4" />
+                                  <span>Pilih Misi Ini & Mulai Foto</span>
+                                </button>
+                              ) : (
+                                <div className="w-full py-2.5 rounded-xl bg-slate-100 text-slate-400 font-medium text-xs text-center border border-slate-200">
+                                  Misi Belum Diaktifkan oleh Guru
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -1335,7 +1510,10 @@ export default function App() {
                       Tahapan berpikir, penalaran, dan refleksi dimulai saat kamu memotret benda di sekitarmu.
                     </p>
                     <button
-                      onClick={() => setIsCameraOpen(true)}
+                      onClick={() => {
+                        setActiveMission(null);
+                        setIsCameraOpen(true);
+                      }}
                       className="px-6 py-3 rounded-xl bg-[#4F8EF7] text-white font-bold text-xs flex items-center gap-2 mx-auto hover:bg-blue-600 transition-colors shadow-xs"
                     >
                       <Camera className="w-4 h-4" />
@@ -1344,9 +1522,10 @@ export default function App() {
                   </div>
                 )}
               </div>
-            )}
-          </>
-        )}
+            </div>
+          )}
+        </>
+      )}
       </main>
 
       {/* Student Bottom Navigation (Mobile & Quick access) */}
@@ -1366,9 +1545,12 @@ export default function App() {
         isOpen={isCameraOpen}
         onClose={() => setIsCameraOpen(false)}
         onConfirmPhoto={handleConfirmPhoto}
-        activeMissionTitle={activeMission.title}
-        activeMissionSubject={activeMission.subject}
-        suggestedObjects={activeMission.suggestedObjects}
+        activeMission={activeMission}
+        missions={missions}
+        onSelectMission={(m) => setActiveMission(m)}
+        activeMissionTitle={activeMission?.title}
+        activeMissionSubject={activeMission?.subject}
+        suggestedObjects={activeMission?.suggestedObjects || []}
       />
 
       {/* Scanning AI Animation */}
@@ -1441,17 +1623,22 @@ export default function App() {
         subjects={subjects}
         onSaveMission={(savedMission) => {
           const exists = missions.some((m) => m.id === savedMission.id);
+          let updatedMissions: LearningMission[];
           if (exists) {
-            setMissions(missions.map((m) => (m.id === savedMission.id ? savedMission : m)));
-            if (activeMission.id === savedMission.id) {
+            updatedMissions = missions.map((m) => (m.id === savedMission.id ? savedMission : m));
+            if (activeMission && activeMission.id === savedMission.id) {
               setActiveMission(savedMission);
             }
             toast.success('Misi Diperbarui', `Misi "${savedMission.title}" berhasil diperbarui.`);
           } else {
-            setMissions([savedMission, ...missions]);
+            updatedMissions = [savedMission, ...missions];
             setActiveMission(savedMission);
             toast.success('Misi Ditambahkan', `Misi baru "${savedMission.title}" berhasil diterbitkan.`);
           }
+          setMissions(updatedMissions);
+          try {
+            localStorage.setItem('narasa_missions_data_v3', JSON.stringify(updatedMissions));
+          } catch (e) {}
         }}
       />
 

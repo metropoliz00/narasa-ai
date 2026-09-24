@@ -36,6 +36,8 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
   const [cp, setCp] = useState('');
   const [tp, setTp] = useState('');
   const [indicatorsText, setIndicatorsText] = useState('');
+  const [suggestedObjectsText, setSuggestedObjectsText] = useState('');
+  const [isGeneratingObjects, setIsGeneratingObjects] = useState(false);
   const [targetCompetency, setTargetCompetency] = useState<TargetCompetency>('numeracy');
   const [cognitiveLevel, setCognitiveLevel] = useState<CognitiveLevel>('C4-C6');
   const [strictCurriculumMode, setStrictCurriculumMode] = useState<boolean>(true); // Default: ON (Section 5)
@@ -62,6 +64,7 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
       setCp(editingMission.cp || '');
       setTp(editingMission.tp || '');
       setIndicatorsText(editingMission.indicators ? editingMission.indicators.join('\n') : '');
+      setSuggestedObjectsText(editingMission.suggestedObjects ? editingMission.suggestedObjects.join('\n') : '');
       setTargetCompetency(editingMission.targetCompetency || 'numeracy');
       setCognitiveLevel(editingMission.cognitiveLevel || 'C4-C6');
       setStrictCurriculumMode(editingMission.strictCurriculumMode ?? true);
@@ -84,6 +87,7 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
       setCp('');
       setTp('');
       setIndicatorsText('');
+      setSuggestedObjectsText('Benda nyata di ruang kelas\nLingkungan halaman sekolah');
       setTargetCompetency('numeracy');
       setCognitiveLevel('C4-C6');
       setStrictCurriculumMode(true);
@@ -106,6 +110,45 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
     setFeatures((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const handleGenerateObjectsWithAI = async () => {
+    if (!material) {
+      alert('Mohon isi materi pokok terlebih dahulu agar AI dapat menentukan rekomendasi benda yang relevan.');
+      return;
+    }
+    setIsGeneratingObjects(true);
+    try {
+      const schoolApiKey = localStorage.getItem('school_gemini_api_key') || '';
+      const response = await fetch('/api/generate-suggested-objects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-school-gemini-key': schoolApiKey
+        },
+        body: JSON.stringify({
+          title,
+          subject,
+          material,
+          cp,
+          tp,
+          targetCompetency,
+          cognitiveLevel
+        })
+      });
+      if (!response.ok) {
+        throw new Error('Gagal menghasilkan rekomendasi dari AI.');
+      }
+      const data = await response.json();
+      if (data.suggestedObjects && Array.isArray(data.suggestedObjects)) {
+        setSuggestedObjectsText(data.suggestedObjects.join('\n'));
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Terjadi kesalahan saat menghubungi AI.');
+    } finally {
+      setIsGeneratingObjects(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !material) return;
@@ -114,6 +157,11 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
       .split('\n')
       .map((i) => i.trim())
       .filter((i) => i.length > 0);
+
+    const suggestedObjects = suggestedObjectsText
+      .split('\n')
+      .map((o) => o.trim())
+      .filter((o) => o.length > 0);
 
     const foundSubject = subjects.find(
       (s) => s.name.toLowerCase() === subject.toLowerCase()
@@ -141,7 +189,7 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
       description: description || 'Misi eksplorasi objek di lingkungan sekitar sekolah.',
       isActive: editingMission ? editingMission.isActive : true,
       createdAt: editingMission ? editingMission.createdAt : new Date().toISOString().split('T')[0],
-      suggestedObjects: editingMission ? (editingMission.suggestedObjects || ['Benda nyata', 'Lingkungan sekitar']) : ['Benda nyata di ruang kelas', 'Lingkungan halaman sekolah']
+      suggestedObjects: suggestedObjects.length > 0 ? suggestedObjects : ['Benda nyata di ruang kelas', 'Lingkungan halaman sekolah']
     };
 
     onSaveMission(updatedMission);
@@ -308,6 +356,47 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
               onChange={(e) => setIndicatorsText(e.target.value)}
               placeholder="1. Menemukan pola interval berulang dari foto&#10;2. Menganalisis alasan logis KPK atau FPB&#10;3. Membuktikan perhitungan"
               className="w-full p-2.5 rounded-xl border border-slate-200 focus:border-blue-500 outline-none text-xs resize-none"
+            />
+          </div>
+
+          {/* Suggested Objects / Ide Benda yang Harus Difoto */}
+          <div className="space-y-1.5 p-4 rounded-2xl bg-amber-50/40 border border-amber-200/60">
+            <div className="flex items-center justify-between gap-2">
+              <label className="font-bold text-[#25324B] uppercase text-[11px] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                Rekomendasi / Ide Benda yang Harus Difoto (Satu per baris)
+              </label>
+              <button
+                type="button"
+                disabled={isGeneratingObjects}
+                onClick={handleGenerateObjectsWithAI}
+                className="px-3 py-1.5 text-[10px] font-black rounded-lg bg-amber-500 hover:bg-amber-600 text-white disabled:bg-slate-200 disabled:text-slate-400 flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+              >
+                {isGeneratingObjects ? (
+                  <>
+                    <svg className="animate-spin h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span>Membuat AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3 h-3 text-white animate-pulse" />
+                    <span>Rekomendasikan via AI</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-500 leading-tight">
+              Tuliskan secara manual atau buat otomatis dengan AI rekomendasi objek/benda nyata di sekolah yang relevan dengan materi pokok pembelajaran ini untuk difoto murid.
+            </p>
+            <textarea
+              rows={3}
+              value={suggestedObjectsText}
+              onChange={(e) => setSuggestedObjectsText(e.target.value)}
+              placeholder="Contoh:&#10;Pola susunan anak tangga bertingkat&#10;Ubin keramik lantai sekolah&#10;Roda sepeda di parkiran"
+              className="w-full p-2.5 rounded-xl border border-slate-200 bg-white focus:border-blue-500 outline-none text-xs resize-none font-medium text-slate-800"
             />
           </div>
 

@@ -20,7 +20,9 @@ import {
   Layers,
   Check,
   Compass,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  Unlock
 } from 'lucide-react';
 
 interface ChallengeStepProps {
@@ -225,7 +227,38 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
     }));
   };
 
+  const getStageLockStatus = (idx: number) => {
+    const isCompleted = (stemAnswers[STEM_STAGES_CONFIG[idx].id] || '').trim().length >= 3;
+    if (idx === 0) {
+      return { isLocked: false, isCompleted };
+    }
+    // Previous stages must all be filled
+    let isPreviousFilled = true;
+    for (let i = 0; i < idx; i++) {
+      const ans = (stemAnswers[STEM_STAGES_CONFIG[i].id] || '').trim();
+      if (ans.length < 3) {
+        isPreviousFilled = false;
+        break;
+      }
+    }
+    return {
+      isLocked: !isPreviousFilled,
+      isCompleted
+    };
+  };
+
+  const [lockWarning, setLockWarning] = useState<string | null>(null);
+
   const handleGoToStep = (idx: number) => {
+    const status = getStageLockStatus(idx);
+    if (status.isLocked) {
+      setLockWarning(`Selesaikan Tahap ${idx} (${STEM_STAGES_CONFIG[idx - 1].title}) terlebih dahulu untuk membuka gembok tahap ini! 🔓`);
+      setTimeout(() => {
+        setLockWarning((prev) => (prev?.includes(STEM_STAGES_CONFIG[idx - 1].title) ? null : prev));
+      }, 4000);
+      return;
+    }
+    setLockWarning(null);
     if (idx >= 0 && idx < stemQuestions.length) {
       setCurrentStepIndex(idx);
       setShowScaffolding(false);
@@ -277,17 +310,17 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 text-left">
-      {/* 8-Step STEM Workflow Stepper Bar */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-5">
+      {/* 8-Step STEM Workflow Stepper Bar with interactive cards */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#4F8EF7] to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
               {currentStepIndex + 1}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
-                  <Compass className="w-3.5 h-3.5 text-blue-500" />
+                  <Compass className="w-3.5 h-3.5 text-[#4F8EF7]" />
                   Pola Berpikir STEM
                 </span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
@@ -302,17 +335,25 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60 flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
               {answeredCount} dari 8 Tahap Terisi
             </span>
           </div>
         </div>
 
-        {/* 8 Interactive Step Pills */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5">
+        {/* Lock Warning Toast Notification if any */}
+        {lockWarning && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm font-semibold animate-tab-fade">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>{lockWarning}</span>
+          </div>
+        )}
+
+        {/* 8 Interactive Premium STEM Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
           {STEM_STAGES_CONFIG.map((stage, idx) => {
-            const isFilled = (stemAnswers[stage.id] || '').trim().length >= 3;
+            const status = getStageLockStatus(idx);
             const isCurrent = idx === currentStepIndex;
 
             return (
@@ -320,36 +361,66 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                 key={stage.id}
                 type="button"
                 onClick={() => handleGoToStep(idx)}
-                className={`p-2 rounded-2xl border text-left transition-all flex flex-col justify-between min-h-[58px] cursor-pointer ${
+                className={`p-2.5 rounded-2xl border text-left transition-all duration-300 flex flex-col justify-between min-h-[92px] group/card hover-wiggle ${
                   isCurrent
-                    ? 'border-blue-600 bg-blue-50/90 ring-2 ring-blue-400/20 shadow-xs'
-                    : isFilled
-                    ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50'
-                    : 'border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-500'
+                    ? 'border-blue-500 bg-blue-50/75 ring-3 ring-blue-100 shadow-md transform -translate-y-1'
+                    : status.isCompleted
+                    ? 'border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/90 hover:border-emerald-300 hover:shadow-xs cursor-pointer'
+                    : !status.isLocked
+                    ? 'border-blue-200/80 bg-blue-50/10 hover:bg-blue-50/50 hover:border-blue-300 hover:shadow-xs cursor-pointer'
+                    : 'border-slate-200 bg-slate-100/50 text-slate-400 opacity-65 cursor-not-allowed'
                 }`}
               >
                 <div className="flex items-center justify-between w-full">
                   <span
-                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
                       isCurrent
                         ? 'bg-blue-600 text-white'
-                        : isFilled
+                        : status.isCompleted
                         ? 'bg-emerald-600 text-white'
                         : 'bg-slate-200 text-slate-700'
                     }`}
                   >
-                    {idx + 1}
+                    Misi {idx + 1}
                   </span>
-                  {isFilled && <Check className="w-3 h-3 text-emerald-600 shrink-0" />}
+
+                  {/* Lock Indicator with Animation */}
+                  <div>
+                    {status.isCompleted ? (
+                      <div className="p-0.5 rounded-full bg-emerald-100 text-emerald-600 animate-unlock-bounce">
+                        <Unlock className="w-3 h-3" />
+                      </div>
+                    ) : isCurrent ? (
+                      <div className="p-0.5 rounded-full bg-blue-100 text-blue-600 animate-pulse">
+                        <Unlock className="w-3 h-3" />
+                      </div>
+                    ) : !status.isLocked ? (
+                      <div className="p-0.5 rounded-full bg-blue-50 text-blue-400">
+                        <Unlock className="w-3 h-3 text-blue-400" />
+                      </div>
+                    ) : (
+                      <div className="p-0.5 rounded-full bg-slate-200 text-slate-400 lock-icon">
+                        <Lock className="w-3 h-3 text-slate-500" />
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <span
-                  className={`text-[11px] font-bold line-clamp-1 mt-1 ${
-                    isCurrent ? 'text-blue-900' : isFilled ? 'text-emerald-900' : 'text-slate-600'
-                  }`}
-                  title={stage.title}
-                >
-                  {stage.title}
-                </span>
+
+                <div className="mt-2.5 space-y-0.5">
+                  <div className="flex items-center gap-1">
+                    {getStageIcon(stage.id, `w-3.5 h-3.5 ${
+                      isCurrent ? 'text-blue-600' : status.isCompleted ? 'text-emerald-600' : 'text-slate-400'
+                    }`)}
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold line-clamp-1 block leading-tight ${
+                      isCurrent ? 'text-blue-900' : status.isCompleted ? 'text-emerald-900' : 'text-slate-600'
+                    }`}
+                    title={stage.title}
+                  >
+                    {stage.title}
+                  </span>
+                </div>
               </button>
             );
           })}

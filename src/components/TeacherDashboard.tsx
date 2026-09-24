@@ -88,6 +88,7 @@ interface TeacherDashboardProps {
   onUpdateQuizSubmission?: (submission: QuizSubmission) => void;
   onAddCustomQuiz?: (quiz: ConceptQuiz) => void;
   onOpenEditMissionModal?: (mission: LearningMission) => void;
+  onToggleMissionActive?: (missionId: string) => void;
 }
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
@@ -121,6 +122,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   onUpdateQuizSubmission,
   onAddCustomQuiz,
   onOpenEditMissionModal,
+  onToggleMissionActive,
   subjects = [],
   onAddSubject = () => {},
   onDeleteSubject = () => {}
@@ -527,9 +529,28 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-                  <span className="text-emerald-600 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Misi Aktif
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onToggleMissionActive?.(m.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      m.isActive
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
+                        : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                    }`}
+                    title={m.isActive ? 'Misi sedang aktif untuk murid. Klik untuk nonaktifkan.' : 'Klik untuk mengaktifkan misi ini agar dikerjakan murid'}
+                  >
+                    {m.isActive ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Diaktifkan untuk Murid</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-slate-400" />
+                        <span>Belum Diaktifkan</span>
+                      </>
+                    )}
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -537,10 +558,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         onOpenEditMissionModal(m);
                       }
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                    className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                     title="Edit misi pembelajaran ini"
                   >
-                    <Edit className="w-3 h-3 text-blue-600" />
+                    <Edit className="w-3.5 h-3.5 text-blue-600" />
                     <span>Edit</span>
                   </button>
                 </div>

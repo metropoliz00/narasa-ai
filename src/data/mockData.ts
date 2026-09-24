@@ -176,7 +176,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
   {
     id: 'mission-kpk-fpb',
     idMapel: 'matematika',
-    title: 'Misi 1: Berburu Interval Jam Dinding',
+    title: 'Misi 1: Eksplorasi Pola Interval & Keteraturan Berulang',
     grade: 'Kelas V',
     phase: 'Fase C',
     subject: 'Matematika',
@@ -200,10 +200,10 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       presentation: true,
       peerQuestion: true
     },
-    description: 'Temukan dan potret jam dinding analog di sekolah. Amati pergerakan jarumnya yang berdetak setiap menit atau detik untuk memahami konsep interval waktu berulang.',
+    description: 'Amati dan potret objek atau pola berulang di sekitarmu, seperti susunan ubin teratur, deret anak tangga dengan penanda langkah, atau jadwal kegiatan periodik untuk memahami konsep interval dan kelipatan (KPK).',
     isActive: true,
     createdAt: '2026-09-10',
-    suggestedObjects: ['Jam dinding kelas V', 'Jam dinding ruang guru', 'Jam dinding perpustakaan']
+    suggestedObjects: ['Pola susunan anak tangga bertingkat', 'Pola susunan paving block/keramik teratur', 'Papan jadwal piket & waktu berkala']
   },
   {
     id: 'mission-kpk-fpb-2',
@@ -233,7 +233,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Temukan dan potret kipas angin yang berputar di ruang kelas atau lorong sekolah. Hitung jumlah baling-balingnya dan pergerakan konstan berulang untuk memvisualisasikan kelipatan putaran.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-11',
     suggestedObjects: ['Kipas angin dinding kelas', 'Kipas angin langit-langit', 'Baling-baling exhaust fan']
   },
@@ -265,7 +265,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Temukan dan potret susunan ubin lantai persegi di dalam kelas atau lorong. Hitung bagaimana ubin-ubin tersebut membagi ruangan secara merata untuk memahami konsep faktor pembagi terbesar.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-12',
     suggestedObjects: ['Ubin lantai kelas persegi', 'Keramik tangga sekolah', 'Paving block halaman depan']
   },
@@ -297,7 +297,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Kunjungi kantin sekolah dan potret jajanan pasar atau kue yang diletakkan berjajar secara rapi di nampan. Amati bagaimana kue tersebut dikelompokkan secara merata untuk mempelajari FPB.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-13',
     suggestedObjects: ['Kue donat di piring saji', 'Lemper di nampan mika', 'Pastel goreng di baki kantin']
   },
@@ -331,7 +331,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Potret tanaman hijau atau pohon di sekitar halaman sekolah yang berperan sebagai produsen dalam rantai makanan, penghasil oksigen pendukung kehidupan ekosistem.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-08',
     suggestedObjects: ['Pohon peneduh di lapangan upacara', 'Tanaman lidah mertua di koridor', 'Rumput hijau subur di taman']
   },
@@ -363,7 +363,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Temukan dan potret komponen tidak hidup (abiotik) seperti tanah, batu, atau genangan air yang membantu pertumbuhan tanaman dan menyokong kehidupan mikroorganisme sekitar.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-09',
     suggestedObjects: ['Tanah hitam subur di dalam pot', 'Bebatuan kerikil di kolam', 'Genangan air/air kran penyiram']
   },
@@ -395,7 +395,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Amati dan potret interaksi atau hubungan nyata antara makhluk hidup berbeda, misalnya serangga kecil di daun, semut beriringan mencari makan, atau kupu-kupu yang hinggap di bunga.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-10',
     suggestedObjects: ['Semut hitam berbaris di batang pohon', 'Lebah atau kupu-kupu di mahkota bunga', 'Burung pipit bertengger di kabel listrik']
   },
@@ -427,7 +427,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Potret sarana penjaga keseimbangan alam buatan di sekolah, seperti tempat sampah pilah atau saluran drainase air untuk menganalisis kebersihan dan pencegahan kerusakan ekosistem.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-11',
     suggestedObjects: ['Tempat sampah terpilah tiga warna', 'Saluran air bersih terawat', 'Komposter sampah organik daun']
   },
@@ -461,7 +461,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Cari dan potret Majalah Dinding (mading) sekolah yang penuh warna. Amati tata letak kertas, tulisan tangan, serta gambar dekoratif untuk bahan teks deskripsi visual pancaindra.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-05',
     suggestedObjects: ['Papan mading lobi sekolah', 'Kliping puisi bertulisan rapi', 'Gambar hiasan origami kertas warna-warni']
   },
@@ -493,7 +493,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Kunjungi perpustakaan sekolah and potret deretan buku yang tersusun rapi di rak kayu. Rasakan kesan ketenangan dan kerapian susunan buku untuk memperkaya teks deskripsi fisik objek.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-06',
     suggestedObjects: ['Deretan novel cerita nusantara', 'Tumpukan kamus besar berdebu tipis', 'Papan penunjuk kategori buku kayu']
   },
@@ -525,7 +525,7 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Potret suasana atau etalase makanan bersih di kantin sekolah. Amati bentuk wadah saji, warna makanan hangat, serta aroma lezat yang tercium untuk melatih menulis deskripsi pancaindra penciuman.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-07',
     suggestedObjects: ['Etalase kaca penutup makanan', 'Nampan saji berisi kue tradisional', 'Daftar menu makanan bersih tertempel dinding']
   },
@@ -557,11 +557,44 @@ export const DEFAULT_MISSIONS: LearningMission[] = [
       peerQuestion: true
     },
     description: 'Pergilah ke area depan sekolah, potret pilar gerbang utama sekolah atau papan nama sekolah. Amati bahan pembuatannya (seperti besi atau semen kokoh) untuk mendeskripsikan ciri fisik kekokohan dan fungsinya.',
-    isActive: true,
+    isActive: false,
     createdAt: '2026-09-08',
     suggestedObjects: ['Pilar beton gerbang berlapis batu alam', 'Papan nama sekolah dari logam mengkilap', 'Tanaman hias menjalar di tembok pagar depan']
   }
 ];
+
+export const FREE_EXPLORATION_MISSION: LearningMission = {
+  id: 'mission-eksplorasi-bebas',
+  idMapel: 'tematik',
+  title: 'Eksplorasi Lingkungan Bebas (Deteksi Otomatis AI)',
+  grade: 'Kelas V',
+  phase: 'Fase C',
+  subject: 'Tematik Kontekstual',
+  material: 'Literasi Visual & Penalaran Konkret di Sekitar Kita',
+  cp: 'Peserta didik mengamati objek konkret di lingkungan sekitar dan mengidentifikasi fenomena keteraturan ilmiah, pola kuantitatif, atau deskripsi objek nyata.',
+  tp: 'Menghubungkan objek nyata di sekitar dengan konsep sains, matematika, atau deskripsi bahasa secara logis dan kritis.',
+  indicators: [
+    'Mengamati dan memotret fenomena nyata di lingkungan sekolah atau rumah',
+    'Menjelaskan karakteristik, bentuk, atau fungsi objek secara terperinci',
+    'Menemukan keterkaitan objek dengan konsep pengetahuan kontekstual'
+  ],
+  targetCompetency: 'both',
+  cognitiveLevel: 'C4-C6',
+  strictCurriculumMode: false,
+  features: {
+    adaptiveDifficulty: true,
+    scaffolding: true,
+    reasoning: true,
+    evidence: true,
+    reflection: true,
+    presentation: true,
+    peerQuestion: true
+  },
+  description: 'Bebas potret objek apa pun di sekolah atau sekitarmu (tumbuhan, alat, bangunan, ubin, dll). Kecerdasan buatan NARASA AI akan menganalisis objek dan mengaitkannya dengan topik kurikulum yang paling cocok.',
+  isActive: true,
+  createdAt: '2026-09-24',
+  suggestedObjects: ['Tumbuhan / bunga di taman', 'Struktur bangunan atau pola ubin', 'Peralatan kelas / lingkungan', 'Benda apa pun di sekitarmu']
+};
 
 export interface SamplePhotoItem {
   id: string;
@@ -575,13 +608,13 @@ export interface SamplePhotoItem {
 
 export const SAMPLE_REAL_OBJECTS: SamplePhotoItem[] = [
   {
-    id: 'sample-clock',
-    name: 'Jam Dinding Ruang Kelas V',
-    category: 'Peralatan Kelas',
-    location: 'Dinding depan atas papan tulis',
-    imageUrl: 'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800&auto=format&fit=crop&q=80',
-    description: 'Jam dinding analog dengan jarum jam, jarum menit berdetak tiap detik, dan angka melingkar 1 sampai 12.',
-    tags: ['Waktu', 'Interval', 'Kejadian berulang', 'Derajat sudut', 'KPK FPB']
+    id: 'sample-stairs',
+    name: 'Deret Undakan Tangga & Ubin Sekolah',
+    category: 'Struktur Bangunan',
+    location: 'Tangga penghubung lantai 1 dan 2',
+    imageUrl: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=800&auto=format&fit=crop&q=80',
+    description: 'Susunan anak tangga bertingkat dengan penanda jarak teratur dan ubin lantai bermotif barisan kelipatan.',
+    tags: ['Interval berulang', 'Kelipatan jarak', 'Geometri', 'KPK FPB']
   },
   {
     id: 'sample-tree',
@@ -631,26 +664,26 @@ export const SAMPLE_REAL_OBJECTS: SamplePhotoItem[] = [
 ];
 
 export const INITIAL_COMPLETED_SESSION: StudentActivitySession = {
-  id: 'session-adit-clock-kpk',
+  id: 'session-adit-interval-kpk',
   missionId: 'mission-kpk-fpb',
-  missionTitle: 'Petualangan KPK & FPB dalam Kehidupan Sehari-hari',
+  missionTitle: 'Eksplorasi Pola Interval & Keteraturan Berulang',
   subject: 'Matematika',
   studentId: 'user-student-1',
   studentName: 'Adit Pratama',
-  image: 'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800&auto=format&fit=crop&q=80',
-  imageLabel: 'Jam Dinding Ruang Kelas V',
+  image: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=800&auto=format&fit=crop&q=80',
+  imageLabel: 'Pola Susunan Undakan Tangga & Ubin Sekolah',
   learningBridge: {
-    detectedObject: 'Jam dinding analog bulat',
+    detectedObject: 'Pola susunan undakan tangga dan ubin teratur',
     compatibility: 'Strong',
-    compatibilityReason: 'Jarum jam dan pembagian waktu adalah representasi interval waktu berulang yang sangat konkret untuk konsep KPK dan kelipatan.',
-    observation: 'Saya melihat jam dinding analog berbentuk lingkaran dengan 12 angka. Jarum panjang bergerak setiap menit dan jarum pendek bergerak setiap jam. Angkanya kelipatan 1 sampai 12, dan ada garis-garis menit kecil.',
-    context: 'Siklus waktu berulang dan interval bel istirahat',
-    learningBridge: 'Jam dinding menunjukkan pola kejadian yang berulang secara berkala. Jika ada dua alarm atau kegiatan dengan selang waktu tertentu (misalnya kegiatan A setiap 4 menit dan kegiatan B setiap 6 menit), waktu mereka berbunyi bersama dapat dihitung menggunakan Kelipatan Persekutuan Terkecil (KPK).',
-    simpleMaterialSummary: 'KPK (Kelipatan Persekutuan Terkecil) adalah angka kelipatan yang sama dan paling kecil dari dua bilangan atau lebih. Bayangkan seperti dua lampu hias yang menyala bergantian dalam waktu berbeda, lalu menyala bersamaan di detik tertentu!',
+    compatibilityReason: 'Susunan undakan tangga dan penanda garis berulang adalah representasi interval waktu dan jarak yang sangat konkret untuk konsep KPK dan kelipatan.',
+    observation: 'Saya melihat susunan anak tangga sekolah dengan penanda reflektor garis setiap kelipatan tertentu dan ubin berjarak sama. Pola ini berulang secara teratur di setiap undakan.',
+    context: 'Pola keteraturan undakan dan interval langkah',
+    learningBridge: 'Susunan undakan bertingkat menunjukkan pola yang berulang secara berkala. Jika ada dua penanda dengan selang jarak atau kegiatan tertentu (misalnya bel piket setiap 4 menit dan alarm stasiun baca setiap 6 menit), waktu mereka berbunyi bersama dapat dihitung menggunakan Kelipatan Persekutuan Terkecil (KPK).',
+    simpleMaterialSummary: 'KPK (Kelipatan Persekutuan Terkecil) adalah angka kelipatan yang sama dan paling kecil dari dua bilangan atau lebih. Bayangkan seperti dua pelari yang melangkah dengan panjang berbeda lalu menginjak garis yang sama pada jarak tertentu!',
     soloTaxonomyLevel: 'Relational',
-    soloDescription: 'Siswa berhasil menghubungkan pengamatan rotasi jarum jam dinding dengan konsep interval waktu berulang dan prinsip kelipatan persekutuan terkecil (KPK).',
+    soloDescription: 'Siswa berhasil menghubungkan pengamatan pola susunan undakan dengan konsep interval waktu berulang dan prinsip kelipatan persekutuan terkecil (KPK).',
     guidingQuestions: [
-      'Bagaimana jarum jam yang berputar terus-menerus bisa membantu kita memperkirakan waktu pertemuan dua jadwal berbeda?',
+      'Bagaimana susunan berulang yang teratur bisa membantu kita memperkirakan titik temu dua jadwal atau jarak berbeda?',
       'Pernahkah kamu memperhatikan bunyi bel sekolah yang berdering bersamaan? Kapan itu terjadi?'
     ],
     subject: 'Matematika',
@@ -662,7 +695,7 @@ export const INITIAL_COMPLETED_SESSION: StudentActivitySession = {
         id: 'q-kpk-1',
         stage: 'challenge',
         title: 'Tantangan Pemecahan Masalah',
-        question: 'Di jam dinding kelas, bel pengingat piket berbunyi setiap 4 menit, sedangkan alarm ganti stasiun baca berbunyi setiap 6 menit. Jika keduanya berbunyi bersamaan pada pukul 08.00, pada menit ke berapa lagi keduanya akan berbunyi bersamaan untuk pertama kali?',
+        question: 'Pada jadwal kelas, bel pengingat piket berbunyi setiap 4 menit, sedangkan alarm ganti stasiun baca berbunyi setiap 6 menit. Jika keduanya berbunyi bersamaan pada pukul 08.00, pada menit ke berapa lagi keduanya akan berbunyi bersamaan untuk pertama kali?',
         inputType: 'text',
         conceptTag: 'Penentuan KPK',
         scaffolding: {
@@ -682,8 +715,8 @@ export const INITIAL_COMPLETED_SESSION: StudentActivitySession = {
         scaffolding: {
           level1: 'Ingat kata kuncinya: apakah kita membagi suatu kumpulan benda menjadi bagian lebih kecil, atau mencari waktu pertemuan di masa depan yang makin besar?',
           level2: 'KPK digunakan saat ada kegiatan yang berulang pada interval waktu tertentu dan kita ingin tahu kapan bertemu lagi.',
-          level3: 'FPB untuk membagi adil, KPK untuk jadwal berulang. Jelaskan perbedaan kedua kebutuhan ini pada soal jam.',
-          level4: 'Jika membagi 12 kue ke beberapa teman itu FPB. Tapi jika jam berdering tiap beberapa menit, itu KPK.'
+          level3: 'FPB untuk membagi adil, KPK untuk jadwal berulang. Jelaskan perbedaan kedua kebutuhan ini pada soal ini.',
+          level4: 'Jika membagi 12 kue ke beberapa teman itu FPB. Tapi jika kegiatan berulang tiap beberapa menit, itu KPK.'
         }
       },
       {
@@ -718,20 +751,20 @@ export const INITIAL_COMPLETED_SESSION: StudentActivitySession = {
     }
   ],
   reflection: {
-    q1Found: 'Saya menemukan bahwa jarum jam dinding dan pembagian garis-garis menitnya sangat berhubungan dengan kelipatan angka dalam matematika.',
+    q1Found: 'Saya menemukan bahwa interval anak tangga dan susunan berulang sangat berhubungan dengan kelipatan angka dalam matematika.',
     q2Learned: 'Saya belajar membedakan kapan harus menggunakan KPK dan kapan FPB. Sekarang saya tahu kalau jadwal dan interval waktu itu pakai KPK.',
     q3Hardest: 'Bagian yang paling menantang adalah menjelaskan alasannya dengan kata-kata sendiri tanpa cuma menghafal rumus.',
-    q4Solved: 'Saya membayangkan dua jam berjalan bersamaan dan menuliskan kelipatan menitnya satu per satu di kertas.',
+    q4Solved: 'Saya membayangkan dua kejadian berjalan bersamaan dan menuliskan kelipatan menitnya satu per satu di kertas.',
     q5Improvement: 'Pada misi berikutnya, saya ingin mencoba menyelesaikan masalah dengan pohon faktor lebih cepat dan membuat gambar diagramnya.'
   },
   presentation: [
     {
       id: 'slide-1',
       slideNumber: 1,
-      title: 'Hasil Eksplorasi Saya: Jam Dinding & KPK',
+      title: 'Hasil Eksplorasi Saya: Pola Interval & KPK',
       subtitle: 'Misi Matematika Kontekstual — Kelas V SDN 01 Nusantara',
-      content: 'Halo teman-teman! Saya Adit Pratama. Hari ini saya menemukan matematika tersembunyi di dalam jam dinding ruang kelas kita.',
-      image: 'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800&auto=format&fit=crop&q=80',
+      content: 'Halo teman-teman! Saya Adit Pratama. Hari ini saya menemukan matematika tersembunyi di dalam pola keteraturan dan interval berulang di sekitar sekolah.',
+      image: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=800&auto=format&fit=crop&q=80',
       speakingNotes: 'Beri salam pembuka dengan percaya diri. Sebutkan namamu dan objek menarik yang kamu amati di kelas.',
       layout: 'title'
     },
@@ -740,29 +773,28 @@ export const INITIAL_COMPLETED_SESSION: StudentActivitySession = {
       slideNumber: 2,
       title: 'Apa yang Saya Temukan?',
       subtitle: 'Observasi Visual Objek Nyata',
-      content: 'Dari foto jam dinding kelas, saya melihat bentuk lingkaran dengan 12 angka utama dan 60 garis menit. Jarum jam berputar dengan ritme yang teratur dan berulang setiap saat.',
+      content: 'Dari foto susunan undakan tangga dan pola ubin sekolah, saya melihat pola berulang dengan interval yang teratur dan konsisten di setiap langkah.',
       bullets: [
-        'Bentuk lingkaran dengan 12 penanda angka',
-        'Jarum detik berdetak tiap 1 detik',
-        'Jarum menit berputar penuh tiap 60 menit',
-        'Pola pengulangan waktu yang konstan'
+        'Susunan undakan bertingkat berjarak sama',
+        'Penanda langkah berjarak kelipatan teratur',
+        'Pola pengulangan jarak dan waktu yang konstan'
       ],
-      image: 'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800&auto=format&fit=crop&q=80',
-      speakingNotes: 'Arahkan teman-teman melihat foto jam. Jelaskan bagian-bagian yang kamu amati secara rinci.',
+      image: 'https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?w=800&auto=format&fit=crop&q=80',
+      speakingNotes: 'Arahkan teman-teman melihat foto observasi. Jelaskan bagian-bagian yang kamu amati secara rinci.',
       layout: 'split-photo'
     },
     {
       id: 'slide-3',
       slideNumber: 3,
       title: 'Hubungannya dengan Pelajaran',
-      subtitle: 'AI Learning Bridge: Jam Dinding ke KPK & FPB',
-      content: 'Jam dinding adalah contoh nyata dari kejadian berulang (interval). Ketika dua hal terjadi pada selang waktu yang berbeda, titik pertemuannya diatur oleh konsep Kelipatan Persekutuan Terkecil (KPK).',
+      subtitle: 'AI Learning Bridge: Pola Interval ke KPK & FPB',
+      content: 'Pola keteraturan adalah contoh nyata dari kejadian berulang (interval). Ketika dua hal terjadi pada selang waktu atau jarak berbeda, titik pertemuannya diatur oleh konsep Kelipatan Persekutuan Terkecil (KPK).',
       bullets: [
-        'Interval = waktu yang berulang berkala',
+        'Interval = waktu atau jarak yang berulang berkala',
         'KPK = titik temu pertama dari dua interval berbeda',
-        'Bukan sekadar rumus hafalan, tapi pola waktu nyata'
+        'Bukan sekadar rumus hafalan, tapi pola nyata di sekitar kita'
       ],
-      speakingNotes: 'Jelaskan hubungan antara ritme jam dinding dengan konsep KPK yang diberikan oleh Pak Dedy.',
+      speakingNotes: 'Jelaskan hubungan antara ritme keteraturan dengan konsep KPK yang diberikan oleh guru.',
       layout: 'observation'
     },
     {
@@ -828,7 +860,7 @@ export const INITIAL_COMPLETED_SESSION: StudentActivitySession = {
       slideNumber: 8,
       title: 'Kesimpulan Penting',
       subtitle: 'Hikmah Matematika di Sekitar Kita',
-      content: 'Matematika tidak cuma ada di buku paket. Benda sesederhana jam dinding membantu kita memahami bagaimana keteraturan interval waktu bekerja di dunia nyata melalui KPK.',
+      content: 'Matematika tidak cuma ada di buku paket. Benda nyata seperti susunan anak tangga dan keteraturan di sekitar kita membantu memahami bagaimana konsep interval bekerja di dunia nyata melalui KPK.',
       bullets: [
         'KPK membantu menyinkronkan jadwal',
         'Observasi objek membuat matematika lebih mudah dibayangkan',
@@ -1092,7 +1124,7 @@ export const TEACHER_INSIGHTS: TeacherInsight[] = [
     title: 'Kekuatan: Murid Mahir Menemukan Bukti Sensorik Visual',
     type: 'strength',
     content: 'Sebagian besar murid (84%) sudah mampu mengidentifikasi objek dan menuliskan informasi kuantitatif dari foto secara rinci.',
-    evidenceData: 'Rata-rata skor tahap Observasi & Identify mencapai 89/100 pada misi jam dinding dan kantin.',
+    evidenceData: 'Rata-rata skor tahap Observasi & Identify mencapai 89/100 pada misi pola interval dan kantin.',
     targetMissions: ['mission-kpk-fpb', 'mission-ipas-ekosistem'],
     actionRecommendation: 'Pertahankan aktivitas observasi langsung. Mulai tingkatkan ke tahap evaluasi kritis (C5).'
   },

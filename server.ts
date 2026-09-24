@@ -61,7 +61,7 @@ app.post("/api/test-gemini-key", async (req, res) => {
   }
 });
 
-// Helper to call Gemini with model pooling, exponential backoff, and instant fallback for 503 / high demand spikes
+// Helper to call Gemini with model pooling, exponential backoff, and fallback models for 503 / high demand spikes
 async function callGeminiWithFallback(
   client: GoogleGenAI,
   options: {
@@ -71,29 +71,57 @@ async function callGeminiWithFallback(
   timeoutMs: number = 20000
 ) {
   // Candidate models list per official guidelines with robust failover
-  const candidateModels = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"];
+  const candidateModels = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
   let lastError: any = null;
 
   for (let i = 0; i < candidateModels.length; i++) {
     const model = candidateModels[i];
-    try {
-      const generatePromise = client.models.generateContent({
-        model,
-        contents: options.contents,
-        config: options.config,
-      });
+    
+    // Try up to 3 attempts per model with jittered exponential backoff
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const generatePromise = client.models.generateContent({
+          model,
+          contents: options.contents,
+          config: options.config,
+        });
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Timeout: ${model} exceeded ${timeoutMs}ms`)), timeoutMs)
-      );
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout: ${model} exceeded ${timeoutMs}ms`)), timeoutMs)
+        );
 
-      const response: any = await Promise.race([generatePromise, timeoutPromise]);
-      return response;
-    } catch (err: any) {
-      lastError = err;
-      const errMsg = String(err?.message || err || "");
-      console.info(`[Gemini API] Model ${model} unavailable or busy (${errMsg.slice(0, 80)}...), falling over to next model in pool.`);
-      // Continue loop to try next model in pool immediately
+        const response: any = await Promise.race([generatePromise, timeoutPromise]);
+        return response;
+      } catch (err: any) {
+        lastError = err;
+        const errMsg = String(err?.message || err || "");
+        const errCode = err?.status || err?.code || 0;
+        
+        console.warn(`[Gemini API] Model ${model} (attempt ${attempt}/3) encountered error: ${errMsg.slice(0, 150)} (Code: ${errCode})`);
+
+        const isTemporaryError =
+          errCode === 503 ||
+          errCode === 429 ||
+          errMsg.includes("503") ||
+          errMsg.includes("429") ||
+          errMsg.toLowerCase().includes("timeout") ||
+          errMsg.toLowerCase().includes("high demand") ||
+          errMsg.toLowerCase().includes("unavailable") ||
+          errMsg.toLowerCase().includes("resource_exhausted") ||
+          errMsg.toLowerCase().includes("busy");
+
+        if (isTemporaryError && attempt < 3) {
+          // Exponential backoff with jitter
+          const delay = (attempt * 800) + Math.random() * 400;
+          console.info(`[Gemini API] Retrying ${model} in ${Math.round(delay)}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // If it's a permanent error or we exhausted attempts, fall over to next model
+        console.warn(`[Gemini API] Failing over from ${model} to next candidate...`);
+        break;
+      }
     }
   }
   throw lastError;
@@ -129,6 +157,80 @@ app.get("/api/health", (req, res) => {
     fallbackModels: ["gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"],
     serverTime: new Date().toISOString()
   });
+});
+
+// Endpoint to generate suggested object ideas via AI for teachers
+app.post("/api/generate-suggested-objects", async (req, res) => {
+  try {
+    const { title, subject, material, cp, tp, targetCompetency, cognitiveLevel } = req.body;
+    
+    const client = getAiClient(req);
+    if (client) {
+      const prompt = `
+Anda adalah Pakar Kurikulum dan Desainer Pembelajaran STEM Sekolah Dasar.
+Berdasarkan informasi materi berikut, rancang 5-8 ide benda nyata konkret yang mudah ditemukan oleh murid di sekitar sekolah atau rumah untuk difoto dan dianalisis secara kritis (penalaran sains, teknologi, rekayasa, atau matematika).
+
+Informasi Misi:
+- Nama Aktivitas: ${title || '-'}
+- Mata Pelajaran: ${subject || 'Sains/Matematika'}
+- Materi Pokok: ${material || '-'}
+- Capaian Pembelajaran (CP): ${cp || '-'}
+- Tujuan Pembelajaran (TP): ${tp || '-'}
+- Target Kompetensi: ${targetCompetency || 'both'} (literacy, numeracy, or both)
+- Level Kognitif: ${cognitiveLevel || 'C4-C6'}
+
+Benda harus sangat kontekstual, menarik, realistis untuk difoto murid menggunakan handphone, dan relevan dengan materi pokok tersebut.
+
+Format keluaran HARUS berupa objek JSON dengan struktur sebagai berikut:
+{
+  "suggestedObjects": [
+    "Nama Benda 1 (Contoh: Jam dinding analog untuk mengamati sudut/interval)",
+    "Nama Benda 2 (Contoh: Lantai keramik berpola untuk menghitung luas dan KPK)",
+    ...
+  ]
+}
+
+Berikan respon HANYA berupa JSON valid tersebut, tanpa tambahan teks pembuka atau penutup markdown.
+`;
+
+      const response = await callGeminiWithFallback(client, {
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        }
+      });
+
+      const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || response?.text || "";
+      let jsonResponse;
+      try {
+        jsonResponse = JSON.parse(text.trim().replace(/^```json\s*|```$/g, ""));
+      } catch (parseErr) {
+        // Fallback parsing if JSON contains wrappers or markdown
+        const match = text.match(/\{[\s\S]*\}/);
+        if (match) {
+          jsonResponse = JSON.parse(match[0]);
+        } else {
+          throw parseErr;
+        }
+      }
+      
+      return res.json(jsonResponse);
+    } else {
+      // Return beautiful fallback suggestions if Gemini API is not configured/available
+      return res.json({
+        suggestedObjects: [
+          `Buku, penggaris, atau alat tulis (terkait ${material})`,
+          `Lantai ubin atau jendela ruangan (terkait ${material})`,
+          `Jam dinding analog atau jadwal (terkait ${material})`,
+          `Tanaman pot atau daun di taman (terkait ${material})`,
+          `Botol minum atau tempat sampah (terkait ${material})`
+        ]
+      });
+    }
+  } catch (err: any) {
+    console.error("Error generating suggested objects:", err);
+    res.status(500).json({ error: err.message || "Gagal membuat ide benda otomatis." });
+  }
 });
 
 // 1. Analyze Vision & Bridge to Learning Mission

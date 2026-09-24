@@ -262,7 +262,7 @@ export const AICriticalQuizGeneratorModal: React.FC<AICriticalQuizGeneratorModal
                       type="text"
                       value={objectHint}
                       onChange={(e) => setObjectHint(e.target.value)}
-                      placeholder="Contoh: Kemasan biskuit, jam dinding, daun mangga..."
+                      placeholder="Contoh: Kemasan biskuit, susunan ubin, tanaman pot, daun mangga..."
                       className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-purple-500/20"
                     />
                   </div>
