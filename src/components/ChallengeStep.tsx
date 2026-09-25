@@ -28,8 +28,36 @@ import {
   Target,
   Info,
   ChevronRight,
-  Play
+  Play,
+  LayoutGrid,
+  Filter,
+  ListOrdered,
+  ZoomIn
 } from 'lucide-react';
+import { PhotoZoomModal } from './PhotoZoomModal';
+
+// Helper to generate natural, child-friendly, logical descriptions contextualized to the observed object
+export const getStageContextualDescription = (
+  stageId: STEMStage,
+  detectedObject?: string,
+  material?: string
+): string => {
+  const obj = detectedObject?.trim() || 'objek di fotomu';
+  const mat = material?.trim() || 'materi pelajaran kita';
+
+  switch (stageId) {
+    case 'decomposition':
+      return `Seperti membongkar balok mainan lego, yuk amati foto ${obj} ini! Kita urai dan cari tahu bagian-bagian atau benda apa saja yang menyusunnya, serta apa fungsi masing-masing bagian itu agar kita paham cara kerjanya.`;
+    case 'pattern_recognition':
+      return `Menjadi detektif cilik! Kita selidiki apakah ada bentuk yang berulang, susunan yang berbaris rapi, atau keteraturan waktu pada ${obj} ini yang cocok dengan konsep pelajaran ${mat}.`;
+    case 'abstraction':
+      return `Pakai kacamata fokus detektif! Dari semua hal yang terlihat pada ${obj}, kita pilih hal utama yang paling penting untuk dipelajari, dan kita simpan atau abaikan dulu detail hiasan atau debu kecil yang tidak berpengaruh.`;
+    case 'algorithmic_thinking':
+      return `Jadi kapten pembuat rencana! Kita susun urutan langkah 1, 2, 3 yang rapi dan teratur seperti petunjuk resep makanan lezat agar siapa saja bisa mencoba atau memanfaatkan ${obj} ini dari awal sampai berhasil!`;
+    default:
+      return `Amati foto ${obj} dan hubungkan secara logis dengan materi ${mat}.`;
+  }
+};
 
 interface ChallengeStepProps {
   questions: ExplorationQuestion[];
@@ -48,17 +76,14 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
   onCompleteChallenge
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isPhotoZoomOpen, setIsPhotoZoomOpen] = useState(false);
 
-  // Form states for all 8 STEM steps
+  // Form states for all 4 CT steps
   const [stemAnswers, setStemAnswers] = useState<Record<string, string>>({
-    real_problem: '',
-    ask_inquire: '',
-    design_solution: '',
-    prototype: '',
-    testing: '',
-    data_analysis: '',
-    improvement: '',
-    communication: ''
+    decomposition: '',
+    pattern_recognition: '',
+    abstraction: '',
+    algorithmic_thinking: ''
   });
 
   // State for popup modal showing activity & instructions for a clicked stage
@@ -75,63 +100,82 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
     { questionId: string; level: 1 | 2 | 3 | 4; hintText: string; requestedAt: string }[]
   >([]);
 
-  // Build the complete 8 STEM questions list, merging AI questions or constructing tailored defaults
+  // Build the complete 4 Computational Thinking questions list, merging AI questions or constructing tailored contextual questions
   const stemQuestions: ExplorationQuestion[] = useMemo(() => {
-    return STEM_STAGES_CONFIG.map((stageCfg, idx) => {
+    return STEM_STAGES_CONFIG.map((stageCfg) => {
+      const obj = learningBridge.detectedObject || 'objek di fotomu';
+      const mat = learningBridge.material || 'materi pelajaran';
+
+      let stageQuestion = stageCfg.guidingPrompt;
+      let tag = stageCfg.title;
+
+      let scaffoldingData = {
+        level1: `Amati lagi foto ${obj}. Bagian apa yang paling pertama menarik perhatianmu?`,
+        level2: `Bagaimana bagian tersebut berhubungan dengan materi ${mat}?`,
+        level3: `Tuliskan dalam 1-2 kalimat sederhana dengan bahasamu sendiri.`,
+        level4: `Bayangkan kamu sedang menceritakan rahasia foto ${obj} ini kepada teman dekatmu.`
+      };
+
+      switch (stageCfg.id) {
+        case 'decomposition':
+          stageQuestion = `Yuk amati foto ${obj} dengan saksama! Apa saja bagian-bagian atau benda penting yang kamu lihat menyusun ${obj} ini? Coba ceritakan apa fungsi atau peran masing-masing bagian tersebut dalam kehidupan nyata!`;
+          tag = 'Membongkar Bagian Objek (Dekomposisi)';
+          scaffoldingData = {
+            level1: `Lihat foto ${obj} dari atas ke bawah: sebutkan setidaknya 2 atau 3 bagian berbeda yang tampak jelas!`,
+            level2: `Apa tugas atau kegunaan dari masing-masing bagian ${obj} tersebut?`,
+            level3: `Tuliskan dalam format rapi: 1) Bagian pertama adalah... gunanya untuk..., 2) Bagian kedua...`,
+            level4: `Seperti sepeda yang punya roda untuk melaju, rantai untuk mengayuh, dan stang untuk berbelok; ${obj} juga punya bagian dengan tugasnya masing-masing!`
+          };
+          break;
+        case 'pattern_recognition':
+          stageQuestion = `Perhatikan lebih dekat foto ${obj} ini! Adakah bentuk yang berulang, susunan garis atau benda yang teratur, jadwal berkala, atau kemiripan dengan konsep ${mat}? Ceritakan pola menarik apa yang berhasil kamu temukan!`;
+          tag = 'Menemukan Keteraturan (Pengenalan Pola)';
+          scaffoldingData = {
+            level1: `Cari hal yang berulang atau memiliki bentuk serupa pada ${obj}. Apa yang kamu lihat?`,
+            level2: `Apakah bentuknya memiliki pola susunan tertentu, atau kejadian yang berulang secara berkala?`,
+            level3: `Tuliskan keteraturan yang kamu amati: "Saya melihat pola pada ${obj} yaitu..."`,
+            level4: `Seperti deretan ubin lantai yang berjarak rapi atau jarum jam yang berputar teratur, ${obj} juga punya pola lho!`
+          };
+          break;
+        case 'abstraction':
+          stageQuestion = `Bayangkan kamu ingin menceritakan rahasia ${obj} ini kepada temanmu agar dia paham ${mat}! Informasi atau ciri apa yang PALING PENTING untuk dijelaskan, dan detail apa (seperti warna hiasan, bayangan, atau coretan kecil) yang bisa diabaikan dulu?`;
+          tag = 'Memilih Hal yang Paling Penting (Abstraksi)';
+          scaffoldingData = {
+            level1: `Jika kamu membuat sketsa cepat dari ${obj}, bagian mana yang WAJIB digambar agar orang langsung mengenalinya?`,
+            level2: `Informasi apa yang paling berguna untuk materi ${mat}? Jadikan itu sebagai hal terpenting.`,
+            level3: `Sebutkan juga hal yang tidak terlalu berpengaruh (seperti warna latar, bayangan, atau noda debu) yang bisa diabaikan dulu.`,
+            level4: `Seperti denah peta sekolah: hanya menampilkan ruang kelas dan jalan utama, bukan setiap rumput di halaman!`
+          };
+          break;
+        case 'algorithmic_thinking':
+          stageQuestion = `Sekarang giliranmu menyusun jurus langkah! Buatlah urutan langkah-langkah yang rapi dan teratur (Langkah 1, Langkah 2, Langkah 3...) yang bisa kamu atau temanmu ikuti untuk menyelesaikan tantangan atau memahami cara kerja ${obj} ini dari awal sampai berhasil!`;
+          tag = 'Menyusun Langkah 1, 2, 3 (Algoritma)';
+          scaffoldingData = {
+            level1: `Tentukan hal pertama yang harus dilakukan: "Langkah 1: Mulai dengan..."`,
+            level2: `Lalu apa langkah berikutnya? Urutkan tindakan secara logis sampai selesai.`,
+            level3: `Tuliskan urutannya: Langkah 1: ..., Langkah 2: ..., Langkah 3: ...`,
+            level4: `Seperti resep memasak telur dadar: pecahkan telur -> kocok dengan bumbu -> tuang ke wajan panas!`
+          };
+          break;
+      }
+
       // Check if provided questions already have an item matching this stage
-      const existing = questions.find(
-        (q) => q.stage === stageCfg.id || (idx === 0 && q.stage === 'challenge') || (idx === 5 && q.stage === 'evidence') || (idx === 6 && q.stage === 'reasoning')
-      );
+      const existing = questions.find((q) => q.stage === stageCfg.id);
 
       if (existing) {
+        const isPlaceholderOrGeneric =
+          !existing.question ||
+          existing.question.toLowerCase().includes('pertanyaan ramah anak') ||
+          existing.question.trim().length < 20;
+
         return {
           ...existing,
           stage: stageCfg.id,
           title: existing.title || stageCfg.title,
-          question: existing.question || stageCfg.guidingPrompt,
-          conceptTag: existing.conceptTag || stageCfg.title
+          question: isPlaceholderOrGeneric ? stageQuestion : existing.question,
+          conceptTag: existing.conceptTag || tag,
+          scaffolding: existing.scaffolding || scaffoldingData
         };
-      }
-
-      // Generate contextual question matching the object & material
-      let stageQuestion = stageCfg.guidingPrompt;
-      let tag = stageCfg.title;
-      const obj = learningBridge.detectedObject || 'objek yang diamati';
-      const mat = learningBridge.material || 'materi pembelajaran';
-
-      switch (stageCfg.id) {
-        case 'real_problem':
-          stageQuestion = `Berdasarkan pengamatan pada foto ${obj}, jelaskan masalah nyata atau kebutuhan apa di lingkungan sekolah/sehari-hari yang ingin kamu pecahkan menggunakan konsep ${mat}!`;
-          tag = 'Identifikasi Masalah Autentik';
-          break;
-        case 'ask_inquire':
-          stageQuestion = `Apa pertanyaan penyelidikan utama yang kamu ajukan? Informasi, data angka, atau konsep apa saja yang kamu perlukan dari materi ${mat}?`;
-          tag = 'Inkuiri & Eksplorasi Konsep';
-          break;
-        case 'design_solution':
-          stageQuestion = `Rancanglah ide solusi atau strategi logis untuk menyelesaikan masalah pada ${obj}. Bagaimana rencana langkah demi langkah yang kamu susun?`;
-          tag = 'Rancangan Solusi Kritis';
-          break;
-        case 'prototype':
-          stageQuestion = `Bagaimana kamu mewujudkan solusi tersebut ke dalam bentuk produk nyata, model matematis, skema kerja, atau prototipe sederhana?`;
-          tag = 'Pembuatan Prototipe/Model';
-          break;
-        case 'testing':
-          stageQuestion = `Lakukan pengujian terhadap prototipe atau model solusimu! Bagaimana kamu menguji ketepatan dan efektivitasnya dalam memecahkan masalah?`;
-          tag = 'Uji Coba & Eksperimen';
-          break;
-        case 'data_analysis':
-          stageQuestion = `Berdasarkan hasil pengujian, tuliskan data angka, hasil hitung, atau bukti observasi yang kamu peroleh. Apa makna data tersebut?`;
-          tag = 'Analisis Data & Bukti';
-          break;
-        case 'improvement':
-          stageQuestion = `Apakah ada kendala saat pengujian? Apa ide perbaikan atau penyempurnaan (iterasi) yang kamu lakukan agar solusimu lebih optimal?`;
-          tag = 'Evaluasi & Iterasi Desain';
-          break;
-        case 'communication':
-          stageQuestion = `Rangkum kesimpulan akhir dari proyek STEM ini! Apa pesan kunci dan manfaat solusi yang siap kamu sampaikan ke teman-teman di kelas?`;
-          tag = 'Komunikasi Hasil & Presentasi';
-          break;
       }
 
       return {
@@ -141,12 +185,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
         question: stageQuestion,
         inputType: 'text',
         conceptTag: tag,
-        scaffolding: {
-          level1: `Petunjuk Awal: Fokus pada ${stageCfg.title.toLowerCase()} dari objek ${obj}. Apa yang terlihat paling jelas?`,
-          level2: `Pertanyaan Penuntun: Bagaimana konsep ${mat} bisa membantumu di tahap ${stageCfg.title.toLowerCase()} ini?`,
-          level3: `Langkah Kecil: Tuliskan satu poin utama dulu, lalu tambahkan penjelasan alasan secara teratur.`,
-          level4: `Contoh Sederhana: Bayangkan kamu sedang menceritakan ide ${stageCfg.title.toLowerCase()} ini kepada teman sebangkumu.`
-        }
+        scaffolding: scaffoldingData
       };
     });
   }, [questions, learningBridge]);
@@ -156,22 +195,14 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
 
   const getStageIcon = (stageId: STEMStage, className = 'w-4 h-4') => {
     switch (stageId) {
-      case 'real_problem':
-        return <Globe className={className} />;
-      case 'ask_inquire':
-        return <Search className={className} />;
-      case 'design_solution':
-        return <PenTool className={className} />;
-      case 'prototype':
-        return <Wrench className={className} />;
-      case 'testing':
-        return <FlaskConical className={className} />;
-      case 'data_analysis':
-        return <BarChart2 className={className} />;
-      case 'improvement':
-        return <RefreshCw className={className} />;
-      case 'communication':
-        return <Megaphone className={className} />;
+      case 'decomposition':
+        return <Layers className={className} />;
+      case 'pattern_recognition':
+        return <LayoutGrid className={className} />;
+      case 'abstraction':
+        return <Filter className={className} />;
+      case 'algorithmic_thinking':
+        return <ListOrdered className={className} />;
       default:
         return <Brain className={className} />;
     }
@@ -380,32 +411,24 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
       setShowScaffolding(false);
       setCurrentScaffoldLevel(1);
     } else {
-      // Completed all 8 STEM questions -> submit structured response
-      const rp = stemAnswers.real_problem.trim() || 'Identifikasi masalah nyata pada objek foto.';
-      const ai = stemAnswers.ask_inquire.trim() || 'Pertanyaan penyelidikan dan pengumpulan informasi konsep.';
-      const ds = stemAnswers.design_solution.trim() || 'Rancangan rencana solusi terstruktur.';
-      const pt = stemAnswers.prototype.trim() || 'Pembuatan model atau prototipe solusi.';
-      const ts = stemAnswers.testing.trim() || 'Uji coba prototipe sesuai kriteria.';
-      const da = stemAnswers.data_analysis.trim() || 'Analisis data kuantitatif dan bukti pengujian.';
-      const im = stemAnswers.improvement.trim() || 'Penyempurnaan dan perbaikan iteratif prototipe.';
-      const cm = stemAnswers.communication.trim() || 'Kesimpulan dan pesan presentasi untuk kelas.';
+      // Completed all 4 CT questions -> submit structured response
+      const dec = stemAnswers.decomposition.trim() || 'Memecah masalah besar.';
+      const pat = stemAnswers.pattern_recognition.trim() || 'Mengenali pola berulang.';
+      const abs = stemAnswers.abstraction.trim() || 'Menyaring informasi penting.';
+      const alg = stemAnswers.algorithmic_thinking.trim() || 'Membuat langkah sistematis.';
 
       const formattedAnswers: StudentAnswers = {
-        // 8 STEM stages
-        realProblem: rp,
-        askInquire: ai,
-        designSolution: ds,
-        prototype: pt,
-        testing: ts,
-        dataAnalysis: da,
-        improvement: im,
-        communication: cm,
+        // 4 CT stages
+        decomposition: dec,
+        patternRecognition: pat,
+        abstraction: abs,
+        algorithmicThinking: alg,
         // Compatibility fields
-        challengeAnswer: `${rp} | Solusi: ${ds}`,
-        reason: `${ai} | Evaluasi: ${im}`,
-        evidence: `${da} | Pengujian: ${ts}`,
-        strategy: ds,
-        conclusion: cm
+        challengeAnswer: `${dec} | Pola: ${pat}`,
+        reason: `${abs} | Langkah: ${alg}`,
+        evidence: `${dec}`,
+        strategy: `${alg}`,
+        conclusion: `${alg}`
       };
 
       onCompleteChallenge(formattedAnswers, scaffoldingHistory);
@@ -418,7 +441,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6 text-left">
-      {/* 8-Step STEM Workflow Stepper Bar with interactive cards and connecting arrows */}
+      {/* 4-Step Computational Thinking Workflow Stepper Bar with interactive cards and connecting arrows */}
       <div className="bg-gradient-to-b from-white to-blue-50/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-indigo-200/90 shadow-sm space-y-4 sm:space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
           <div className="flex items-center gap-3">
@@ -429,10 +452,10 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-indigo-900 bg-indigo-100 px-2.5 py-0.5 rounded-lg flex items-center gap-1 border border-indigo-200 shadow-2xs">
                   <Compass className="w-3.5 h-3.5 text-indigo-600" />
-                  Alur Berpikir STEM 8-Langkah 🚀
+                  4 Langkah Berpikir Komputasional 🚀
                 </span>
                 <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
-                  Tahap {currentStepIndex + 1} dari 8
+                  Langkah {currentStepIndex + 1} dari {stemQuestions.length}
                 </span>
               </div>
               <h2 className="text-base sm:text-xl font-black text-[#1E293B] font-display flex items-center gap-1.5 truncate mt-0.5">
@@ -445,7 +468,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
           <div className="flex items-center gap-2 self-start sm:self-center">
             <span className="text-[11px] sm:text-xs font-black text-emerald-800 bg-emerald-100/90 px-3 py-1.5 rounded-xl border border-emerald-300 flex items-center gap-1.5 shadow-2xs">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>{answeredCount}/8 Selesai ✨</span>
+              <span>{answeredCount}/{stemQuestions.length} Selesai ✨</span>
             </span>
           </div>
         </div>
@@ -462,7 +485,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
         <div className="bg-blue-50/80 border border-blue-200 px-3.5 py-2 rounded-xl flex items-center justify-between text-[11px] text-blue-900 font-semibold">
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-            <span>Klik kartu tahap untuk melihat <strong>Petunjuk & Panduan Kegiatan</strong> lengkap!</span>
+            <span>Klik kartu langkah untuk melihat <strong>Petunjuk & Panduan Objek</strong> lebih lengkap!</span>
           </div>
           <span className="text-[10px] bg-white px-2 py-0.5 rounded-md font-bold text-blue-700 border border-blue-200 hidden sm:inline">
             Interactive Flow
@@ -569,7 +592,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                       </div>
 
                       <p className="text-[10px] text-slate-500 line-clamp-2 leading-tight">
-                        {stage.description}
+                        {getStageContextualDescription(stage.id, learningBridge.detectedObject, learningBridge.material)}
                       </p>
                     </div>
 
@@ -583,7 +606,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                         }`}
                       >
                         <Lightbulb className="w-3 h-3 text-amber-500 shrink-0" />
-                        <span>Petunjuk & Kegiatan</span>
+                        <span>Petunjuk & Panduan</span>
                       </button>
                       <ChevronRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
                     </div>
@@ -613,7 +636,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
         </div>
       </div>
 
-      {/* POPUP MODAL: Detail Kegiatan & Petunjuk Tahap STEM */}
+      {/* POPUP MODAL: Detail Kegiatan & Petunjuk Tahap Berpikir Komputasional */}
       {selectedStageModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border-2 border-indigo-200 overflow-hidden max-h-[90vh] flex flex-col text-left">
@@ -625,7 +648,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/25 text-white inline-block">
-                    Tahap {selectedStageModal.index + 1} dari 8 STEM
+                    Langkah {selectedStageModal.index + 1} dari {stemQuestions.length} Berpikir Komputasional
                   </span>
                   <h3 className="text-lg sm:text-xl font-black font-display text-white mt-0.5">
                     {selectedStageModal.stage.title}
@@ -644,26 +667,55 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
 
             {/* Modal Body with Instructions, Guiding Questions, and Concrete Examples */}
             <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-800">
-              {/* 1. Deskripsi & Tujuan Kegiatan */}
+              {/* 1. Deskripsi & Tujuan Kegiatan Kontekstual */}
               <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-100 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-indigo-950 font-black">
                   <Target className="w-4 h-4 text-indigo-600 shrink-0" />
-                  <span>🎯 Tujuan Kegiatan Tahap Ini:</span>
+                  <span>🎯 Misi Penyelidikan di Langkah Ini:</span>
                 </div>
                 <p className="text-slate-700 leading-relaxed font-medium">
-                  {selectedStageModal.stage.description}
+                  {getStageContextualDescription(selectedStageModal.stage.id, learningBridge.detectedObject, learningBridge.material)}
                 </p>
               </div>
 
               {/* 2. Hubungan dengan Objek Foto yang Diamati */}
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                <img
-                  src={photoUrl}
-                  alt="Objek foto"
-                  className="w-16 h-16 rounded-xl object-cover border border-slate-300 shrink-0 shadow-2xs"
-                />
-                <div className="space-y-0.5 min-w-0">
-                  <span className="text-[10px] font-black uppercase text-blue-700 block">Konteks Nyata Objek Foto:</span>
+                <div
+                  onClick={() => setIsPhotoZoomOpen(true)}
+                  className="group relative cursor-pointer overflow-hidden rounded-xl border-2 border-slate-300 hover:border-blue-500 shrink-0 shadow-2xs transition-all w-16 h-16 bg-slate-900"
+                  title="Klik untuk memperbesar foto objek"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setIsPhotoZoomOpen(true);
+                    }
+                  }}
+                >
+                  <img
+                    src={photoUrl}
+                    alt="Objek foto"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                    <ZoomIn className="w-5 h-5 drop-shadow" />
+                  </div>
+                  <div className="absolute bottom-0.5 right-0.5 bg-blue-600/90 text-white p-0.5 rounded text-[8px] flex items-center shadow-xs">
+                    <ZoomIn className="w-2.5 h-2.5" />
+                  </div>
+                </div>
+                <div className="space-y-0.5 min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-black uppercase text-blue-700 block">Konteks Nyata Objek Foto:</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsPhotoZoomOpen(true)}
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5 hover:underline cursor-pointer"
+                    >
+                      <ZoomIn className="w-3 h-3" />
+                      <span>Zoom Foto</span>
+                    </button>
+                  </div>
                   <h5 className="font-extrabold text-[#1E293B] truncate">{learningBridge.detectedObject}</h5>
                   <p className="text-xs text-slate-600 line-clamp-2">
                     Materi: <strong>{learningBridge.material}</strong> ({learningBridge.subject})
@@ -676,7 +728,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-amber-950 font-black">
                     <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>❓ Pertanyaan Pemantik Penyelidikan:</span>
+                    <span>❓ Pertanyaan Pemantik untuk Kamu:</span>
                   </div>
                   <button
                     type="button"
@@ -705,7 +757,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                 <ul className="space-y-1.5 text-xs text-purple-900 font-medium">
                   <li className="flex items-start gap-1.5">
                     <span className="text-purple-600 font-bold">•</span>
-                    <span>{selectedStageModal.question.scaffolding?.level1 || 'Fokus pada fakta nyata objek.'}</span>
+                    <span>{selectedStageModal.question.scaffolding?.level1 || 'Fokus pada fakta nyata objek di foto.'}</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-purple-600 font-bold">•</span>
@@ -772,21 +824,58 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
 
       {/* Main STEM Question Card with Photo Context */}
       <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border-2 border-slate-200 shadow-md space-y-5 sm:space-y-6">
-        {/* Context Photo Strip */}
+        {/* Context Photo Strip with Click-to-Zoom */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3.5 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50/60 rounded-2xl border-2 border-blue-100">
-          <img
-            src={photoUrl}
-            alt="Objek kontekstual"
-            className="w-full sm:w-20 h-36 sm:h-20 rounded-xl sm:rounded-2xl object-cover border-2 border-blue-200 shrink-0 shadow-xs"
-          />
-          <div className="space-y-1 text-xs sm:text-sm text-slate-800 leading-snug">
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span className="font-extrabold text-[#1E293B]">
-                📸 Objek Foto: {learningBridge.detectedObject}
+          <div
+            onClick={() => setIsPhotoZoomOpen(true)}
+            className="group relative cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl border-2 border-blue-300 hover:border-blue-500 shadow-sm hover:shadow-md transition-all shrink-0 w-full sm:w-28 h-36 sm:h-24 bg-slate-900"
+            title="Klik untuk memperbesar foto objek agar dapat diamati dengan jelas"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                setIsPhotoZoomOpen(true);
+              }
+            }}
+          >
+            <img
+              src={photoUrl}
+              alt="Objek kontekstual"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            {/* Hover overlay hint */}
+            <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white p-1 text-center">
+              <ZoomIn className="w-6 h-6 text-white drop-shadow-md animate-pulse" />
+              <span className="text-[10px] font-black bg-blue-600/90 px-2 py-0.5 rounded-full shadow-xs">
+                Klik untuk Zoom 🔍
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-200 text-blue-900 border border-blue-300">
-                {learningBridge.material}
-              </span>
+            </div>
+            {/* Corner permanent badge so kids immediately see it's clickable */}
+            <div className="absolute bottom-1.5 right-1.5 bg-blue-600/95 hover:bg-blue-700 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-md border border-white/20 backdrop-blur-xs">
+              <ZoomIn className="w-3 h-3" />
+              <span>Zoom Foto</span>
+            </div>
+          </div>
+
+          <div className="space-y-1.5 text-xs sm:text-sm text-slate-800 leading-snug flex-1 w-full">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span className="font-extrabold text-[#1E293B] text-sm sm:text-base">
+                  📸 Objek Foto: {learningBridge.detectedObject}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-200 text-blue-900 border border-blue-300">
+                  {learningBridge.material}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPhotoZoomOpen(true)}
+                className="px-2.5 py-1 rounded-xl bg-white border-2 border-blue-300 text-blue-700 hover:bg-blue-50 text-[11px] font-extrabold inline-flex items-center gap-1.5 transition shadow-2xs hover:shadow-xs cursor-pointer ml-auto"
+                title="Perbesar foto objek agar dapat diamati secara detail"
+              >
+                <ZoomIn className="w-3.5 h-3.5 text-blue-600" />
+                <span>🔍 Amati Foto Jelas</span>
+              </button>
             </div>
             <p className="text-slate-600 text-xs font-medium">
               {learningBridge.learningBridge}
@@ -795,7 +884,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
         </div>
 
         {/* Question Text Box with Stage Explainer */}
-        <div className="bg-gradient-to-br from-indigo-50 via-purple-50/60 to-blue-50/70 p-4 sm:p-6 rounded-2xl border-2 border-indigo-200 space-y-2.5 sm:space-y-3 relative shadow-xs">
+        <div className="bg-gradient-to-br from-indigo-50 via-purple-50/60 to-blue-50/70 p-4 sm:p-6 rounded-2xl border-2 border-indigo-200 space-y-3.5 relative shadow-xs">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-indigo-900 bg-indigo-200/90 px-3 py-1 rounded-lg flex items-center gap-1.5 border border-indigo-300">
               {getStageIcon(activeStageConfig.id, 'w-3.5 h-3.5')}
@@ -822,11 +911,31 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
             </div>
           </div>
 
-          <p className="text-sm sm:text-lg font-bold text-[#1E293B] leading-relaxed">
-            {activeQuestion.question}
-          </p>
+          {/* Child-friendly Contextual Mission Box */}
+          <div className="p-3 sm:p-3.5 rounded-xl bg-white/90 border border-indigo-200 flex items-start gap-2.5 shadow-2xs text-xs sm:text-sm">
+            <span className="text-lg shrink-0 mt-0.5">🎯</span>
+            <div className="space-y-0.5">
+              <span className="font-extrabold text-indigo-950 block text-[11px] uppercase tracking-wide">
+                Misi Penyelidikan di Langkah Ini:
+              </span>
+              <p className="text-slate-700 leading-relaxed font-medium">
+                {getStageContextualDescription(activeStageConfig.id, learningBridge.detectedObject, learningBridge.material)}
+              </p>
+            </div>
+          </div>
 
-          <div className="pt-1.5 border-t border-indigo-200/70 flex items-center gap-1.5 text-xs text-indigo-900 font-semibold">
+          {/* Main Question Box */}
+          <div className="p-3.5 sm:p-4 rounded-xl bg-white border-2 border-indigo-200 shadow-2xs space-y-1.5">
+            <span className="text-[10px] sm:text-[11px] font-black uppercase text-indigo-700 tracking-wider flex items-center gap-1">
+              <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+              Pertanyaan Eksplorasi untuk Kamu:
+            </span>
+            <p className="text-sm sm:text-base font-extrabold text-[#1E293B] leading-relaxed">
+              {activeQuestion.question}
+            </p>
+          </div>
+
+          <div className="pt-1 border-t border-indigo-200/70 flex items-center gap-1.5 text-xs text-indigo-900 font-semibold">
             <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
             <span className="leading-snug">{activeStageConfig.microcopy}</span>
           </div>
@@ -837,7 +946,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
           <label className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <PenTool className="w-4 h-4 text-blue-600" />
-              Ide & Pemikiranmu:
+              Tanggapan & Hasil Pemikiranmu:
             </span>
             <span className="text-[11px] text-slate-500 font-medium">
               {currentAnswerValue.length} karakter
@@ -934,14 +1043,23 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
             >
               <span className="truncate">
                 {currentStepIndex < stemQuestions.length - 1
-                  ? `Lanjut Tahap ${currentStepIndex + 2}: ${STEM_STAGES_CONFIG[currentStepIndex + 1]?.title}`
-                  : 'Selesai 8 Tahap & Refleksi'}
+                  ? `Lanjut Langkah ${currentStepIndex + 2}: ${STEM_STAGES_CONFIG[currentStepIndex + 1]?.title}`
+                  : 'Selesai 4 Langkah & Lanjut Refleksi 🎉'}
               </span>
               <ArrowRight className="w-4 h-4 shrink-0" />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Interactive Photo Zoom Lightbox Modal */}
+      <PhotoZoomModal
+        isOpen={isPhotoZoomOpen}
+        onClose={() => setIsPhotoZoomOpen(false)}
+        photoUrl={photoUrl}
+        title={`📸 Mengamati Objek: ${learningBridge.detectedObject || 'Foto Objek'}`}
+        subtitle={`Materi Pelajaran: ${learningBridge.material || 'STEM'} (${learningBridge.subject || 'Sains'})`}
+      />
     </div>
   );
 };

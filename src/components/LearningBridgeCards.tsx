@@ -12,8 +12,10 @@ import {
   Sparkles,
   CheckCircle2,
   PenTool,
-  AlertCircle
+  AlertCircle,
+  ZoomIn
 } from 'lucide-react';
+import { PhotoZoomModal } from './PhotoZoomModal';
 
 interface LearningBridgeCardsProps {
   bridgeResult: AILearningBridgeResult;
@@ -31,8 +33,9 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
   onRetakePhoto
 }) => {
   const [isMaterialExpanded, setIsMaterialExpanded] = useState(false);
-  const [pemantikAnswer, setPemantikAnswer] = useState('');
+  const [answersByQuestion, setAnswersByQuestion] = useState<Record<number, string>>({});
   const [showValidationWarning, setShowValidationWarning] = useState(false);
+  const [isPhotoZoomOpen, setIsPhotoZoomOpen] = useState(false);
 
   // Parse student observation from combined imageLabel if available
   let studentObs: string | null = null;
@@ -85,34 +88,78 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
         'Apa pola menarik yang kamu amati dan bisa kamu simpulkan?'
       ];
 
-  const isPemantikFilled = pemantikAnswer.trim().length >= 3;
+  const filledCount = questionsList.filter((_, idx) => (answersByQuestion[idx] || '').trim().length >= 3).length;
+  const isPemantikFilled = filledCount === questionsList.length && questionsList.length > 0;
+
+  const handleAnswerChange = (index: number, value: string) => {
+    setAnswersByQuestion((prev) => ({
+      ...prev,
+      [index]: value
+    }));
+    if (showValidationWarning) {
+      const allFilled = questionsList.every((_, idx) => {
+        const val = idx === index ? value : (answersByQuestion[idx] || '');
+        return val.trim().length >= 3;
+      });
+      if (allFilled) {
+        setShowValidationWarning(false);
+      }
+    }
+  };
 
   const handleAttemptStartChallenge = () => {
     if (!isPemantikFilled) {
       setShowValidationWarning(true);
-      const inputEl = document.getElementById('pemantik-answer-input');
-      if (inputEl) {
-        inputEl.focus();
-        inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const firstUnfilledIdx = questionsList.findIndex((_, idx) => (answersByQuestion[idx] || '').trim().length < 3);
+      if (firstUnfilledIdx !== -1) {
+        const inputEl = document.getElementById(`pemantik-answer-input-${firstUnfilledIdx}`);
+        if (inputEl) {
+          inputEl.focus();
+          inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
       return;
     }
     setShowValidationWarning(false);
-    onStartChallenge(pemantikAnswer.trim());
+    const combinedResponse = questionsList
+      .map((q, idx) => `${idx + 1}. ${q}\nJawaban: ${(answersByQuestion[idx] || '').trim()}`)
+      .join('\n\n');
+    onStartChallenge(combinedResponse);
   };
 
   return (
     <div className="space-y-5 sm:space-y-6 max-w-4xl mx-auto text-left">
       {/* Top Banner with Photo & Object Detected */}
       <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center gap-4 sm:gap-5 relative">
-        <div className="relative w-full md:w-56 h-48 sm:h-44 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 shrink-0 border border-slate-200 shadow-inner">
+        <div
+          onClick={() => setIsPhotoZoomOpen(true)}
+          className="group relative w-full md:w-56 h-48 sm:h-44 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 shrink-0 border-2 border-slate-200 hover:border-blue-400 shadow-inner cursor-pointer transition-all"
+          title="Klik untuk memperbesar foto objek"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              setIsPhotoZoomOpen(true);
+            }
+          }}
+        >
           <img
             src={photoUrl}
             alt={bridgeResult.detectedObject}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
           <div className="absolute top-2 left-2 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-xs text-[10px] font-bold text-white">
             Foto Pengamatan
+          </div>
+          <div className="absolute inset-0 bg-slate-950/35 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white">
+            <ZoomIn className="w-6 h-6 drop-shadow animate-pulse" />
+            <span className="text-[10px] font-black bg-blue-600/90 px-2 py-0.5 rounded-full shadow-xs">
+              Klik untuk Zoom 🔍
+            </span>
+          </div>
+          <div className="absolute bottom-2 right-2 bg-blue-600/90 hover:bg-blue-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-md border border-white/20 backdrop-blur-xs">
+            <ZoomIn className="w-3 h-3" />
+            <span>Zoom Foto</span>
           </div>
         </div>
 
@@ -309,9 +356,9 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
           </div>
         )}
 
-        {/* Card: 💡 Pertanyaan Pematik untuk Murid (Wajib Diisi) */}
-        <div className={`bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border ${showValidationWarning && !isPemantikFilled ? 'border-rose-400 ring-2 ring-rose-200 bg-rose-50/20' : 'border-amber-300'} shadow-sm hover:shadow-md transition-all space-y-3 sm:space-y-4 md:col-span-2`}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        {/* Card: 💡 Pertanyaan Pemantik untuk Murid (Wajib Diisi - Masing-masing Pertanyaan Memiliki Kolom Tanggapan Sendiri) */}
+        <div className={`bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border ${showValidationWarning && !isPemantikFilled ? 'border-rose-400 ring-2 ring-rose-200 bg-rose-50/20' : 'border-amber-300'} shadow-sm hover:shadow-md transition-all space-y-4 md:col-span-2`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                 <Sparkles className="w-5 h-5" />
@@ -320,76 +367,122 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
                 <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase flex items-center gap-2">
                   💡 Pertanyaan Pemantik Murid
                 </h3>
-                <p className="text-[10px] sm:text-[11px] text-amber-700 font-semibold">Pancingan rasa ingin tahu & eksplorasi konsep</p>
+                <p className="text-[10px] sm:text-[11px] text-amber-700 font-semibold">
+                  Pancingan rasa ingin tahu & eksplorasi konsep — Isi tanggapan pada masing-masing pertanyaan
+                </p>
               </div>
             </div>
 
-            <div className="shrink-0">
+            <div className="shrink-0 flex items-center gap-2">
               {isPemantikFilled ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  Sudah Diisi
+                  Sudah Diisi ({filledCount}/{questionsList.length})
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
-                  Wajib Diisi
+                  Wajib Diisi ({filledCount}/{questionsList.length})
                 </span>
               )}
             </div>
           </div>
 
-          {/* List of Guiding Questions */}
-          <div className="space-y-2 bg-amber-50/60 p-3.5 sm:p-4 rounded-2xl border border-amber-200/80">
-            <span className="text-[10px] sm:text-[11px] font-extrabold text-amber-900 uppercase tracking-wider block">
-              Pertanyaan yang Perlu Kamu Renungkan:
-            </span>
-            <div className="space-y-2">
-              {questionsList.map((q, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-xs sm:text-sm text-slate-800 font-medium">
-                  <span className="w-5 h-5 rounded-full bg-amber-500 text-white font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                    {idx + 1}
-                  </span>
-                  <p className="leading-relaxed">"{q}"</p>
+          {/* List of Questions with Individual Response Column per Question */}
+          <div className="space-y-4 pt-1">
+            {questionsList.map((questionText, idx) => {
+              const currentVal = answersByQuestion[idx] || '';
+              const isItemFilled = currentVal.trim().length >= 3;
+              const isItemWarning = showValidationWarning && !isItemFilled;
+
+              return (
+                <div
+                  key={idx}
+                  className={`p-3.5 sm:p-5 rounded-2xl border transition-all space-y-3 ${
+                    isItemWarning
+                      ? 'border-rose-400 bg-rose-50/40 ring-1 ring-rose-200'
+                      : isItemFilled
+                      ? 'border-emerald-200 bg-emerald-50/20'
+                      : 'border-amber-200/90 bg-amber-50/40'
+                  }`}
+                >
+                  {/* Pertanyaan Header & Text */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-900 font-medium">
+                      <span className="w-6 h-6 rounded-full bg-amber-500 text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                        {idx + 1}
+                      </span>
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block">
+                          Pertanyaan {idx + 1}:
+                        </span>
+                        <p className="leading-relaxed font-bold text-slate-800 text-xs sm:text-sm">
+                          "{questionText}"
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                      {isItemFilled ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-300">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Terjawab
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                          Belum Diisi
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Individual Textarea Input for this Question */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <label
+                        htmlFor={`pemantik-answer-input-${idx}`}
+                        className="flex items-center gap-1.5 font-bold text-slate-700 text-[11px] sm:text-xs"
+                      >
+                        <PenTool className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>Kolom Tanggapan Pertanyaan {idx + 1}:</span>
+                        <span className="text-rose-600 font-extrabold">*</span>
+                      </label>
+                      <span className="text-[11px] font-normal text-slate-400">
+                        {currentVal.length} karakter
+                      </span>
+                    </div>
+
+                    <textarea
+                      id={`pemantik-answer-input-${idx}`}
+                      rows={2}
+                      value={currentVal}
+                      onChange={(e) => handleAnswerChange(idx, e.target.value)}
+                      placeholder={`Ketikkan tanggapan atau jawabanmu untuk pertanyaan ${idx + 1} di sini...`}
+                      className={`w-full p-3 text-xs sm:text-sm text-slate-800 bg-white rounded-xl border ${
+                        isItemWarning
+                          ? 'border-rose-400 focus:ring-2 focus:ring-rose-200'
+                          : 'border-slate-300 focus:border-[#4F8EF7] focus:ring-2 focus:ring-blue-100'
+                      } outline-none transition-all placeholder:text-slate-400 shadow-2xs`}
+                    />
+
+                    {isItemWarning && (
+                      <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1 pt-0.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        Tanggapan pertanyaan {idx + 1} wajib diisi minimal 3 karakter.
+                      </p>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Interactive Mandatory Response Field */}
-          <div className="space-y-1.5 pt-1">
-            <label htmlFor="pemantik-answer-input" className="flex items-center justify-between text-xs font-bold text-slate-800">
-              <span className="flex items-center gap-1.5 text-slate-800">
-                <PenTool className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                Tanggapan Pertanyaan Pemantik:
-                <span className="text-rose-600 font-extrabold">*</span>
-              </span>
-              <span className="text-[11px] font-normal text-slate-400">
-                {pemantikAnswer.length} karakter
-              </span>
-            </label>
-
-            <textarea
-              id="pemantik-answer-input"
-              rows={3}
-              value={pemantikAnswer}
-              onChange={(e) => {
-                setPemantikAnswer(e.target.value);
-                if (showValidationWarning && e.target.value.trim().length >= 3) {
-                  setShowValidationWarning(false);
-                }
-              }}
-              placeholder="Ketikkan pemikiran atau jawabanmu mengenai pertanyaan pemantik di atas..."
-              className={`w-full p-3.5 text-xs sm:text-sm text-slate-800 bg-white rounded-2xl border ${showValidationWarning && !isPemantikFilled ? 'border-rose-400 focus:ring-2 focus:ring-rose-200' : 'border-slate-300 focus:border-[#4F8EF7] focus:ring-2 focus:ring-blue-100'} outline-none transition-all placeholder:text-slate-400`}
-            />
-
-            {showValidationWarning && !isPemantikFilled && (
-              <p className="text-xs font-bold text-rose-600 flex items-center gap-1.5 pt-0.5">
-                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                Pertanyaan pemantik wajib diisi terlebih dahulu sebelum memulai tantangan.
-              </p>
-            )}
-          </div>
+          {showValidationWarning && !isPemantikFilled && (
+            <p className="text-xs font-bold text-rose-600 flex items-center gap-1.5 pt-1">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              Mohon lengkapi tanggapan untuk seluruh pertanyaan pemantik di atas ({filledCount}/{questionsList.length} terisi).
+            </p>
+          )}
         </div>
       </div>
 
@@ -417,11 +510,20 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
           </button>
           {!isPemantikFilled && (
             <span className="text-[11px] text-amber-700 font-medium text-center sm:text-right w-full">
-              * Isi pertanyaan pemantik di atas untuk membuka tombol
+              * Isi seluruh kolom tanggapan pertanyaan pemantik ({filledCount}/{questionsList.length}) untuk membuka tombol
             </span>
           )}
         </div>
       </div>
+
+      {/* Interactive Photo Zoom Lightbox Modal */}
+      <PhotoZoomModal
+        isOpen={isPhotoZoomOpen}
+        onClose={() => setIsPhotoZoomOpen(false)}
+        photoUrl={photoUrl}
+        title={`📸 Mengamati Objek: ${bridgeResult.detectedObject || 'Foto Objek'}`}
+        subtitle={`Kategori: ${bridgeResult.material || 'STEM'} • Alasan: ${bridgeResult.compatibilityReason || ''}`}
+      />
     </div>
   );
 };

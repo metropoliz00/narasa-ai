@@ -75,114 +75,58 @@ export const AIClientService = {
         questions: [
           {
             id: 'q-fb-1',
-            stage: 'real_problem',
-            title: '1. Masalah Nyata',
-            question: `Berdasarkan objek ${objectHint || 'yang kamu amati'}, temukan masalah nyata atau tantangan menarik di sekitarmu yang berkaitan dengan materi ${mission.material}!`,
+            stage: 'decomposition',
+            title: '1. Dekomposisi (Membongkar Bagian Objek)',
+            question: `Yuk amati foto ${objectHint || 'objek yang kamu foto'} dengan teliti! Apa saja bagian-bagian atau benda penting yang kamu lihat menyusun ${objectHint || 'objek ini'}? Coba ceritakan apa fungsi atau peran masing-masing bagian tersebut!`,
             inputType: 'text',
-            conceptTag: 'Masalah Autentik',
+            conceptTag: 'Membongkar Bagian Objek (Dekomposisi)',
             scaffolding: {
-              level1: 'Amati kembali foto dengan teliti. Apa situasi atau masalah nyata yang terlihat?',
-              level2: 'Kaitkan situasi tersebut dengan materi yang telah diajarkan guru di kelas.',
-              level3: 'Pecah menjadi langkah: Tuliskan informasi apa yang terjadi dan mengapa ini penting dipecahkan.',
-              level4: 'Bayangkan kejadian sehari-hari yang membutuhkan keteraturan atau pembagian.'
+              level1: 'Amati foto dari atas ke bawah: sebutkan setidaknya 2 atau 3 bagian yang berbeda!',
+              level2: 'Kaitkan bagian-bagian tersebut dengan materi pelajaran di kelas.',
+              level3: 'Pecah jadi poin: 1) Bagian pertama adalah... fungsinya untuk..., 2) Bagian kedua...',
+              level4: 'Seperti merakit mainan lego: setiap balok kecil punya tempat dan tugasnya sendiri!'
             }
           },
           {
             id: 'q-fb-2',
-            stage: 'ask_inquire',
-            title: '2. Bertanya & Mencari Informasi',
-            question: `Apa pertanyaan penyelidikan utama yang kamu ajukan? Konsep sains, rumus, atau data apa dari materi ${mission.material} yang perlu kamu ketahui?`,
+            stage: 'pattern_recognition',
+            title: '2. Pengenalan Pola (Menemukan Keteraturan)',
+            question: `Perhatikan lebih dekat foto ${objectHint || 'objek ini'}! Adakah bentuk yang berulang, pola susunan teratur, jadwal berkala, atau kemiripan dengan konsep ${mission.material}? Ceritakan pola menarik apa yang kamu temukan!`,
             inputType: 'text',
-            conceptTag: 'Inkuiri & Eksplorasi',
+            conceptTag: 'Menemukan Keteraturan (Pengenalan Pola)',
             scaffolding: {
-              level1: 'Tuliskan satu pertanyaan kunci yang membuatmu penasaran.',
-              level2: 'Sebutkan konsep atau aturan utama yang relevan dari materi guru.',
-              level3: 'Uraikan informasi yang sudah diketahui dan apa yang masih perlu dicari tahu.',
-              level4: 'Contoh: Berapa interval waktu berulang? Atau berapa faktor pembaginya?'
+              level1: 'Cari hal yang berulang atau terjadi terus-menerus pada objek ini.',
+              level2: 'Apakah bentuknya punya pola tertentu atau kejadian yang teratur?',
+              level3: 'Tuliskan persamaan atau keteraturan yang kamu amati: "Polanya adalah..."',
+              level4: 'Seperti detektif yang mencari petunjuk rahasia yang berulang!'
             }
           },
           {
             id: 'q-fb-3',
-            stage: 'design_solution',
-            title: '3. Merancang Solusi',
-            question: 'Rancanglah ide solusi atau strategi berpikir logis untuk menyelesaikan masalah tersebut! Bagaimana rencana kerjamu?',
+            stage: 'abstraction',
+            title: '3. Abstraksi (Memilih Hal yang Paling Penting)',
+            question: `Dari semua informasi yang ada pada foto ${objectHint || 'objek ini'}, informasi atau ciri mana yang paling penting untuk membantu kita memahami ${mission.material}, dan bagian mana yang cuma hiasan atau detail kecil yang bisa kita abaikan dulu?`,
             inputType: 'text',
-            conceptTag: 'Desain Solusi',
+            conceptTag: 'Memilih Hal Penting (Abstraksi)',
             scaffolding: {
-              level1: 'Tuliskan ide utama pemecahan masalahmu.',
-              level2: 'Gunakan langkah terstruktur: Langkah 1, Langkah 2, Langkah 3.',
-              level3: 'Pilih metode yang paling efektif berdasarkan konsep yang dipelajari.',
-              level4: 'Contoh: Menata jadwal bersama atau membuat pola kelompok yang pas.'
+              level1: 'Bayangkan kamu membuat sketsa cepat: bagian mana yang wajib digambar agar orang langsung tahu?',
+              level2: 'Informasi apa yang paling penting untuk materi pelajaranmu?',
+              level3: 'Sebutkan detail yang tidak terlalu penting (seperti warna latar atau goresan kecil) yang bisa diabaikan.',
+              level4: 'Seperti peta rute: kita fokus pada jalan utamanya, bukan pohon di pinggir jalannya!'
             }
           },
           {
             id: 'q-fb-4',
-            stage: 'prototype',
-            title: '4. Membuat Produk/Prototipe',
-            question: 'Bagaimana kamu mewujudkan ide tersebut dalam bentuk produk nyata, model matematis, skema, atau prototipe sederhana?',
+            stage: 'algorithmic_thinking',
+            title: '4. Berpikir Algoritma (Menyusun Langkah 1, 2, 3)',
+            question: `Sekarang giliranmu menyusun jurus langkah! Buatlah urutan langkah-langkah yang rapi dan teratur (Langkah 1, Langkah 2, Langkah 3...) agar kamu atau temanmu bisa menyelesaikan tantangan atau memahami cara kerja ${objectHint || 'objek ini'} dari awal sampai berhasil!`,
             inputType: 'text',
-            conceptTag: 'Realisasi Prototipe',
+            conceptTag: 'Menyusun Langkah 1, 2, 3 (Algoritma)',
             scaffolding: {
-              level1: 'Sebutkan bentuk prototipe yang dibuat (tabel, diagram, model fisik, atau jadwal).',
-              level2: 'Tuliskan bahan atau komponen utama penyusun prototipe.',
-              level3: 'Jelaskan cara membuat atau menyusun model tersebut.',
-              level4: 'Bayangkan membuat bagan sederhana di buku atau peraga mini.'
-            }
-          },
-          {
-            id: 'q-fb-5',
-            stage: 'testing',
-            title: '5. Menguji',
-            question: 'Bagaimana cara kamu menguji prototipe atau model solusimu? Apa kriteria keberhasilan yang kamu periksa?',
-            inputType: 'text',
-            conceptTag: 'Uji Coba & Eksperimen',
-            scaffolding: {
-              level1: 'Lakukan uji coba: apakah solusimu bekerja sesuai harapan?',
-              level2: 'Tentukan tolok ukur pengujian, misalnya ketepatan waktu atau keadilan pembagian.',
-              level3: 'Catat apa yang terjadi saat prototipe/model diuji coba.',
-              level4: 'Uji dengan skenario nyata apakah tidak ada sisa atau keterlambatan.'
-            }
-          },
-          {
-            id: 'q-fb-6',
-            stage: 'data_analysis',
-            title: '6. Menganalisis Data',
-            question: 'Tuliskan data angka, tabel, atau bukti hasil pengujianmu! Bagaimana analisis perhitungan matematikamu?',
-            inputType: 'text',
-            conceptTag: 'Analisis Data & Bukti',
-            scaffolding: {
-              level1: 'Tunjukkan angka atau hasil hitung dari pengujian.',
-              level2: 'Bandingkan data sebelum dan sesudah solusi diterapkan.',
-              level3: 'Tuliskan rumus atau operasi hitung pendukung.',
-              level4: 'Pastikan data membuktikan bahwa masalah nyata telah terpecahkan.'
-            }
-          },
-          {
-            id: 'q-fb-7',
-            stage: 'improvement',
-            title: '7. Memperbaiki',
-            question: 'Apa kelemahan yang ditemukan dari pengujian dan langkah perbaikan (iterasi) apa yang kamu lakukan agar solusi makin sempurna?',
-            inputType: 'text',
-            conceptTag: 'Iterasi & Penyempurnaan',
-            scaffolding: {
-              level1: 'Identifikasi bagian mana yang masih bisa ditingkatkan.',
-              level2: 'Pikirkan cara agar lebih hemat, lebih cepat, atau lebih akurat.',
-              level3: 'Tuliskan perubahan konkret yang kamu buat pada desain.',
-              level4: 'Evaluasi apakah perbaikan membuat hasilnya lebih memuaskan.'
-            }
-          },
-          {
-            id: 'q-fb-8',
-            stage: 'communication',
-            title: '8. Mengomunikasikan Hasil',
-            question: 'Apa kesimpulan akhir dan pesan utama dari proyek STEM ini yang siap kamu bagikan dan presentasikan ke teman-teman?',
-            inputType: 'text',
-            conceptTag: 'Komunikasi & Presentasi',
-            scaffolding: {
-              level1: 'Rangkum manfaat utama dari proyek yang telah kamu kerjakan.',
-              level2: 'Jelaskan bagaimana konsep STEM membantumu menyelesaikan masalah.',
-              level3: 'Siapkan 2-3 poin penting untuk disampaikan di depan kelas.',
-              level4: 'Tutup dengan kalimat ajakan yang ramah dan inspiratif.'
+              level1: 'Tentukan langkah pertama yang harus dilakukan: "Langkah 1: Mulai dengan..."',
+              level2: 'Lalu apa langkah berikutnya? Urutkan sampai tuntas dan berhasil.',
+              level3: 'Tuliskan urutannya: Langkah 1: ..., Langkah 2: ..., Langkah 3: ...',
+              level4: 'Seperti resep memasak yang runtut dari awal sampai makanan siap dinikmati!'
             }
           }
         ]

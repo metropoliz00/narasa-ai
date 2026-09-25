@@ -380,7 +380,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // System config states
-  const [modelName, setModelName] = useState('gemini-3.8-flash');
+  const [modelName, setModelName] = useState('gemini-3.1-flash-lite');
   const [strictnessLevel, setStrictnessLevel] = useState('Strict (Sangat Disiplin Kurikulum)');
   const [scaffoldingSensitivity, setScaffoldingSensitivity] = useState('Tinggi (Responsif 4 Level)');
   const [isSaved, setIsSaved] = useState(false);
@@ -1039,10 +1039,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onChange={(e) => setModelName(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white font-medium outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
-                  <option value="gemini-2.5-flash">Google Gemini 2.5 Flash (Sangat Cepat & Stabil)</option>
-                  <option value="gemini-3.8-flash">Google Gemini 3.8 Flash</option>
+                  <option value="gemini-3.1-flash-lite">Google Gemini 3.1 Flash Lite (Sangat Cepat, Stabil & Tanpa Antre)</option>
                   <option value="gemini-flash-latest">Gemini Flash Latest</option>
-                  <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+                  <option value="gemini-3.8-flash">Google Gemini 3.8 Flash</option>
+                  <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview (Penalaran Kompleks)</option>
                 </select>
                 <p className="text-[10px] text-slate-400">
                   Menangani pengenalan foto objek sekitar anak, analisis pola keteraturan, dan pembentukan soal kontekstual.

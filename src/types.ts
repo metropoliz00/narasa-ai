@@ -93,14 +93,10 @@ export interface ScaffoldingLevels {
 }
 
 export type STEMStage =
-  | 'real_problem' // 1. Masalah nyata
-  | 'ask_inquire' // 2. Bertanya & mencari informasi
-  | 'design_solution' // 3. Merancang solusi
-  | 'prototype' // 4. Membuat produk/prototipe
-  | 'testing' // 5. Menguji
-  | 'data_analysis' // 6. Menganalisis data
-  | 'improvement' // 7. Memperbaiki
-  | 'communication' // 8. Mengomunikasikan hasil
+  | 'decomposition' // 1. Memecah masalah
+  | 'pattern_recognition' // 2. Mengenali pola
+  | 'abstraction' // 3. Menyaring informasi penting
+  | 'algorithmic_thinking' // 4. Membuat langkah sistematis
   | 'challenge'
   | 'reasoning'
   | 'evidence'
@@ -120,92 +116,48 @@ export interface STEMStageDefinition {
 
 export const STEM_STAGES_CONFIG: STEMStageDefinition[] = [
   {
-    id: 'real_problem',
+    id: 'decomposition',
     stepNumber: 1,
-    title: 'Masalah Nyata',
-    badge: 'Tahap 1: Masalah Nyata',
-    iconName: 'Globe',
-    description: 'Mengidentifikasi masalah autentik atau fenomena nyata dari objek yang difoto di lingkungan sekitar.',
-    guidingPrompt: 'Apa masalah nyata atau fenomena menarik yang kamu temukan pada objek ini yang perlu diselesaikan atau dipahami?',
-    placeholder: 'Ceritakan masalah nyata atau kebutuhan yang kamu amati pada objek foto ini...',
-    microcopy: 'Amati objek dengan saksama. Temukan situasi nyata atau tantangan yang membutuhkan penyelidikan!'
+    title: 'Dekomposisi (Membongkar Bagian Objek)',
+    badge: 'Langkah 1: Dekomposisi',
+    iconName: 'Layers',
+    description: 'Seperti membongkar balok mainan lego, kita pisahkan objek fotomu menjadi bagian-bagian yang lebih kecil agar mudah diselidiki fungsi dan perannya satu per satu.',
+    guidingPrompt: 'Yuk amati fotomu baik-baik! Apa saja bagian-bagian atau benda penting yang tampak di fotomu? Coba ceritakan apa fungsi atau tugas masing-masing bagian itu!',
+    placeholder: 'Contoh: Bagian yang saya amati ada 3:\n1) Bagian utama: ... gunanya untuk ...\n2) Bagian pendukung: ... fungsinya ...\n3) Bagian ...',
+    microcopy: '🔍 Amati fotomu! Bongkar jadi bagian-bagian kecil seperti mainan balok agar mudah kamu pahami.'
   },
   {
-    id: 'ask_inquire',
+    id: 'pattern_recognition',
     stepNumber: 2,
-    title: 'Bertanya & Mencari Informasi',
-    badge: 'Tahap 2: Bertanya & Mencari Informasi',
-    iconName: 'Search',
-    description: 'Mengajukan pertanyaan kunci dan mengumpulkan informasi/konsep sains, matematika, atau teknologi yang relevan.',
-    guidingPrompt: 'Apa pertanyaan utama yang muncul dan informasi/konsep apa yang perlu kamu cari tahu untuk memahami masalah tersebut?',
-    placeholder: 'Tuliskan pertanyaan penting dan konsep sains/matematika yang kamu butuhkan...',
-    microcopy: 'Ajukan pertanyaan penyelidikan! Konsep atau rumus apa yang dapat membantumu?'
+    title: 'Pengenalan Pola (Menemukan Keteraturan)',
+    badge: 'Langkah 2: Pengenalan Pola',
+    iconName: 'LayoutGrid',
+    description: 'Menjadi detektif cilik! Kita cari tahu apakah ada bentuk yang berulang, susunan yang berbaris rapi, atau kejadian teratur yang mirip dengan materi pelajaran kita.',
+    guidingPrompt: 'Perhatikan lagi fotomu lebih dekat! Adakah bentuk yang berulang, garis yang teratur, jadwal berkala, atau kemiripan dengan materi yang sedang kita pelajari? Ceritakan pola apa yang kamu temukan!',
+    placeholder: 'Contoh: Saya menemukan pola yang berulang pada bentuk atau susunannya yaitu ... yang berulang setiap ...',
+    microcopy: '🧩 Jadi detektif pola! Temukan rahasia keteraturan atau kesamaan yang tersembunyi pada fotomu.'
   },
   {
-    id: 'design_solution',
+    id: 'abstraction',
     stepNumber: 3,
-    title: 'Merancang Solusi',
-    badge: 'Tahap 3: Merancang Solusi',
-    iconName: 'PenTool',
-    description: 'Merumuskan ide kreatif, konsep perancangan, atau strategi logis untuk memecahkan masalah.',
-    guidingPrompt: 'Bagaimana rancangan rencana atau strategi solusi yang kamu usulkan untuk mengatasi masalah nyata tersebut?',
-    placeholder: 'Jelaskan sketsa rencana, metode, atau ide kreatif solusimu...',
-    microcopy: 'Rancang solusimu! Uraikan langkah awal dan ide kreatif yang kamu rencanakan.'
+    title: 'Abstraksi (Memilih yang Paling Penting)',
+    badge: 'Langkah 3: Abstraksi',
+    iconName: 'Filter',
+    description: 'Pakai kacamata fokus detektif! Kita pilih informasi utama yang paling penting untuk dipelajari, dan kita simpan atau abaikan dulu detail kecil (seperti hiasan atau debu) yang tidak terlalu berpengaruh.',
+    guidingPrompt: 'Bayangkan kamu mau menceritakan rahasia benda di fotomu ke temanmu! Hal apa yang PALING PENTING dia ketahui untuk memahami pelajaran kita, dan detail apa yang cuma hiasan sehingga bisa diabaikan dulu?',
+    placeholder: 'Contoh: Hal yang paling penting dipahami adalah ... karena ..., sedangkan detail hiasan yang bisa diabaikan dulu adalah ...',
+    microcopy: '🎯 Pakai kacamata fokus! Ambil petunjuk utamanya saja, kesampingkan detail yang tidak terlalu penting.'
   },
   {
-    id: 'prototype',
+    id: 'algorithmic_thinking',
     stepNumber: 4,
-    title: 'Membuat Produk/Prototipe',
-    badge: 'Tahap 4: Membuat Produk/Prototipe',
-    iconName: 'Wrench',
-    description: 'Menyusun langkah pembuatan produk nyata, model matematis, rekayasa alat, atau prototipe sederhana.',
-    guidingPrompt: 'Bagaimana cara kamu mewujudkan produk, model kerja, atau prototipe sederhana dari rancangan solusi tersebut?',
-    placeholder: 'Jelaskan bahan, alat, rumus model, atau langkah membuat prototipe solusimu...',
-    microcopy: 'Wujudkan ide dalam bentuk nyata! Apa saja bahan atau langkah pembuatannya?'
-  },
-  {
-    id: 'testing',
-    stepNumber: 5,
-    title: 'Menguji',
-    badge: 'Tahap 5: Menguji',
-    iconName: 'FlaskConical',
-    description: 'Melakukan uji coba, simulasi, atau eksperimen langsung untuk menguji efektivitas prototipe/solusi.',
-    guidingPrompt: 'Bagaimana cara kamu menguji prototipe/solusi tersebut? Apa saja kriteria keberhasilan yang kamu uji?',
-    placeholder: 'Tuliskan cara kamu melakukan pengujian atau simulasi pada prototipe/modelmu...',
-    microcopy: 'Uji solusimu! Bagaimana kamu menguji apakah prototipe tersebut bekerja dengan baik?'
-  },
-  {
-    id: 'data_analysis',
-    stepNumber: 6,
-    title: 'Menganalisis Data',
-    badge: 'Tahap 6: Menganalisis Data',
-    iconName: 'BarChart2',
-    description: 'Mencatat angka, mengolah data hasil pengujian, dan menafsirkan bukti kuantitatif/kualitatif.',
-    guidingPrompt: 'Berdasarkan pengujian, apa data atau bukti angka yang kamu peroleh? Bagaimana analisis hasil perhitunganmu?',
-    placeholder: 'Tuliskan data hitungan, tabel, grafik, atau fakta hasil pengujianmu...',
-    microcopy: 'Tunjukkan bukti data! Gunakan perhitungan matematika atau tabel untuk menganalisis hasilnya.'
-  },
-  {
-    id: 'improvement',
-    stepNumber: 7,
-    title: 'Memperbaiki',
-    badge: 'Tahap 7: Memperbaiki',
-    iconName: 'RefreshCw',
-    description: 'Mengevaluasi kelemahan, melakukan perbaikan desain, dan menyempurnakan prototipe secara berulang (iteratif).',
-    guidingPrompt: 'Kelemahan apa yang ditemukan dari hasil pengujian dan apa langkah perbaikan konkret yang kamu lakukan?',
-    placeholder: 'Jelaskan bagian mana yang diperbaiki dan bagaimana caramu menjadikannya lebih optimal...',
-    microcopy: 'Evaluasi & sempurnakan! Apa yang bisa dibuat lebih kuat, lebih cepat, atau lebih hemat?'
-  },
-  {
-    id: 'communication',
-    stepNumber: 8,
-    title: 'Mengomunikasikan Hasil',
-    badge: 'Tahap 8: Mengomunikasikan Hasil',
-    iconName: 'Megaphone',
-    description: 'Menyajikan kesimpulan, membagikan manfaat produk, dan mengomunikasikan temuan kepada rekan kelas.',
-    guidingPrompt: 'Apa kesimpulan utama dari proyek STEM ini yang siap kamu komunikasikan dan presentasikan kepada teman-teman?',
-    placeholder: 'Tuliskan kesimpulan akhir dan pesan utama yang akan kamu presentasikan...',
-    microcopy: 'Bagikan karya hebatmu! Rangkum pesan kunci dan manfaat solusi untuk dipresentasikan.'
+    title: 'Berpikir Algoritma (Menyusun Langkah 1, 2, 3)',
+    badge: 'Langkah 4: Berpikir Algoritma',
+    iconName: 'ListOrdered',
+    description: 'Menjadi kapten pembuat rencana! Kita susun urutan langkah yang jelas dan runtut (Langkah 1, 2, 3...) seperti resep makanan yang lezat agar kamu atau temanmu bisa menyelesaikan tantangan dengan sukses.',
+    guidingPrompt: 'Sekarang giliranmu membuat petunjuk aksi! Susunlah langkah-langkah yang rapi dan teratur (Langkah 1, Langkah 2, Langkah 3...) yang bisa diikuti untuk memahami atau memanfaatkan objek fotomu dari awal sampai selesai!',
+    placeholder: 'Langkah 1: Mulai dengan ...\nLangkah 2: Lalu lakukan ...\nLangkah 3: Periksa hasil akhir ...',
+    microcopy: '📋 Susun jurus langkahmu! Buat petunjuk aksi 1, 2, 3 yang runtut dan mudah dipraktikkan siapa saja.'
   }
 ];
 
@@ -267,15 +219,11 @@ export interface PeerQuestion {
 }
 
 export interface StudentAnswers {
-  // 8 Pola Berpikir STEM
-  realProblem?: string; // 1. Masalah Nyata
-  askInquire?: string; // 2. Bertanya & Mencari Informasi
-  designSolution?: string; // 3. Merancang Solusi
-  prototype?: string; // 4. Membuat Produk/Prototipe
-  testing?: string; // 5. Menguji
-  dataAnalysis?: string; // 6. Menganalisis Data
-  improvement?: string; // 7. Memperbaiki
-  communication?: string; // 8. Mengomunikasikan Hasil
+  // 4 Pola Berpikir Komputasional
+  decomposition?: string;
+  patternRecognition?: string;
+  abstraction?: string;
+  algorithmicThinking?: string;
 
   // Compatibility fields
   challengeAnswer?: string;

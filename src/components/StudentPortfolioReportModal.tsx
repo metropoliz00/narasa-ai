@@ -498,21 +498,67 @@ export const StudentPortfolioReportModal: React.FC<StudentPortfolioReportModalPr
                       </div>
                     )}
 
-                    {/* 6. BAGIAN III: LEMBAR POLA BERPIKIR STEM (8 TAHAP) & PENALARAN SISWA */}
+                    {/* 6. BAGIAN III: LEMBAR 4 PILAR BERPIKIR KOMPUTASIONAL (COMPUTATIONAL THINKING) */}
                     {includeReasoning && (
                       <div className="space-y-2">
                         <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center justify-between border-b border-slate-200 pb-1">
                           <div className="flex items-center gap-1.5">
                             <Brain className="w-4 h-4 text-purple-600" />
-                            <span>III. Lembar Pola Berpikir STEM & Pemecahan Masalah</span>
+                            <span>III. Lembar 4 Pilar Berpikir Komputasional (Computational Thinking)</span>
                           </div>
                           <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
-                            8 Tahap Penyelidikan Autentik
+                            4 Langkah Penyelidikan Kontekstual
                           </span>
                         </h4>
 
-                        {/* If STEM answers are present */}
-                        {session.answers?.realProblem || session.answers?.prototype || session.answers?.testing ? (
+                        {/* If 4 CT answers are present */}
+                        {session.answers?.decomposition || session.answers?.patternRecognition || session.answers?.abstraction || session.answers?.algorithmicThinking ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            {/* 1. Dekomposisi */}
+                            <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200 space-y-1.5">
+                              <span className="font-extrabold text-blue-900 block text-[11px] flex items-center gap-1.5">
+                                <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] inline-flex items-center justify-center font-bold">1</span>
+                                🔍 Langkah 1: Dekomposisi (Membongkar Bagian Objek)
+                              </span>
+                              <p className="text-slate-800 text-[11px] leading-relaxed bg-white/90 p-2.5 rounded-lg border border-blue-100 shadow-2xs font-medium">
+                                {session.answers?.decomposition || '-'}
+                              </p>
+                            </div>
+
+                            {/* 2. Pengenalan Pola */}
+                            <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-200 space-y-1.5">
+                              <span className="font-extrabold text-indigo-900 block text-[11px] flex items-center gap-1.5">
+                                <span className="w-4 h-4 rounded-full bg-indigo-600 text-white text-[9px] inline-flex items-center justify-center font-bold">2</span>
+                                🧩 Langkah 2: Pengenalan Pola (Menemukan Keteraturan)
+                              </span>
+                              <p className="text-slate-800 text-[11px] leading-relaxed bg-white/90 p-2.5 rounded-lg border border-indigo-100 shadow-2xs font-medium">
+                                {session.answers?.patternRecognition || '-'}
+                              </p>
+                            </div>
+
+                            {/* 3. Abstraksi */}
+                            <div className="p-3 bg-purple-50/60 rounded-xl border border-purple-200 space-y-1.5">
+                              <span className="font-extrabold text-purple-900 block text-[11px] flex items-center gap-1.5">
+                                <span className="w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] inline-flex items-center justify-center font-bold">3</span>
+                                🎯 Langkah 3: Abstraksi (Memilih yang Paling Penting)
+                              </span>
+                              <p className="text-slate-800 text-[11px] leading-relaxed bg-white/90 p-2.5 rounded-lg border border-purple-100 shadow-2xs font-medium">
+                                {session.answers?.abstraction || '-'}
+                              </p>
+                            </div>
+
+                            {/* 4. Berpikir Algoritma */}
+                            <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200 space-y-1.5">
+                              <span className="font-extrabold text-emerald-900 block text-[11px] flex items-center gap-1.5">
+                                <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] inline-flex items-center justify-center font-bold">4</span>
+                                📋 Langkah 4: Berpikir Algoritma (Menyusun Langkah 1, 2, 3)
+                              </span>
+                              <p className="text-slate-800 text-[11px] leading-relaxed bg-white/90 p-2.5 rounded-lg border border-emerald-100 shadow-2xs font-medium">
+                                {session.answers?.algorithmicThinking || '-'}
+                              </p>
+                            </div>
+                          </div>
+                        ) : session.answers?.realProblem || session.answers?.prototype || session.answers?.testing ? (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                             {/* 1. Masalah Nyata */}
                             <div className="p-2.5 bg-rose-50/50 rounded-xl border border-rose-200 space-y-1">
