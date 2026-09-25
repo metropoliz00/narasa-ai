@@ -35,6 +35,7 @@ import {
   ZoomIn
 } from 'lucide-react';
 import { PhotoZoomModal } from './PhotoZoomModal';
+import { PatternPuzzleGame } from './PatternPuzzleGame';
 
 // Helper to generate natural, child-friendly, logical descriptions contextualized to the observed object
 export const getStageContextualDescription = (
@@ -77,6 +78,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
 }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPhotoZoomOpen, setIsPhotoZoomOpen] = useState(false);
+  const [isPatternPuzzleSolved, setIsPatternPuzzleSolved] = useState(false);
 
   // Form states for all 4 CT steps
   const [stemAnswers, setStemAnswers] = useState<Record<string, string>>({
@@ -406,6 +408,13 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
   };
 
   const handleAdvance = () => {
+    // If on pattern_recognition and puzzle not solved yet:
+    if (activeStageConfig.id === 'pattern_recognition' && !isPatternPuzzleSolved) {
+      setLockWarning('Selesaikan atau susun puzzle foto di atas terlebih dahulu ya! 🧩');
+      setTimeout(() => setLockWarning(null), 4000);
+      return;
+    }
+
     if (currentStepIndex < stemQuestions.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
       setShowScaffolding(false);
@@ -883,141 +892,184 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
           </div>
         </div>
 
-        {/* Question Text Box with Stage Explainer */}
-        <div className="bg-gradient-to-br from-indigo-50 via-purple-50/60 to-blue-50/70 p-4 sm:p-6 rounded-2xl border-2 border-indigo-200 space-y-3.5 relative shadow-xs">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-indigo-900 bg-indigo-200/90 px-3 py-1 rounded-lg flex items-center gap-1.5 border border-indigo-300">
-              {getStageIcon(activeStageConfig.id, 'w-3.5 h-3.5')}
-              {activeStageConfig.badge}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleOpenStagePopup(activeStageConfig, currentStepIndex)}
-                className="p-1.5 sm:p-2 rounded-xl bg-purple-100 text-purple-900 hover:bg-purple-200 border border-purple-300 transition-colors shrink-0 flex items-center gap-1 text-xs font-black min-h-[36px] shadow-2xs cursor-pointer"
-                title="Buka Popup Petunjuk"
-              >
-                <Lightbulb className="w-4 h-4 text-amber-500" />
-                <span className="hidden sm:inline">Lihat Panduan</span>
-              </button>
-              <button
-                onClick={() => handleReadAloud(activeQuestion.question)}
-                className="p-1.5 sm:p-2 rounded-xl bg-white text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors shrink-0 flex items-center gap-1 text-xs font-bold min-h-[36px] shadow-2xs cursor-pointer"
-                title="Dengarkan Soal"
-              >
-                <Volume2 className="w-4 h-4 text-indigo-600" />
-                <span className="hidden sm:inline">Dengarkan</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Child-friendly Contextual Mission Box */}
-          <div className="p-3 sm:p-3.5 rounded-xl bg-white/90 border border-indigo-200 flex items-start gap-2.5 shadow-2xs text-xs sm:text-sm">
-            <span className="text-lg shrink-0 mt-0.5">🎯</span>
-            <div className="space-y-0.5">
-              <span className="font-extrabold text-indigo-950 block text-[11px] uppercase tracking-wide">
-                Misi Penyelidikan di Langkah Ini:
-              </span>
-              <p className="text-slate-700 leading-relaxed font-medium">
-                {getStageContextualDescription(activeStageConfig.id, learningBridge.detectedObject, learningBridge.material)}
-              </p>
-            </div>
-          </div>
-
-          {/* Main Question Box */}
-          <div className="p-3.5 sm:p-4 rounded-xl bg-white border-2 border-indigo-200 shadow-2xs space-y-1.5">
-            <span className="text-[10px] sm:text-[11px] font-black uppercase text-indigo-700 tracking-wider flex items-center gap-1">
-              <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
-              Pertanyaan Eksplorasi untuk Kamu:
-            </span>
-            <p className="text-sm sm:text-base font-extrabold text-[#1E293B] leading-relaxed">
-              {activeQuestion.question}
-            </p>
-          </div>
-
-          <div className="pt-1 border-t border-indigo-200/70 flex items-center gap-1.5 text-xs text-indigo-900 font-semibold">
-            <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-            <span className="leading-snug">{activeStageConfig.microcopy}</span>
-          </div>
-        </div>
-
-        {/* Answer Input */}
-        <div className="space-y-2">
-          <label className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <PenTool className="w-4 h-4 text-blue-600" />
-              Tanggapan & Hasil Pemikiranmu:
-            </span>
-            <span className="text-[11px] text-slate-500 font-medium">
-              {currentAnswerValue.length} karakter
-            </span>
-          </label>
-          <textarea
-            rows={4}
-            value={currentAnswerValue}
-            onChange={(e) => handleUpdateCurrentAnswer(e.target.value)}
-            placeholder={activeStageConfig.placeholder}
-            className="w-full p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 focus:border-[#4F8EF7] focus:ring-4 focus:ring-blue-100 outline-none text-sm text-slate-800 transition-all resize-none shadow-xs font-medium"
+        {/* If on Pattern Recognition stage (Langkah 2: Pengenalan Pola), render Picture Puzzle Game */}
+        {activeStageConfig.id === 'pattern_recognition' && (
+          <PatternPuzzleGame
+            photoUrl={photoUrl}
+            objectName={learningBridge.detectedObject || 'Objek Pengamatan'}
+            isSolved={isPatternPuzzleSolved}
+            onSolve={() => setIsPatternPuzzleSolved(true)}
+            onUnlockAnyway={() => setIsPatternPuzzleSolved(true)}
           />
-        </div>
+        )}
 
-        {/* Scaffolding Assistant Card (Adaptive 4-level tutoring) */}
-        {!showScaffolding ? (
-          <button
-            type="button"
-            onClick={handleOpenScaffolding}
-            className="w-full py-3 px-3 sm:px-4 rounded-2xl border-2 border-dashed border-purple-300 bg-gradient-to-r from-purple-50 via-pink-50 to-indigo-50 hover:border-purple-400 text-purple-900 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px] shadow-2xs hover:shadow-xs"
-          >
-            <Lightbulb className="w-5 h-5 text-amber-500 shrink-0 animate-bounce" />
-            <span className="leading-tight text-center">Butuh Bantuan? Buka Petunjuk Tutor Adaptif ✨</span>
-          </button>
+        {/* Question & Answer Area: Locked on Pattern Recognition until puzzle is solved, otherwise open */}
+        {activeStageConfig.id === 'pattern_recognition' && !isPatternPuzzleSolved ? (
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/50 border-2 border-dashed border-amber-300 text-center space-y-2.5 shadow-2xs">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-200 text-amber-900 text-xs font-black">
+              <Lock className="w-3.5 h-3.5" />
+              <span>Pertanyaan Pola Terkunci Sementara</span>
+            </div>
+            <p className="text-xs sm:text-sm text-amber-950 font-bold max-w-md mx-auto leading-relaxed">
+              Ayo selesaikan susunan puzzle di atas dulu ya! Begitu kamu berhasil menyusun polanya dengan benar, pertanyaan eksplorasi dan kolom jawaban pola akan langsung terbuka! 🚀
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsPatternPuzzleSolved(true)}
+              className="text-xs text-amber-700 hover:text-amber-900 underline font-semibold cursor-pointer inline-flex items-center gap-1"
+            >
+              <Unlock className="w-3 h-3" />
+              <span>Buka pertanyaan sekarang tanpa menyelesaikan puzzle</span>
+            </button>
+          </div>
         ) : (
-          <div className="bg-gradient-to-br from-purple-50 via-pink-50/50 to-indigo-50 border-2 border-purple-200 p-4 sm:p-5 rounded-2xl space-y-3 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
-                  L{currentScaffoldLevel}
+          <>
+            {activeStageConfig.id === 'pattern_recognition' && (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-300 flex items-center gap-2.5 text-emerald-900 text-xs sm:text-sm font-bold shadow-2xs animate-in fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>
+                  🔓 <strong>Puzzle Selesai!</strong> Sekarang lanjutkan dengan menjawab pertanyaan pola berikut berdasarkan pecahan gambar yang baru saja kamu amati:
                 </span>
-                <div>
-                  <h4 className="text-xs sm:text-sm font-extrabold text-purple-950 leading-snug">
-                    Bantuan Adaptif Level {currentScaffoldLevel}:{' '}
-                    {currentScaffoldLevel === 1 && 'Petunjuk Awal 💡'}
-                    {currentScaffoldLevel === 2 && 'Pertanyaan Penuntun 🔍'}
-                    {currentScaffoldLevel === 3 && 'Langkah Kecil 🪜'}
-                    {currentScaffoldLevel === 4 && 'Contoh Analog Sederhana 🌟'}
-                  </h4>
-                  <p className="text-[10px] text-purple-700 font-medium">
-                    Petunjuk berpikir mandiri tanpa memberi contekan langsung
+              </div>
+            )}
+
+            {/* Question Text Box with Stage Explainer */}
+            <div className="bg-gradient-to-br from-indigo-50 via-purple-50/60 to-blue-50/70 p-4 sm:p-6 rounded-2xl border-2 border-indigo-200 space-y-3.5 relative shadow-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-indigo-900 bg-indigo-200/90 px-3 py-1 rounded-lg flex items-center gap-1.5 border border-indigo-300">
+                  {getStageIcon(activeStageConfig.id, 'w-3.5 h-3.5')}
+                  {activeStageConfig.badge}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenStagePopup(activeStageConfig, currentStepIndex)}
+                    className="p-1.5 sm:p-2 rounded-xl bg-purple-100 text-purple-900 hover:bg-purple-200 border border-purple-300 transition-colors shrink-0 flex items-center gap-1 text-xs font-black min-h-[36px] shadow-2xs cursor-pointer"
+                    title="Buka Popup Petunjuk"
+                  >
+                    <Lightbulb className="w-4 h-4 text-amber-500" />
+                    <span className="hidden sm:inline">Lihat Panduan</span>
+                  </button>
+                  <button
+                    onClick={() => handleReadAloud(activeQuestion.question)}
+                    className="p-1.5 sm:p-2 rounded-xl bg-white text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors shrink-0 flex items-center gap-1 text-xs font-bold min-h-[36px] shadow-2xs cursor-pointer"
+                    title="Dengarkan Soal"
+                  >
+                    <Volume2 className="w-4 h-4 text-indigo-600" />
+                    <span className="hidden sm:inline">Dengarkan</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Child-friendly Contextual Mission Box */}
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white/90 border border-indigo-200 flex items-start gap-2.5 shadow-2xs text-xs sm:text-sm">
+                <span className="text-lg shrink-0 mt-0.5">🎯</span>
+                <div className="space-y-0.5">
+                  <span className="font-extrabold text-indigo-950 block text-[11px] uppercase tracking-wide">
+                    Misi Penyelidikan di Langkah Ini:
+                  </span>
+                  <p className="text-slate-700 leading-relaxed font-medium">
+                    {getStageContextualDescription(activeStageConfig.id, learningBridge.detectedObject, learningBridge.material)}
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleReadAloud(currentHint)}
-                className="p-1.5 rounded-lg bg-white border border-purple-200 text-purple-700 hover:bg-purple-100 shrink-0 cursor-pointer shadow-2xs"
-                title="Dengarkan Petunjuk"
-              >
-                <Volume2 className="w-4 h-4 text-purple-600" />
-              </button>
+
+              {/* Main Question Box */}
+              <div className="p-3.5 sm:p-4 rounded-xl bg-white border-2 border-indigo-200 shadow-2xs space-y-1.5">
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-indigo-700 tracking-wider flex items-center gap-1">
+                  <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+                  Pertanyaan Eksplorasi untuk Kamu:
+                </span>
+                <p className="text-sm sm:text-base font-extrabold text-[#1E293B] leading-relaxed">
+                  {activeQuestion.question}
+                </p>
+              </div>
+
+              <div className="pt-1 border-t border-indigo-200/70 flex items-center gap-1.5 text-xs text-indigo-900 font-semibold">
+                <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="leading-snug">{activeStageConfig.microcopy}</span>
+              </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-800 bg-white p-3.5 sm:p-4 rounded-xl border-2 border-purple-100 leading-relaxed font-semibold shadow-2xs">
-              “{currentHint}”
-            </p>
+            {/* Answer Input */}
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <PenTool className="w-4 h-4 text-blue-600" />
+                  Tanggapan & Hasil Pemikiranmu:
+                </span>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  {currentAnswerValue.length} karakter
+                </span>
+              </label>
+              <textarea
+                rows={4}
+                value={currentAnswerValue}
+                onChange={(e) => handleUpdateCurrentAnswer(e.target.value)}
+                placeholder={activeStageConfig.placeholder}
+                className="w-full p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 focus:border-[#4F8EF7] focus:ring-4 focus:ring-blue-100 outline-none text-sm text-slate-800 transition-all resize-none shadow-xs font-medium"
+              />
+            </div>
 
-            {currentScaffoldLevel < 4 && (
-              <div className="flex justify-end pt-1">
-                <button
-                  type="button"
-                  onClick={handleNextLevelScaffold}
-                  className="px-3 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
-                >
-                  <span>Naikkan ke Level {currentScaffoldLevel + 1}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+            {/* Scaffolding Assistant Card (Adaptive 4-level tutoring) */}
+            {!showScaffolding ? (
+              <button
+                type="button"
+                onClick={handleOpenScaffolding}
+                className="w-full py-3 px-3 sm:px-4 rounded-2xl border-2 border-dashed border-purple-300 bg-gradient-to-r from-purple-50 via-pink-50 to-indigo-50 hover:border-purple-400 text-purple-900 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px] shadow-2xs hover:shadow-xs"
+              >
+                <Lightbulb className="w-5 h-5 text-amber-500 shrink-0 animate-bounce" />
+                <span className="leading-tight text-center">Butuh Bantuan? Buka Petunjuk Tutor Adaptif ✨</span>
+              </button>
+            ) : (
+              <div className="bg-gradient-to-br from-purple-50 via-pink-50/50 to-indigo-50 border-2 border-purple-200 p-4 sm:p-5 rounded-2xl space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                      L{currentScaffoldLevel}
+                    </span>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-extrabold text-purple-950 leading-snug">
+                        Bantuan Adaptif Level {currentScaffoldLevel}:{' '}
+                        {currentScaffoldLevel === 1 && 'Petunjuk Awal 💡'}
+                        {currentScaffoldLevel === 2 && 'Pertanyaan Penuntun 🔍'}
+                        {currentScaffoldLevel === 3 && 'Langkah Kecil 🪜'}
+                        {currentScaffoldLevel === 4 && 'Contoh Analog Sederhana 🌟'}
+                      </h4>
+                      <p className="text-[10px] text-purple-700 font-medium">
+                        Petunjuk berpikir mandiri tanpa memberi contekan langsung
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleReadAloud(currentHint)}
+                    className="p-1.5 rounded-lg bg-white border border-purple-200 text-purple-700 hover:bg-purple-100 shrink-0 cursor-pointer shadow-2xs"
+                    title="Dengarkan Petunjuk"
+                  >
+                    <Volume2 className="w-4 h-4 text-purple-600" />
+                  </button>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-800 bg-white p-3.5 sm:p-4 rounded-xl border-2 border-purple-100 leading-relaxed font-semibold shadow-2xs">
+                  “{currentHint}”
+                </p>
+
+                {currentScaffoldLevel < 4 && (
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={handleNextLevelScaffold}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
+                    >
+                      <span>Naikkan ke Level {currentScaffoldLevel + 1}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Action Controls */}
