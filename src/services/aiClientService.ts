@@ -10,7 +10,10 @@ import { getDefaultAvatar } from '../data/avatarData';
 function getAuthHeaders() {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
-    const customKey = localStorage.getItem('narasa_school_gemini_key');
+    const customKey =
+      localStorage.getItem('narasa_school_gemini_key') ||
+      localStorage.getItem('school_gemini_api_key') ||
+      localStorage.getItem('gemini_api_key');
     if (customKey && customKey.trim() !== '') {
       headers['x-school-gemini-key'] = customKey.trim();
     }

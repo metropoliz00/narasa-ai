@@ -125,69 +125,69 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         {/* 3. CORE PILLARS OF LITERACY & NUMERACY (Responsive Grid Columns) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 pt-1 sm:pt-2">
           {/* Pillar 1 */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/50 border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all space-y-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
-              <BookOpen className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+          <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-blue-50/80 via-white to-cyan-50/60 border-2 border-blue-200 hover:border-blue-400 hover:shadow-md transition-all space-y-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25">
+              <BookOpen className="w-5 h-5" />
             </div>
-            <h4 className="text-sm font-bold text-slate-800 font-display">
+            <h4 className="text-sm sm:text-base font-extrabold text-blue-950 font-display">
               1. Literasi Kontekstual
             </h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
               Mengenali objek, memahami konsep sains alam sekitar, serta memperkaya kosakata ilmiah dan narasi argumentatif.
             </p>
-            <div className="text-[11px] font-semibold text-blue-700 pt-0.5 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <div className="text-[11px] font-bold text-blue-800 pt-1 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
               <span>Kosakata & Fakta Ilmiah</span>
             </div>
           </div>
 
           {/* Pillar 2 */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/50 border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition-all space-y-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm">
-              <Calculator className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+          <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/60 border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all space-y-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/25">
+              <Calculator className="w-5 h-5" />
             </div>
-            <h4 className="text-sm font-bold text-slate-800 font-display">
+            <h4 className="text-sm sm:text-base font-extrabold text-emerald-950 font-display">
               2. Numerasi Terapan
             </h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
               Kalkulasi estimasi ukuran, perbandingan skala, pengenalan bentuk geometri 2D/3D, dan pengukuran kuantitatif.
             </p>
-            <div className="text-[11px] font-semibold text-emerald-700 pt-0.5 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <div className="text-[11px] font-bold text-emerald-800 pt-1 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>Matematika Realistik</span>
             </div>
           </div>
 
           {/* Pillar 3 */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-purple-50/50 border border-purple-100 hover:border-purple-300 hover:shadow-md transition-all space-y-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-sm">
-              <Lightbulb className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+          <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-purple-50/80 via-white to-fuchsia-50/60 border-2 border-purple-200 hover:border-purple-400 hover:shadow-md transition-all space-y-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white flex items-center justify-center shadow-md shadow-purple-500/25">
+              <Lightbulb className="w-5 h-5" />
             </div>
-            <h4 className="text-sm font-bold text-slate-800 font-display">
+            <h4 className="text-sm sm:text-base font-extrabold text-purple-950 font-display">
               3. Scaffolding Nalar Kritis
             </h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Bimbingan perancah bertingkat (ZPD) yang memicu nalar murid menemukan jawaban tanpa langsung memberi solusi instan.
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              Bimbingan perancah bertingkat (ZPD) yang memicu nalar murid menemukan jawaban tanpa langsung memberi contekan.
             </p>
-            <div className="text-[11px] font-semibold text-purple-700 pt-0.5 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <div className="text-[11px] font-bold text-purple-800 pt-1 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />
               <span>Pertanyaan Pemantik HOTS</span>
             </div>
           </div>
 
           {/* Pillar 4 */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/50 border border-amber-100 hover:border-amber-300 hover:shadow-md transition-all space-y-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shadow-sm">
-              <Presentation className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+          <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-50/80 via-white to-orange-50/60 border-2 border-amber-200 hover:border-amber-400 hover:shadow-md transition-all space-y-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-md shadow-amber-500/25">
+              <Presentation className="w-5 h-5" />
             </div>
-            <h4 className="text-sm font-bold text-slate-800 font-display">
+            <h4 className="text-sm sm:text-base font-extrabold text-amber-950 font-display">
               4. Portofolio & Presentasi
             </h4>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
               Menghasilkan bahan tayang kelas, slide refleksi belajar, dan asesmen formatif Pembelajaran Mendalam secara otomatis.
             </p>
-            <div className="text-[11px] font-semibold text-amber-700 pt-0.5 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <div className="text-[11px] font-bold text-amber-800 pt-1 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
               <span>Presentasi Otomatis Kelas</span>
             </div>
           </div>

@@ -117,7 +117,11 @@ export const MissionCreatorModal: React.FC<MissionCreatorModalProps> = ({
     }
     setIsGeneratingObjects(true);
     try {
-      const schoolApiKey = localStorage.getItem('school_gemini_api_key') || '';
+      const schoolApiKey =
+        localStorage.getItem('narasa_school_gemini_key') ||
+        localStorage.getItem('school_gemini_api_key') ||
+        localStorage.getItem('gemini_api_key') ||
+        '';
       const response = await fetch('/api/generate-suggested-objects', {
         method: 'POST',
         headers: {

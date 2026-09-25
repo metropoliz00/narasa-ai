@@ -68,17 +68,20 @@ async function callGeminiWithFallback(
     contents: any;
     config?: any;
   },
-  timeoutMs: number = 20000
+  timeoutMs: number = 25000
 ) {
-  // Candidate models list per official guidelines with robust failover
-  const candidateModels = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"];
+  // Valid model candidates per official Gemini SDK guidelines:
+  // 1. gemini-2.5-flash (primary multimodal fast)
+  // 2. gemini-2.5-flash-lite (high-speed fallback)
+  // 3. gemini-2.5-pro (advanced reasoning fallback)
+  const candidateModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"];
   let lastError: any = null;
 
   for (let i = 0; i < candidateModels.length; i++) {
     const model = candidateModels[i];
     
-    // Try up to 3 attempts per model with jittered exponential backoff
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    // Try up to 2 attempts per model with exponential backoff
+    for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const generatePromise = client.models.generateContent({
           model,
@@ -97,7 +100,7 @@ async function callGeminiWithFallback(
         const errMsg = String(err?.message || err || "");
         const errCode = err?.status || err?.code || 0;
         
-        console.warn(`[Gemini API] Model ${model} (attempt ${attempt}/3) encountered error: ${errMsg.slice(0, 150)} (Code: ${errCode})`);
+        console.warn(`[Gemini API] Model ${model} (attempt ${attempt}/2) encountered error: ${errMsg.slice(0, 150)} (Code: ${errCode})`);
 
         const isTemporaryError =
           errCode === 503 ||
@@ -108,23 +111,49 @@ async function callGeminiWithFallback(
           errMsg.toLowerCase().includes("high demand") ||
           errMsg.toLowerCase().includes("unavailable") ||
           errMsg.toLowerCase().includes("resource_exhausted") ||
-          errMsg.toLowerCase().includes("busy");
+          errMsg.toLowerCase().includes("busy") ||
+          errMsg.toLowerCase().includes("overloaded");
 
-        if (isTemporaryError && attempt < 3) {
-          // Exponential backoff with jitter
-          const delay = (attempt * 800) + Math.random() * 400;
+        if (isTemporaryError && attempt < 2) {
+          const delay = (attempt * 700) + Math.random() * 300;
           console.info(`[Gemini API] Retrying ${model} in ${Math.round(delay)}ms...`);
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
         
-        // If it's a permanent error or we exhausted attempts, fall over to next model
-        console.warn(`[Gemini API] Failing over from ${model} to next candidate...`);
         break;
       }
     }
   }
   throw lastError;
+}
+
+// Helper to reliably extract text and JSON from Gemini response
+function extractJsonFromGeminiResponse(response: any): any {
+  if (!response) return null;
+  let text = "";
+  if (typeof response.text === "string") {
+    text = response.text;
+  } else if (typeof response.text === "function") {
+    text = response.text();
+  } else if (response?.candidates?.[0]?.content?.parts?.[0]?.text) {
+    text = response.candidates[0].content.parts.map((p: any) => p.text || "").join("\n");
+  }
+
+  if (!text || text.trim() === "") return null;
+
+  let cleaned = text.trim();
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+    const jsonMatch = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    throw err;
+  }
 }
 
 // Root API verification
@@ -154,19 +183,19 @@ app.get("/api/health", (req, res) => {
     status: "ok",
     hasApiKey: hasValidKey,
     primaryModel: "gemini-2.5-flash",
-    fallbackModels: ["gemini-3.8-flash", "gemini-3.1-flash-lite", "gemini-flash-latest"],
+    fallbackModels: ["gemini-2.5-flash-lite", "gemini-2.5-pro"],
     serverTime: new Date().toISOString()
   });
 });
 
 // Endpoint to generate suggested object ideas via AI for teachers
 app.post("/api/generate-suggested-objects", async (req, res) => {
+  const { title, subject, material, cp, tp, targetCompetency, cognitiveLevel } = req.body;
   try {
-    const { title, subject, material, cp, tp, targetCompetency, cognitiveLevel } = req.body;
-    
     const client = getAiClient(req);
     if (client) {
-      const prompt = `
+      try {
+        const prompt = `
 Anda adalah Pakar Kurikulum dan Desainer Pembelajaran STEM Sekolah Dasar.
 Berdasarkan informasi materi berikut, rancang 5-8 ide benda nyata konkret yang mudah ditemukan oleh murid di sekitar sekolah atau rumah untuk difoto dan dianalisis secara kritis (penalaran sains, teknologi, rekayasa, atau matematika).
 
@@ -186,50 +215,72 @@ Format keluaran HARUS berupa objek JSON dengan struktur sebagai berikut:
   "suggestedObjects": [
     "Nama Benda 1 (Contoh: Jam dinding analog untuk mengamati sudut/interval)",
     "Nama Benda 2 (Contoh: Lantai keramik berpola untuk menghitung luas dan KPK)",
-    ...
+    "Nama Benda 3...",
+    "Nama Benda 4...",
+    "Nama Benda 5..."
   ]
 }
 
-Berikan respon HANYA berupa JSON valid tersebut, tanpa tambahan teks pembuka atau penutup markdown.
+Kembalikan HANYA format JSON valid tanpa markdown tambahan.
 `;
 
-      const response = await callGeminiWithFallback(client, {
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        }
-      });
+        const response = await callGeminiWithFallback(client, {
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+          }
+        });
 
-      const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || response?.text || "";
-      let jsonResponse;
-      try {
-        jsonResponse = JSON.parse(text.trim().replace(/^```json\s*|```$/g, ""));
-      } catch (parseErr) {
-        // Fallback parsing if JSON contains wrappers or markdown
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) {
-          jsonResponse = JSON.parse(match[0]);
-        } else {
-          throw parseErr;
+        const parsed = extractJsonFromGeminiResponse(response);
+        if (parsed && Array.isArray(parsed.suggestedObjects) && parsed.suggestedObjects.length > 0) {
+          return res.json(parsed);
         }
+      } catch (geminiErr: any) {
+        console.warn("[Gemini API] Failed generate-suggested-objects, falling back:", geminiErr?.message);
       }
-      
-      return res.json(jsonResponse);
-    } else {
-      // Return beautiful fallback suggestions if Gemini API is not configured/available
-      return res.json({
-        suggestedObjects: [
-          `Buku, penggaris, atau alat tulis (terkait ${material})`,
-          `Lantai ubin atau jendela ruangan (terkait ${material})`,
-          `Jam dinding analog atau jadwal (terkait ${material})`,
-          `Tanaman pot atau daun di taman (terkait ${material})`,
-          `Botol minum atau tempat sampah (terkait ${material})`
-        ]
-      });
     }
+
+    // High quality contextual fallback suggestions
+    const isMath = (subject || "").toLowerCase().includes("matematika");
+    const isIpas = (subject || "").toLowerCase().includes("ipa") || (subject || "").toLowerCase().includes("ipas");
+
+    const fallbackSuggestions = isMath
+      ? [
+          `Jam dinding analog kelas atau sekolah (terkait ${material || 'KPK/FPB'})`,
+          `Lantai ubin keramik dan garis jendela (terkait ${material || 'Geometri/Kelipatan'})`,
+          `Kotak pensil, spidol, dan penggaris kayu (terkait ${material || 'Pembagian FPB'})`,
+          `Kemasan makanan ringan atau label harga kantin (terkait ${material || 'Pecahan/Nilai'})`,
+          `Jadwal piket kelas dan kalender dinding (terkait ${material || 'Pola KPK'})`
+        ]
+      : isIpas
+      ? [
+          `Pohon rindang di halaman sekolah (terkait ${material || 'Ekosistem'})`,
+          `Tempat sampah pilah organik dan anorganik (terkait ${material || 'Lingkungan'})`,
+          `Tanaman pot bunga di teras kelas (terkait ${material || 'Fotosintesis/Biotik'})`,
+          `Kran air wudhu atau kolam ikan sekolah (terkait ${material || 'Siklus Air'})`,
+          `Lampu neon kelas dan panel stopkontak (terkait ${material || 'Energi Listrik'})`
+        ]
+      : [
+          `Buku cerita di pojok baca perpustakaan (terkait ${material || 'Literasi Teks'})`,
+          `Poster pengumuman di mading sekolah (terkait ${material || 'Teks Informasi'})`,
+          `Tempat sampah 3 warna di lorong sekolah (terkait ${material || 'Teks Deskripsi'})`,
+          `Taman toga dan kebun sayur sekolah (terkait ${material || 'Teks Laporan Hasil Observasi'})`,
+          `Peta Indonesia di dinding kelas (terkait ${material || 'Literasi Spasial'})`
+        ];
+
+    return res.json({
+      suggestedObjects: fallbackSuggestions
+    });
   } catch (err: any) {
     console.error("Error generating suggested objects:", err);
-    res.status(500).json({ error: err.message || "Gagal membuat ide benda otomatis." });
+    return res.json({
+      suggestedObjects: [
+        `Buku dan alat tulis (terkait ${material || 'pembelajaran'})`,
+        `Jam dinding kelas (terkait ${material || 'waktu'})`,
+        `Pohon di halaman sekolah (terkait ${material || 'lingkungan'})`,
+        `Tempat sampah pilah sekolah (terkait ${material || 'kebersihan'})`
+      ]
+    });
   }
 });
 
@@ -289,7 +340,7 @@ Tugas Anda:
 Kembalikan HANYA format JSON valid tanpa tanda kutip markdown, sesuai skema:
 {
   "detectedObject": "nama objek yang teridentifikasi dari informasi murid",
-  "compatibility": "Strong" | "Moderate" | "Weak",
+  "compatibility": "Strong",
   "compatibilityReason": "penjelasan kualitas hubungan objek dengan materi",
   "observation": "penjelasan apa yang dilaporkan oleh murid beserta analisis tambahan visual logis dari AI",
   "context": "konteks situasi di lingkungan sekolah/anak",
@@ -383,22 +434,20 @@ Kembalikan HANYA format JSON valid tanpa tanda kutip markdown, sesuai skema:
 }
 `;
 
-        const contents = prompt;
-
         const response = await callGeminiWithFallback(client, {
-          contents: contents,
+          contents: prompt,
           config: {
             responseMimeType: "application/json",
             temperature: 0.3
           }
         });
 
-        const text = response.text?.trim() || "{}";
-        const cleaned = text.replace(/^```json\s*/i, "").replace(/\s*```$/, "");
-        const parsed = JSON.parse(cleaned);
-        return res.json(parsed);
+        const parsed = extractJsonFromGeminiResponse(response);
+        if (parsed && parsed.detectedObject && Array.isArray(parsed.questions) && parsed.questions.length >= 8) {
+          return res.json(parsed);
+        }
       } catch (_geminiError: any) {
-        // High-demand or transient network error: safely hand off to pedagogical engine
+        console.warn("[Gemini API] Failed analyze-vision, utilizing pedagogical fallback:", _geminiError?.message);
       }
     }
 
@@ -407,7 +456,8 @@ Kembalikan HANYA format JSON valid tanpa tanda kutip markdown, sesuai skema:
     return res.json(fallbackResult);
   } catch (err: any) {
     console.error("Error in /api/analyze-vision:", err);
-    res.status(500).json({ error: err.message || "Failed to process image analysis" });
+    const fallbackResult = generatePedagogicalFallback(req.body?.mission || {}, req.body?.objectHint, req.body?.imageBase64OrUrl);
+    return res.json(fallbackResult);
   }
 });
 
@@ -438,8 +488,8 @@ Format kembalian JSON: { "hint": "kalimat bimbingan singkat hangat" }
           contents: prompt,
           config: { responseMimeType: "application/json" }
         });
-        const parsed = JSON.parse(resp.text?.trim() || "{}");
-        if (parsed.hint) {
+        const parsed = extractJsonFromGeminiResponse(resp);
+        if (parsed && parsed.hint) {
           return res.json(parsed);
         }
       } catch (_e) {
@@ -633,8 +683,8 @@ Kembalikan JSON:
           contents: prompt,
           config: { responseMimeType: "application/json" }
         });
-        const parsed = JSON.parse(resp.text?.trim() || "{}");
-        if (parsed.polishedContent) {
+        const parsed = extractJsonFromGeminiResponse(resp);
+        if (parsed && parsed.polishedContent) {
           let polishedTitle = parsed.polishedTitle || title;
           let polishedContent = parsed.polishedContent || content;
           let polishedNotes = parsed.polishedNotes || notes;
@@ -729,8 +779,8 @@ Format JSON:
           contents: prompt,
           config: { responseMimeType: "application/json" }
         });
-        const parsed = JSON.parse(resp.text?.trim() || "{}");
-        if (parsed.question) {
+        const parsed = extractJsonFromGeminiResponse(resp);
+        if (parsed && parsed.question) {
           return res.json(parsed);
         }
       } catch (_e) {
@@ -1048,11 +1098,9 @@ Kembalikan HANYA format JSON valid tanpa tanda kutip markdown:
           }
         });
 
-        const text = resp.text?.trim() || "{}";
-        const cleaned = text.replace(/^```json\s*/i, "").replace(/\s*```$/, "");
-        const parsed = JSON.parse(cleaned);
+        const parsed = extractJsonFromGeminiResponse(resp);
 
-        if (parsed.questions && parsed.questions.length > 0) {
+        if (parsed && parsed.questions && parsed.questions.length > 0) {
           parsed.contextImage = "";
 
           parsed.questions.forEach((q: any) => {

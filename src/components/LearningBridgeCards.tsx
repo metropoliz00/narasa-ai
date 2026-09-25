@@ -150,32 +150,32 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
       {/* The Pedagogical Grid Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
         {/* Card 1: 👁️ Yang Saya Lihat */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3 sm:space-y-4">
+        <div className="bg-gradient-to-br from-blue-50/70 via-white to-cyan-50/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-blue-200 shadow-sm hover:shadow-md transition-all space-y-3 sm:space-y-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#4F8EF7] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-xs">
               <Eye className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
+              <h3 className="text-xs sm:text-sm font-extrabold text-blue-950 tracking-wide uppercase">
                 👁️ Yang Saya Lihat
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-slate-400">Pengamatan & Temuanmu</p>
+              <p className="text-[10px] sm:text-[11px] text-blue-600 font-semibold">Pengamatan & Temuanmu</p>
             </div>
           </div>
 
           <div className="space-y-2.5 sm:space-y-3">
             {/* Render student's initial findings if present */}
             {studentObs && (
-              <div className="bg-blue-50/50 border border-blue-100 p-3 sm:p-3.5 rounded-2xl space-y-1">
-                <span className="text-[10px] font-extrabold text-blue-700 tracking-wider uppercase block">
+              <div className="bg-blue-100/60 border-2 border-blue-200 p-3 sm:p-3.5 rounded-2xl space-y-1">
+                <span className="text-[10px] font-black text-blue-800 tracking-wider uppercase block">
                   📝 Temuan Awal Pengamatanmu:
                 </span>
-                <p className="text-xs text-slate-700 font-semibold whitespace-pre-line leading-relaxed">
+                <p className="text-xs text-slate-800 font-bold whitespace-pre-line leading-relaxed">
                   {studentObs}
                 </p>
                 {studentQuest && (
-                  <p className="text-[11px] text-slate-600 mt-1 italic border-t border-blue-100/60 pt-1">
-                    <span className="font-bold text-amber-600">❓ Rasa Penasaranmu:</span> "{studentQuest}"
+                  <p className="text-[11px] text-slate-700 mt-1 italic border-t border-blue-200 pt-1">
+                    <span className="font-bold text-amber-700">❓ Rasa Penasaranmu:</span> "{studentQuest}"
                   </p>
                 )}
               </div>
@@ -183,11 +183,11 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
 
             <div className="space-y-1">
               {studentObs && (
-                <span className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase block pl-1">
-                  🤖 Analisis & Detail Tambahan dari AI:
+                <span className="text-[10px] font-black text-blue-700 tracking-wider uppercase block pl-1">
+                  🤖 Analisis & Detail AI:
                 </span>
               )}
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed bg-slate-50/70 p-3 sm:p-3.5 rounded-2xl border border-slate-100 min-h-[80px]">
+              <p className="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed bg-white p-3 sm:p-3.5 rounded-2xl border-2 border-blue-100 min-h-[80px] shadow-2xs">
                 {bridgeResult.observation}
               </p>
             </div>
@@ -195,45 +195,45 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
         </div>
 
         {/* Card 2: 🔗 Hubungannya dengan Pelajaran */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3">
+        <div className="bg-gradient-to-br from-purple-50/70 via-white to-fuchsia-50/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-purple-200 shadow-sm hover:shadow-md transition-all space-y-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-purple-50 text-[#7C5CFC] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-purple-500 text-white flex items-center justify-center shrink-0 shadow-xs">
               <Link2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
-                🔗 Hubungannya dengan Pelajaran
+              <h3 className="text-xs sm:text-sm font-extrabold text-purple-950 tracking-wide uppercase">
+                🔗 Hubungan Pelajaran
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-slate-400">Koneksi ke Materi Pelajaran</p>
+              <p className="text-[10px] sm:text-[11px] text-purple-600 font-semibold">Koneksi ke Materi Pelajaran</p>
             </div>
           </div>
-          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed bg-purple-50/40 p-3 sm:p-3.5 rounded-2xl border border-purple-100 min-h-[80px]">
+          <p className="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed bg-white p-3 sm:p-3.5 rounded-2xl border-2 border-purple-100 min-h-[80px] shadow-2xs">
             {bridgeResult.learningBridge}
           </p>
         </div>
 
         {/* Card 3: 📚 Materi Guru */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3">
+        <div className="bg-gradient-to-br from-emerald-50/70 via-white to-teal-50/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-emerald-200 shadow-sm hover:shadow-md transition-all space-y-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#20C9A6] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
-                📚 Materi Pembelajaran
+              <h3 className="text-xs sm:text-sm font-extrabold text-emerald-950 tracking-wide uppercase">
+                📚 Materi Pelajaran
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-slate-400">Konfigurasi Guru</p>
+              <p className="text-[10px] sm:text-[11px] text-emerald-600 font-semibold">Konsep yang Dipelajari</p>
             </div>
           </div>
-          <div className="bg-emerald-50/40 p-3 sm:p-3.5 rounded-2xl border border-emerald-100 space-y-1 min-h-[80px]">
-            <p className="text-xs font-bold text-emerald-900">{bridgeResult.subject}</p>
-            <p className="text-xs sm:text-sm text-slate-700 leading-snug">
+          <div className="bg-white p-3 sm:p-3.5 rounded-2xl border-2 border-emerald-100 space-y-1 min-h-[80px] shadow-2xs">
+            <p className="text-xs font-black text-emerald-900">{bridgeResult.subject}</p>
+            <p className="text-xs sm:text-sm text-slate-800 font-medium leading-snug">
               {isMaterialExpanded ? bridgeResult.material : `${bridgeResult.material.substring(0, 150)}${bridgeResult.material.length > 150 ? '...' : ''}`}
             </p>
             {bridgeResult.material.length > 150 && (
               <button 
                 onClick={() => setIsMaterialExpanded(!isMaterialExpanded)}
-                className="text-xs font-bold text-emerald-700 hover:text-emerald-900 cursor-pointer pt-1 min-h-[32px] flex items-center"
+                className="text-xs font-black text-emerald-700 hover:text-emerald-900 cursor-pointer pt-1 min-h-[32px] flex items-center"
               >
                 {isMaterialExpanded ? "Sembunyikan" : "Baca Selengkapnya"}
               </button>
@@ -242,21 +242,21 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
         </div>
 
         {/* Card 4: 🎯 Target Belajar */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3">
+        <div className="bg-gradient-to-br from-amber-50/70 via-white to-orange-50/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-amber-200 shadow-sm hover:shadow-md transition-all space-y-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#FFC857] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
               <Target className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
+              <h3 className="text-xs sm:text-sm font-extrabold text-amber-950 tracking-wide uppercase">
                 🎯 Target Belajar
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-slate-400">Kompetensi yang Dibangun</p>
+              <p className="text-[10px] sm:text-[11px] text-amber-600 font-semibold">Kompetensi yang Dibangun</p>
             </div>
           </div>
-          <div className="bg-amber-50/40 p-3 sm:p-3.5 rounded-2xl border border-amber-100 space-y-1 min-h-[80px]">
-            <p className="text-xs font-bold text-amber-900">Tujuan Pembelajaran (TP)</p>
-            <p className="text-xs sm:text-sm text-slate-700 leading-snug">
+          <div className="bg-white p-3 sm:p-3.5 rounded-2xl border-2 border-amber-100 space-y-1 min-h-[80px] shadow-2xs">
+            <p className="text-xs font-black text-amber-900">Tujuan Pembelajaran (TP)</p>
+            <p className="text-xs sm:text-sm text-slate-800 font-medium leading-snug">
               {bridgeResult.learningTarget}
             </p>
           </div>
@@ -264,19 +264,19 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
 
         {/* Card: 📖 Ringkasan Materi Sederhana untuk Murid */}
         {bridgeResult.simpleMaterialSummary && (
-          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-emerald-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3 md:col-span-2">
+          <div className="bg-gradient-to-br from-teal-50/60 via-white to-emerald-50/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-teal-200 shadow-sm hover:shadow-md transition-all space-y-3 md:col-span-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-teal-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
+                <h3 className="text-xs sm:text-sm font-extrabold text-teal-950 tracking-wide uppercase">
                   📖 Ringkasan Materi Sederhana
                 </h3>
-                <p className="text-[10px] sm:text-[11px] text-emerald-700 font-semibold">Rangkuman konsep inti dengan bahasa mudah dipahami</p>
+                <p className="text-[10px] sm:text-[11px] text-teal-700 font-bold">Rangkuman konsep inti dengan bahasa mudah dipahami</p>
               </div>
             </div>
-            <div className="bg-emerald-50/50 p-3.5 sm:p-4 rounded-2xl border border-emerald-200/60 text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
+            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border-2 border-teal-100 text-xs sm:text-sm text-slate-800 font-semibold leading-relaxed shadow-2xs">
               {bridgeResult.simpleMaterialSummary}
             </div>
           </div>

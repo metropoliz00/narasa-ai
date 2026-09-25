@@ -114,7 +114,10 @@ export const AICriticalQuizGeneratorModal: React.FC<AICriticalQuizGeneratorModal
         questionConfigs: qConfig
       };
 
-      const customKey = localStorage.getItem('narasa_school_gemini_key');
+      const customKey =
+        localStorage.getItem('narasa_school_gemini_key') ||
+        localStorage.getItem('school_gemini_api_key') ||
+        localStorage.getItem('gemini_api_key');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (customKey && customKey.trim() !== '') {
         headers['x-school-gemini-key'] = customKey.trim();
