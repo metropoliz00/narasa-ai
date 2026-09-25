@@ -524,9 +524,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-left">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6 text-left">
       {/* Header Banner with White Theme & Literacy-Numeracy Illustration */}
-      <div className="rounded-3xl p-6 sm:p-8 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm border border-slate-200/90 bg-white group">
+      <div className="rounded-2xl sm:rounded-3xl p-4 sm:p-8 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm border border-slate-200/90 bg-white group">
         {/* Background Image: Vivid, High Quality, Distinct Literacy & Numeracy */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <img
@@ -541,10 +541,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         <div className="relative z-10 space-y-1 max-w-2xl">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <NarasaLogo size="sm" withHoverAnimation={true} withGlow={true} containerClassName="rounded-xl" />
-            <h1 className="text-xl sm:text-2xl font-bold font-display text-[#1E293B]">
-              Panel Administrator & Manajemen Akun NARASA
+            <h1 className="text-lg sm:text-2xl font-bold font-display text-[#1E293B]">
+              Panel Administrator & Manajemen Akun
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
@@ -552,22 +552,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </p>
         </div>
 
-        <div className="relative z-10 flex items-center gap-2">
+        <div className="relative z-10 flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => handleOpenCreate('student')}
-            className="px-4 py-2.5 rounded-xl bg-[#4F8EF7] hover:bg-blue-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+            className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl bg-[#4F8EF7] hover:bg-blue-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
-            <span>+ Akun Baru</span>
+            <span>+ Tambah Akun</span>
           </button>
         </div>
       </div>
 
       {/* Primary Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar scroll-smooth">
         <button
           onClick={() => setActiveTab('accounts')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 ${
             activeTab === 'accounts'
               ? 'bg-[#4F8EF7] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -579,7 +579,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         <button
           onClick={() => setActiveTab('config')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 ${
             activeTab === 'config'
               ? 'bg-[#4F8EF7] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -591,7 +591,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         <button
           onClick={() => setActiveTab('schools')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 ${
             activeTab === 'schools'
               ? 'bg-[#4F8EF7] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -605,7 +605,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {(currentUser.role === 'central_admin' || currentUser.role === 'school_admin' || currentUser.role === 'admin') && (
           <button
             onClick={() => setActiveTab('school_settings')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 ${
               activeTab === 'school_settings'
                 ? 'bg-[#4F8EF7] text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'

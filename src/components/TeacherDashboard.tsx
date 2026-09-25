@@ -193,9 +193,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 text-left">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6 text-left">
       {/* Welcome Hero for Teacher with White Theme & Literacy-Numeracy Background */}
-      <div className="rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-sm border border-slate-200/90 bg-white group">
+      <div className="rounded-2xl sm:rounded-3xl p-4 sm:p-8 relative overflow-hidden shadow-sm border border-slate-200/90 bg-white group">
         {/* Background Image: Vivid Literacy & Numeracy */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <img
@@ -209,28 +209,28 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           <div className="absolute inset-0 bg-gradient-to-t from-white/60 via-transparent to-white/30 pointer-events-none" />
         </div>
 
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="pt-1">
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="pt-0.5">
               <SchoolClassBadge classNameStr={currentUser.className} schoolNameStr={currentUser.schoolName} size="md" />
             </div>
-            <h1 className="text-2xl sm:text-4xl font-bold font-display tracking-tight text-[#1E293B]">
+            <h1 className="text-xl sm:text-4xl font-bold font-display tracking-tight text-[#1E293B]">
               Ruang Eksplorasi <span className="text-[#4F8EF7]">{currentUser.name}</span>
             </h1>
           </div>
 
           {/* Quick CTA Actions */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={onOpenNewMissionModal}
-              className="px-4 py-2.5 rounded-xl bg-[#4F8EF7] hover:bg-blue-600 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+              className="flex-1 sm:flex-initial justify-center px-4 py-2.5 rounded-xl bg-[#4F8EF7] hover:bg-blue-600 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Buat Misi Pembelajaran</span>
+              <span>Buat Misi</span>
             </button>
             <button
               onClick={onOpenClassroomPresentation}
-              className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm flex items-center gap-2 active:scale-95 transition-all cursor-pointer shadow-xs"
+              className="flex-1 sm:flex-initial justify-center px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm flex items-center gap-2 active:scale-95 transition-all cursor-pointer shadow-xs"
             >
               <Tv className="w-4 h-4 text-purple-300" />
               <span>Presentasi Kelas</span>
@@ -239,28 +239,28 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         </div>
 
         {/* 4 Stat Cards */}
-        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-200/80">
+        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-slate-200/80">
           <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/70 shadow-2xs backdrop-blur-xs">
-            <span className="text-[11px] text-slate-500 font-medium block">Total Murid</span>
-            <span className="text-xl sm:text-2xl font-bold font-display text-[#1E293B]">
+            <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block">Total Murid</span>
+            <span className="text-lg sm:text-2xl font-bold font-display text-[#1E293B]">
               {studentAccounts.length} Murid
             </span>
           </div>
           <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/70 shadow-2xs backdrop-blur-xs">
-            <span className="text-[11px] text-slate-500 font-medium block">Kelompok Belajar</span>
-            <span className="text-xl sm:text-2xl font-bold font-display text-blue-600">
+            <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block">Kelompok Belajar</span>
+            <span className="text-lg sm:text-2xl font-bold font-display text-blue-600">
               {groups.length} Tim
             </span>
           </div>
           <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/70 shadow-2xs backdrop-blur-xs">
-            <span className="text-[11px] text-slate-500 font-medium block">Uji Pemahaman</span>
-            <span className="text-xl sm:text-2xl font-bold font-display text-emerald-600">
+            <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block">Uji Pemahaman</span>
+            <span className="text-lg sm:text-2xl font-bold font-display text-emerald-600">
               {quizSubmissions.length} Nilai
             </span>
           </div>
           <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/70 shadow-2xs backdrop-blur-xs">
-            <span className="text-[11px] text-slate-500 font-medium block">Eksplorasi Masuk</span>
-            <span className="text-xl sm:text-2xl font-bold font-display text-amber-600">
+            <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block">Eksplorasi Masuk</span>
+            <span className="text-lg sm:text-2xl font-bold font-display text-amber-600">
               {sessions.length} Karya
             </span>
           </div>
@@ -268,7 +268,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       </div>
 
       {/* Sub Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar scroll-smooth">
         <button
           onClick={() => setActiveSubTab('missions')}
           className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shrink-0 ${

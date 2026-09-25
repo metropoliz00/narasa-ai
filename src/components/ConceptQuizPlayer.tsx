@@ -636,11 +636,11 @@ export const ConceptQuizPlayer: React.FC<ConceptQuizPlayerProps> = ({
                     </div>
                 )}
 
-                {/* JENIS 3: BENAR / SALAH (TRUE/FALSE) - TABEL PERNYATAAN KELOMPOK / MURID */}
+                {/* JENIS 3: BENAR / SALAH (TRUE/FALSE) - TABEL & KARTU RESPONSIF */}
                 {currentQ.questionType === 'true_false' && (
                   <div className="space-y-4 pt-1">
                     {(() => {
-                      // Normalize statements array so single statements or array statements both use the Column Table
+                      // Normalize statements array so single statements or array statements both use the Column Table / Card
                       const displayStatements: TrueFalseStatement[] =
                         currentQ.statements && currentQ.statements.length > 0
                           ? currentQ.statements
@@ -656,21 +656,21 @@ export const ConceptQuizPlayer: React.FC<ConceptQuizPlayerProps> = ({
                       const isMulti = Boolean(currentQ.statements && currentQ.statements.length > 0);
 
                       return (
-                        <div className="space-y-3.5">
-                          {/* Table Container */}
-                          <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-xs">
+                        <div className="space-y-3">
+                          {/* Desktop Table View (sm and up) */}
+                          <div className="hidden sm:block rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-xs">
                             {/* Table Header Columns */}
                             <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-slate-100/90 border-b border-slate-200 items-center font-bold text-xs text-slate-700">
-                              <div className="col-span-7 sm:col-span-8 flex items-center gap-2">
+                              <div className="col-span-8 flex items-center gap-2">
                                 <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-800 text-[10px] flex items-center justify-center font-bold">#</span>
                                 <span>Pernyataan Konsep & Penalaran</span>
                               </div>
-                              <div className="col-span-2 sm:col-span-2 text-center">
+                              <div className="col-span-2 text-center">
                                 <span className="inline-block px-2 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-[11px] border border-emerald-200/80 w-full shadow-2xs">
                                   BENAR
                                 </span>
                               </div>
-                              <div className="col-span-3 sm:col-span-2 text-center">
+                              <div className="col-span-2 text-center">
                                 <span className="inline-block px-2 py-1 rounded-lg bg-rose-100 text-rose-800 font-extrabold text-[11px] border border-rose-200/80 w-full shadow-2xs">
                                   SALAH
                                 </span>
@@ -702,7 +702,7 @@ export const ConceptQuizPlayer: React.FC<ConceptQuizPlayerProps> = ({
                                     }`}
                                   >
                                     {/* Column 1: Statement Text */}
-                                    <div className="col-span-7 sm:col-span-8 flex items-start gap-2.5 pr-2">
+                                    <div className="col-span-8 flex items-start gap-2.5 pr-2">
                                       <span className="shrink-0 w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center border border-slate-200 mt-0.5">
                                         {sIdx + 1}
                                       </span>
@@ -712,7 +712,7 @@ export const ConceptQuizPlayer: React.FC<ConceptQuizPlayerProps> = ({
                                     </div>
 
                                     {/* Column 2: BENAR Button */}
-                                    <div className="col-span-2 sm:col-span-2 flex justify-center">
+                                    <div className="col-span-2 flex justify-center">
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -722,7 +722,7 @@ export const ConceptQuizPlayer: React.FC<ConceptQuizPlayerProps> = ({
                                             handleSelectTrueFalse(currentQ.id, true);
                                           }
                                         }}
-                                        className={`w-full max-w-[105px] py-2.5 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                        className={`w-full max-w-[105px] py-2.5 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[42px] ${
                                           userChoice === true
                                             ? 'bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-[1.02]'
                                             : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-400 hover:bg-emerald-50/60'
@@ -740,7 +740,7 @@ export const ConceptQuizPlayer: React.FC<ConceptQuizPlayerProps> = ({
                                     </div>
 
                                     {/* Column 3: SALAH Button */}
-                                    <div className="col-span-3 sm:col-span-2 flex justify-center">
+                                    <div className="col-span-2 flex justify-center">
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -750,7 +750,7 @@ export const ConceptQuizPlayer: React.FC<ConceptQuizPlayerProps> = ({
                                             handleSelectTrueFalse(currentQ.id, false);
                                           }
                                         }}
-                                        className={`w-full max-w-[105px] py-2.5 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                        className={`w-full max-w-[105px] py-2.5 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[42px] ${
                                           userChoice === false
                                             ? 'bg-rose-600 border-rose-600 text-white shadow-md shadow-rose-600/20 scale-[1.02]'
                                             : 'bg-white border-slate-200 text-slate-600 hover:border-rose-400 hover:bg-rose-50/60'
@@ -770,6 +770,81 @@ export const ConceptQuizPlayer: React.FC<ConceptQuizPlayerProps> = ({
                                 );
                               })}
                             </div>
+                          </div>
+
+                          {/* Mobile Friendly Card View (Screen < 640px) */}
+                          <div className="sm:hidden space-y-3">
+                            {displayStatements.map((stmt, sIdx) => {
+                              const userChoice: boolean | undefined = isMulti
+                                ? typeof currentAnsObj === 'object' && currentAnsObj !== null
+                                  ? currentAnsObj[stmt.id]
+                                  : undefined
+                                : typeof currentAnsObj === 'boolean'
+                                ? currentAnsObj
+                                : undefined;
+
+                              return (
+                                <div
+                                  key={stmt.id || sIdx}
+                                  className={`p-3.5 rounded-2xl border transition-all ${
+                                    typeof userChoice === 'boolean'
+                                      ? userChoice
+                                        ? 'bg-emerald-50/40 border-emerald-300 ring-1 ring-emerald-200'
+                                        : 'bg-rose-50/40 border-rose-300 ring-1 ring-rose-200'
+                                      : 'bg-white border-slate-200 shadow-2xs'
+                                  }`}
+                                >
+                                  <div className="flex items-start gap-2 mb-3">
+                                    <span className="shrink-0 w-6 h-6 rounded-lg bg-blue-100 text-blue-800 font-bold text-xs flex items-center justify-center mt-0.5">
+                                      {sIdx + 1}
+                                    </span>
+                                    <p className="text-xs font-semibold text-slate-800 leading-relaxed">
+                                      {stmt.statement}
+                                    </p>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (isMulti) {
+                                          handleSelectTrueFalseStatement(currentQ.id, stmt.id, true);
+                                        } else {
+                                          handleSelectTrueFalse(currentQ.id, true);
+                                        }
+                                      }}
+                                      className={`w-full py-2.5 px-3 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[44px] ${
+                                        userChoice === true
+                                          ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
+                                          : 'bg-white border-slate-200 text-slate-700 active:bg-emerald-50'
+                                      }`}
+                                    >
+                                      <Check className={`w-4 h-4 ${userChoice === true ? 'text-white' : 'text-emerald-600'}`} />
+                                      <span>BENAR</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (isMulti) {
+                                          handleSelectTrueFalseStatement(currentQ.id, stmt.id, false);
+                                        } else {
+                                          handleSelectTrueFalse(currentQ.id, false);
+                                        }
+                                      }}
+                                      className={`w-full py-2.5 px-3 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer min-h-[44px] ${
+                                        userChoice === false
+                                          ? 'bg-rose-600 border-rose-600 text-white shadow-xs'
+                                          : 'bg-white border-slate-200 text-slate-700 active:bg-rose-50'
+                                      }`}
+                                    >
+                                      <X className={`w-4 h-4 ${userChoice === false ? 'text-white' : 'text-rose-600'}`} />
+                                      <span>SALAH</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );

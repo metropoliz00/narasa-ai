@@ -309,49 +309,49 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
   const answeredCount = Object.values(stemAnswers).filter((v) => v.trim().length >= 3).length;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 text-left">
+    <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 text-left">
       {/* 8-Step STEM Workflow Stepper Bar with interactive cards */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm space-y-4 sm:space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#4F8EF7] to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-[#4F8EF7] to-indigo-600 text-white flex items-center justify-center font-bold text-base sm:text-lg shadow-sm shrink-0">
               {currentStepIndex + 1}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-blue-600 flex items-center gap-1.5">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-blue-600 flex items-center gap-1">
                   <Compass className="w-3.5 h-3.5 text-[#4F8EF7]" />
-                  Pola Berpikir STEM
+                  Pola STEM
                 </span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
                   Tahap {currentStepIndex + 1} dari 8
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-[#25324B] font-display flex items-center gap-2">
-                {getStageIcon(activeStageConfig.id, 'w-5 h-5 text-indigo-600')}
-                {activeStageConfig.title}
+              <h2 className="text-base sm:text-xl font-bold text-[#25324B] font-display flex items-center gap-1.5 truncate">
+                {getStageIcon(activeStageConfig.id, 'w-4 h-4 sm:w-5 sm:h-5 text-indigo-600 shrink-0')}
+                <span className="truncate">{activeStageConfig.title}</span>
               </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              {answeredCount} dari 8 Tahap Terisi
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            <span className="text-[11px] sm:text-xs font-semibold text-slate-600 bg-slate-50 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-slate-200/60 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>{answeredCount}/8 Selesai</span>
             </span>
           </div>
         </div>
 
         {/* Lock Warning Toast Notification if any */}
         {lockWarning && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-2xl flex items-center gap-2.5 text-xs sm:text-sm font-semibold animate-tab-fade">
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3.5 py-2.5 rounded-2xl flex items-center gap-2 text-xs font-semibold animate-tab-fade">
             <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>{lockWarning}</span>
+            <span className="leading-snug">{lockWarning}</span>
           </div>
         )}
 
-        {/* 8 Interactive Premium STEM Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
+        {/* 8 Interactive STEM Cards (Horizontal scroll on mobile, clean grid on desktop) */}
+        <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-2.5 overflow-x-auto pb-1.5 sm:pb-0 no-scrollbar">
           {STEM_STAGES_CONFIG.map((stage, idx) => {
             const status = getStageLockStatus(idx);
             const isCurrent = idx === currentStepIndex;
@@ -361,9 +361,9 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                 key={stage.id}
                 type="button"
                 onClick={() => handleGoToStep(idx)}
-                className={`p-2.5 rounded-2xl border text-left transition-all duration-300 flex flex-col justify-between min-h-[92px] group/card hover-wiggle ${
+                className={`p-2.5 rounded-2xl border text-left transition-all duration-300 flex flex-col justify-between min-w-[110px] sm:min-w-0 sm:min-h-[92px] group/card shrink-0 sm:shrink ${
                   isCurrent
-                    ? 'border-blue-500 bg-blue-50/75 ring-3 ring-blue-100 shadow-md transform -translate-y-1'
+                    ? 'border-blue-500 bg-blue-50/75 ring-2 sm:ring-3 ring-blue-100 shadow-md transform sm:-translate-y-1'
                     : status.isCompleted
                     ? 'border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/90 hover:border-emerald-300 hover:shadow-xs cursor-pointer'
                     : !status.isLocked
@@ -371,7 +371,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                     : 'border-slate-200 bg-slate-100/50 text-slate-400 opacity-65 cursor-not-allowed'
                 }`}
               >
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center justify-between w-full gap-1">
                   <span
                     className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
                       isCurrent
@@ -406,14 +406,14 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-2.5 space-y-0.5">
+                <div className="mt-2 space-y-0.5">
                   <div className="flex items-center gap-1">
                     {getStageIcon(stage.id, `w-3.5 h-3.5 ${
                       isCurrent ? 'text-blue-600' : status.isCompleted ? 'text-emerald-600' : 'text-slate-400'
                     }`)}
                   </div>
                   <span
-                    className={`text-[10px] font-bold line-clamp-1 block leading-tight ${
+                    className={`text-[10px] font-bold truncate block leading-tight ${
                       isCurrent ? 'text-blue-900' : status.isCompleted ? 'text-emerald-900' : 'text-slate-600'
                     }`}
                     title={stage.title}
@@ -428,16 +428,16 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
       </div>
 
       {/* Main STEM Question Card with Photo Context */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-md space-y-5 sm:space-y-6">
         {/* Context Photo Strip */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
           <img
             src={photoUrl}
             alt="Objek kontekstual"
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-200 shrink-0 shadow-xs"
+            className="w-full sm:w-20 h-36 sm:h-20 rounded-xl sm:rounded-2xl object-cover border border-slate-200 shrink-0 shadow-xs"
           />
           <div className="space-y-1 text-xs sm:text-sm text-slate-700 leading-snug">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span className="font-bold text-[#25324B]">
                 Konteks: {learningBridge.detectedObject}
               </span>
@@ -452,15 +452,15 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
         </div>
 
         {/* Question Text Box with Stage Explainer */}
-        <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-purple-50/40 p-5 sm:p-6 rounded-2xl border border-blue-200 space-y-3 relative">
+        <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-purple-50/40 p-4 sm:p-6 rounded-2xl border border-blue-200 space-y-2.5 sm:space-y-3 relative">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700 bg-blue-100/80 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+            <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-blue-700 bg-blue-100/80 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
               {getStageIcon(activeStageConfig.id, 'w-3.5 h-3.5')}
               {activeStageConfig.badge}
             </span>
             <button
               onClick={() => handleReadAloud(activeQuestion.question)}
-              className="p-2 rounded-xl text-blue-700 hover:bg-blue-100 transition-colors shrink-0 flex items-center gap-1 text-xs font-bold"
+              className="p-1.5 sm:p-2 rounded-xl text-blue-700 hover:bg-blue-100 transition-colors shrink-0 flex items-center gap-1 text-xs font-bold min-h-[36px]"
               title="Dengarkan Soal"
             >
               <Volume2 className="w-4 h-4" />
@@ -468,13 +468,13 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
             </button>
           </div>
 
-          <p className="text-base sm:text-lg font-bold text-[#25324B] leading-relaxed">
+          <p className="text-sm sm:text-lg font-bold text-[#1E293B] leading-relaxed">
             {activeQuestion.question}
           </p>
 
           <div className="pt-1 border-t border-blue-200/60 flex items-center gap-1.5 text-xs text-blue-800 font-medium">
             <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span>{activeStageConfig.microcopy}</span>
+            <span className="leading-snug">{activeStageConfig.microcopy}</span>
           </div>
         </div>
 
@@ -483,7 +483,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
           <label className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <PenTool className="w-3.5 h-3.5 text-blue-600" />
-              Tuliskan Pemikiran / Solusi untuk Tahap Ini:
+              Pemikiran / Solusi:
             </span>
             <span className="text-[11px] text-slate-400 lowercase font-normal">
               {currentAnswerValue.length} karakter
@@ -494,7 +494,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
             value={currentAnswerValue}
             onChange={(e) => handleUpdateCurrentAnswer(e.target.value)}
             placeholder={activeStageConfig.placeholder}
-            className="w-full p-4 rounded-2xl border border-slate-300 focus:border-[#4F8EF7] focus:ring-3 focus:ring-blue-100 outline-none text-sm text-slate-800 transition-all resize-none shadow-xs"
+            className="w-full p-3.5 sm:p-4 rounded-2xl border border-slate-300 focus:border-[#4F8EF7] focus:ring-3 focus:ring-blue-100 outline-none text-sm text-slate-800 transition-all resize-none shadow-xs"
           />
         </div>
 
@@ -503,20 +503,20 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
           <button
             type="button"
             onClick={handleOpenScaffolding}
-            className="w-full py-3 px-4 rounded-2xl border border-dashed border-purple-300 bg-purple-50/70 hover:bg-purple-100/90 text-purple-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+            className="w-full py-3 px-3 sm:px-4 rounded-2xl border border-dashed border-purple-300 bg-purple-50/70 hover:bg-purple-100/90 text-purple-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px]"
           >
-            <Lightbulb className="w-4 h-4 text-amber-500" />
-            <span>Merasa kesulitan di tahap {activeStageConfig.title}? Minta Bantuan Tutor Adaptif</span>
+            <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="leading-tight text-center">Merasa kesulitan? Minta Bantuan Tutor Adaptif</span>
           </button>
         ) : (
-          <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200 p-5 rounded-2xl space-y-3">
+          <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200 p-4 sm:p-5 rounded-2xl space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="w-7 h-7 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                <span className="w-7 h-7 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
                   L{currentScaffoldLevel}
                 </span>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-purple-900">
+                  <h4 className="text-xs sm:text-sm font-bold text-purple-900 leading-snug">
                     Bantuan Adaptif Level {currentScaffoldLevel}:{' '}
                     {currentScaffoldLevel === 1 && 'Petunjuk Awal'}
                     {currentScaffoldLevel === 2 && 'Pertanyaan Penuntun'}
@@ -524,21 +524,21 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                     {currentScaffoldLevel === 4 && 'Contoh Analog Sederhana'}
                   </h4>
                   <p className="text-[10px] text-purple-600">
-                    Petunjuk berpikir mandiri tanpa memberi contekan jawaban langsung
+                    Petunjuk berpikir mandiri tanpa memberi contekan langsung
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => handleReadAloud(currentHint)}
-                className="p-1.5 rounded-lg text-purple-700 hover:bg-purple-200/50"
+                className="p-1.5 rounded-lg text-purple-700 hover:bg-purple-200/50 shrink-0"
                 title="Dengarkan Petunjuk"
               >
                 <Volume2 className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-800 bg-white/90 p-4 rounded-xl border border-purple-100 leading-relaxed font-medium shadow-2xs">
+            <p className="text-xs sm:text-sm text-slate-800 bg-white/90 p-3 sm:p-4 rounded-xl border border-purple-100 leading-relaxed font-medium shadow-2xs">
               “{currentHint}”
             </p>
 
@@ -547,7 +547,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                 <button
                   type="button"
                   onClick={handleNextLevelScaffold}
-                  className="text-xs font-bold text-purple-700 hover:text-purple-900 underline flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-bold text-purple-700 hover:text-purple-900 underline flex items-center gap-1 cursor-pointer min-h-[36px]"
                 >
                   <span>Masih butuh bantuan? Naikkan ke Level {currentScaffoldLevel + 1}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -558,13 +558,13 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
         )}
 
         {/* Action Controls */}
-        <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             {currentStepIndex > 0 && (
               <button
                 type="button"
                 onClick={() => handleGoToStep(currentStepIndex - 1)}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer min-h-[44px]"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Tahap Sebelumnya</span>
@@ -576,14 +576,14 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
             <button
               type="button"
               onClick={handleAdvance}
-              className="w-full sm:w-auto py-3 px-6 rounded-2xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:scale-98 cursor-pointer"
+              className="w-full sm:w-auto py-3 px-5 sm:px-6 rounded-2xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm active:scale-98 cursor-pointer min-h-[48px]"
             >
-              <span>
+              <span className="truncate">
                 {currentStepIndex < stemQuestions.length - 1
-                  ? `Lanjut ke Tahap ${currentStepIndex + 2}: ${STEM_STAGES_CONFIG[currentStepIndex + 1]?.title}`
-                  : 'Selesai 8 Tahap STEM & Masuk Refleksi'}
+                  ? `Lanjut Tahap ${currentStepIndex + 2}: ${STEM_STAGES_CONFIG[currentStepIndex + 1]?.title}`
+                  : 'Selesai 8 Tahap & Refleksi'}
               </span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 shrink-0" />
             </button>
           </div>
         </div>

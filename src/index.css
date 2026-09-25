@@ -1,10 +1,17 @@
 @import "tailwindcss";
 
 @layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     background-color: #ffffff;
     position: relative;
+    overflow-x: hidden;
+    touch-action: manipulation;
   }
   body::before {
     content: "";
@@ -24,7 +31,27 @@
 
   h1, h2, h3, .font-display {
     font-family: 'Fredoka', 'Plus Jakarta Sans', system-ui, sans-serif;
+    text-wrap: balance;
   }
+
+  /* Prevent text overlapping and input auto-zoom on mobile safari/chrome */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+  @media (min-width: 640px) {
+    input, textarea, select {
+      font-size: 0.875rem !important; /* 14px */
+    }
+  }
+}
+
+/* Hide scrollbar for clean horizontal mobile carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Custom smooth transitions and animations */

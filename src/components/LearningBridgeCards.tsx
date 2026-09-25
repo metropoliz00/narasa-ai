@@ -102,10 +102,10 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-5 sm:space-y-6 max-w-4xl mx-auto text-left">
       {/* Top Banner with Photo & Object Detected */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center gap-5 relative">
-        <div className="relative w-full md:w-56 h-44 rounded-2xl overflow-hidden bg-slate-900 shrink-0 border border-slate-200 shadow-inner">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center gap-4 sm:gap-5 relative">
+        <div className="relative w-full md:w-56 h-48 sm:h-44 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 shrink-0 border border-slate-200 shadow-inner">
           <img
             src={photoUrl}
             alt={bridgeResult.detectedObject}
@@ -116,15 +116,15 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 space-y-2 text-center md:text-left">
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${badge.bg}`}>
-              <BadgeIcon className="w-3.5 h-3.5" />
-              {badge.label}
+        <div className="flex-1 space-y-2 text-left w-full">
+          <div className="flex flex-wrap items-center justify-start gap-1.5 sm:gap-2">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold border ${badge.bg}`}>
+              <BadgeIcon className="w-3.5 h-3.5 shrink-0" />
+              <span>{badge.label}</span>
             </span>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-bold text-[#25324B] font-display">
+          <h2 className="text-lg sm:text-2xl font-bold text-[#25324B] font-display">
             {bridgeResult.detectedObject}
           </h2>
 
@@ -135,7 +135,7 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
           {isWeak && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 space-y-1 text-left">
               <p className="font-bold flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                 Saran Guru & Panduan Belajar:
               </p>
               <p>
@@ -148,25 +148,25 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
       </div>
 
       {/* The Pedagogical Grid Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
         {/* Card 1: 👁️ Yang Saya Lihat */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-4">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3 sm:space-y-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#4F8EF7] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#4F8EF7] flex items-center justify-center shrink-0">
               <Eye className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#25324B] tracking-wide uppercase">
+              <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
                 👁️ Yang Saya Lihat
               </h3>
-              <p className="text-[11px] text-slate-400">Pengamatan & Hasil Temuanmu</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-400">Pengamatan & Temuanmu</p>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             {/* Render student's initial findings if present */}
             {studentObs && (
-              <div className="bg-blue-50/50 border border-blue-100 p-3.5 rounded-2xl space-y-1.5">
+              <div className="bg-blue-50/50 border border-blue-100 p-3 sm:p-3.5 rounded-2xl space-y-1">
                 <span className="text-[10px] font-extrabold text-blue-700 tracking-wider uppercase block">
                   📝 Temuan Awal Pengamatanmu:
                 </span>
@@ -187,7 +187,7 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
                   🤖 Analisis & Detail Tambahan dari AI:
                 </span>
               )}
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100 min-h-[90px]">
+              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed bg-slate-50/70 p-3 sm:p-3.5 rounded-2xl border border-slate-100 min-h-[80px]">
                 {bridgeResult.observation}
               </p>
             </div>
@@ -195,37 +195,37 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
         </div>
 
         {/* Card 2: 🔗 Hubungannya dengan Pelajaran */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-purple-50 text-[#7C5CFC] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 text-[#7C5CFC] flex items-center justify-center shrink-0">
               <Link2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#25324B] tracking-wide uppercase">
+              <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
                 🔗 Hubungannya dengan Pelajaran
               </h3>
-              <p className="text-[11px] text-slate-400">Koneksi ke Materi Pelajaran</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-400">Koneksi ke Materi Pelajaran</p>
             </div>
           </div>
-          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed bg-purple-50/40 p-3.5 rounded-2xl border border-purple-100 min-h-[90px]">
+          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed bg-purple-50/40 p-3 sm:p-3.5 rounded-2xl border border-purple-100 min-h-[80px]">
             {bridgeResult.learningBridge}
           </p>
         </div>
 
         {/* Card 3: 📚 Materi Guru */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#20C9A6] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#20C9A6] flex items-center justify-center shrink-0">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#25324B] tracking-wide uppercase">
+              <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
                 📚 Materi Pembelajaran
               </h3>
-              <p className="text-[11px] text-slate-400">Konfigurasi Guru</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-400">Konfigurasi Guru</p>
             </div>
           </div>
-          <div className="bg-emerald-50/40 p-3.5 rounded-2xl border border-emerald-100 space-y-1 min-h-[90px]">
+          <div className="bg-emerald-50/40 p-3 sm:p-3.5 rounded-2xl border border-emerald-100 space-y-1 min-h-[80px]">
             <p className="text-xs font-bold text-emerald-900">{bridgeResult.subject}</p>
             <p className="text-xs sm:text-sm text-slate-700 leading-snug">
               {isMaterialExpanded ? bridgeResult.material : `${bridgeResult.material.substring(0, 150)}${bridgeResult.material.length > 150 ? '...' : ''}`}
@@ -233,7 +233,7 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
             {bridgeResult.material.length > 150 && (
               <button 
                 onClick={() => setIsMaterialExpanded(!isMaterialExpanded)}
-                className="text-xs font-bold text-emerald-700 hover:text-emerald-900 cursor-pointer pt-1"
+                className="text-xs font-bold text-emerald-700 hover:text-emerald-900 cursor-pointer pt-1 min-h-[32px] flex items-center"
               >
                 {isMaterialExpanded ? "Sembunyikan" : "Baca Selengkapnya"}
               </button>
@@ -242,19 +242,19 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
         </div>
 
         {/* Card 4: 🎯 Target Belajar */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#FFC857] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#FFC857] flex items-center justify-center shrink-0">
               <Target className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#25324B] tracking-wide uppercase">
+              <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
                 🎯 Target Belajar
               </h3>
-              <p className="text-[11px] text-slate-400">Kompetensi yang Dibangun</p>
+              <p className="text-[10px] sm:text-[11px] text-slate-400">Kompetensi yang Dibangun</p>
             </div>
           </div>
-          <div className="bg-amber-50/40 p-3.5 rounded-2xl border border-amber-100 space-y-1 min-h-[90px]">
+          <div className="bg-amber-50/40 p-3 sm:p-3.5 rounded-2xl border border-amber-100 space-y-1 min-h-[80px]">
             <p className="text-xs font-bold text-amber-900">Tujuan Pembelajaran (TP)</p>
             <p className="text-xs sm:text-sm text-slate-700 leading-snug">
               {bridgeResult.learningTarget}
@@ -264,19 +264,19 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
 
         {/* Card: 📖 Ringkasan Materi Sederhana untuk Murid */}
         {bridgeResult.simpleMaterialSummary && (
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-emerald-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3 md:col-span-2">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-emerald-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3 md:col-span-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-[#25324B] tracking-wide uppercase">
-                  📖 Ringkasan Materi Sederhana untuk Murid
+                <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
+                  📖 Ringkasan Materi Sederhana
                 </h3>
-                <p className="text-[11px] text-emerald-700 font-semibold">Rangkuman konsep inti dengan bahasa yang sangat mudah dipahami</p>
+                <p className="text-[10px] sm:text-[11px] text-emerald-700 font-semibold">Rangkuman konsep inti dengan bahasa mudah dipahami</p>
               </div>
             </div>
-            <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200/60 text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
+            <div className="bg-emerald-50/50 p-3.5 sm:p-4 rounded-2xl border border-emerald-200/60 text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
               {bridgeResult.simpleMaterialSummary}
             </div>
           </div>
@@ -284,69 +284,69 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
 
         {/* Card: 🎯 Taksonomi SOLO Eksplorasi */}
         {bridgeResult.soloTaxonomyLevel && (
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-indigo-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3 md:col-span-2">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-indigo-200/90 shadow-sm hover:shadow-md transition-shadow space-y-3 md:col-span-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                 <Brain className="w-5 h-5" />
               </div>
               <div className="flex-1 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-sm font-bold text-[#25324B] tracking-wide uppercase">
-                    🎯 Taksonomi SOLO (Tingkat Kedalaman Pemahaman)
+                  <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase">
+                    🎯 Taksonomi SOLO
                   </h3>
-                  <p className="text-[11px] text-indigo-700 font-semibold">Struktur Hasil Belajar Teramati dari Eksplorasi Objek</p>
+                  <p className="text-[10px] sm:text-[11px] text-indigo-700 font-semibold">Struktur Pemahaman Teramati</p>
                 </div>
-                <span className="px-3 py-1 rounded-xl bg-indigo-100 text-indigo-800 text-xs font-extrabold border border-indigo-200">
+                <span className="px-2.5 py-0.5 rounded-xl bg-indigo-100 text-indigo-800 text-[11px] sm:text-xs font-extrabold border border-indigo-200">
                   {bridgeResult.soloTaxonomyLevel}
                 </span>
               </div>
             </div>
             {bridgeResult.soloDescription && (
-              <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-200/60 text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
+              <div className="bg-indigo-50/50 p-3.5 sm:p-4 rounded-2xl border border-indigo-200/60 text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
                 {bridgeResult.soloDescription}
               </div>
             )}
           </div>
         )}
 
-        {/* Card: 💡 Pertanyaan Pematik untuk Murid (Diletakkan di Bagian Bawah - Wajib Diisi) */}
-        <div className={`bg-white rounded-3xl p-5 sm:p-6 border ${showValidationWarning && !isPemantikFilled ? 'border-rose-400 ring-2 ring-rose-200 bg-rose-50/20' : 'border-amber-300'} shadow-sm hover:shadow-md transition-all space-y-4 md:col-span-2`}>
+        {/* Card: 💡 Pertanyaan Pematik untuk Murid (Wajib Diisi) */}
+        <div className={`bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border ${showValidationWarning && !isPemantikFilled ? 'border-rose-400 ring-2 ring-rose-200 bg-rose-50/20' : 'border-amber-300'} shadow-sm hover:shadow-md transition-all space-y-3 sm:space-y-4 md:col-span-2`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-[#25324B] tracking-wide uppercase flex items-center gap-2">
-                  💡 Pertanyaan Pematik untuk Murid
+                <h3 className="text-xs sm:text-sm font-bold text-[#25324B] tracking-wide uppercase flex items-center gap-2">
+                  💡 Pertanyaan Pemantik Murid
                 </h3>
-                <p className="text-[11px] text-amber-700 font-semibold">Pancingan rasa ingin tahu & eksplorasi konsep</p>
+                <p className="text-[10px] sm:text-[11px] text-amber-700 font-semibold">Pancingan rasa ingin tahu & eksplorasi konsep</p>
               </div>
             </div>
 
             <div className="shrink-0">
               {isPemantikFilled ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   Sudah Diisi
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
-                  Wajib Diisi untuk Melanjutkan
+                  Wajib Diisi
                 </span>
               )}
             </div>
           </div>
 
           {/* List of Guiding Questions */}
-          <div className="space-y-2 bg-amber-50/60 p-4 rounded-2xl border border-amber-200/80">
-            <span className="text-[11px] font-extrabold text-amber-900 uppercase tracking-wider block">
+          <div className="space-y-2 bg-amber-50/60 p-3.5 sm:p-4 rounded-2xl border border-amber-200/80">
+            <span className="text-[10px] sm:text-[11px] font-extrabold text-amber-900 uppercase tracking-wider block">
               Pertanyaan yang Perlu Kamu Renungkan:
             </span>
             <div className="space-y-2">
               {questionsList.map((q, idx) => (
-                <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-800 font-medium">
+                <div key={idx} className="flex items-start gap-2 text-xs sm:text-sm text-slate-800 font-medium">
                   <span className="w-5 h-5 rounded-full bg-amber-500 text-white font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
@@ -357,11 +357,11 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
           </div>
 
           {/* Interactive Mandatory Response Field */}
-          <div className="space-y-2 pt-1">
+          <div className="space-y-1.5 pt-1">
             <label htmlFor="pemantik-answer-input" className="flex items-center justify-between text-xs font-bold text-slate-800">
               <span className="flex items-center gap-1.5 text-slate-800">
-                <PenTool className="w-3.5 h-3.5 text-amber-600" />
-                Tuliskan Jawaban / Tanggapanmu terhadap Pertanyaan Pematik di Atas:
+                <PenTool className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                Tanggapan Pertanyaan Pemantik:
                 <span className="text-rose-600 font-extrabold">*</span>
               </span>
               <span className="text-[11px] font-normal text-slate-400">
@@ -379,14 +379,14 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
                   setShowValidationWarning(false);
                 }
               }}
-              placeholder="Ketikkan pemikiran, hipotesis, atau jawabanmu mengenai pertanyaan pemantik di atas... (Wajib diisi sebelum lanjut ke tantangan penalaran)"
+              placeholder="Ketikkan pemikiran atau jawabanmu mengenai pertanyaan pemantik di atas..."
               className={`w-full p-3.5 text-xs sm:text-sm text-slate-800 bg-white rounded-2xl border ${showValidationWarning && !isPemantikFilled ? 'border-rose-400 focus:ring-2 focus:ring-rose-200' : 'border-slate-300 focus:border-[#4F8EF7] focus:ring-2 focus:ring-blue-100'} outline-none transition-all placeholder:text-slate-400`}
             />
 
             {showValidationWarning && !isPemantikFilled && (
               <p className="text-xs font-bold text-rose-600 flex items-center gap-1.5 pt-0.5">
                 <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                Pertanyaan pemantik wajib diisi terlebih dahulu sebelum memulai tantangan penalaran.
+                Pertanyaan pemantik wajib diisi terlebih dahulu sebelum memulai tantangan.
               </p>
             )}
           </div>
@@ -394,28 +394,26 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
       </div>
 
       {/* Main Action Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-          <button
-            onClick={onRetakePhoto}
-            className="flex-1 sm:flex-none px-5 py-3 rounded-2xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center gap-2 text-sm cursor-pointer"
-          >
-            <RotateCw className="w-4 h-4" />
-            Foto Objek Lain
-          </button>
-        </div>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+        <button
+          onClick={onRetakePhoto}
+          className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer min-h-[46px]"
+        >
+          <RotateCw className="w-4 h-4" />
+          <span>Foto Objek Lain</span>
+        </button>
 
         <div className="w-full sm:w-auto flex flex-col items-end gap-1">
           <button
             onClick={handleAttemptStartChallenge}
-            className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 text-base active:scale-98 cursor-pointer ${
+            className={`w-full sm:w-auto px-6 sm:px-8 py-3.5 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:scale-98 cursor-pointer min-h-[48px] ${
               isPemantikFilled
                 ? 'bg-gradient-to-r from-[#4F8EF7] via-[#7C5CFC] to-[#20C9A6] text-white hover:shadow-lg hover:shadow-blue-500/25'
                 : 'bg-slate-200 text-slate-500 hover:bg-slate-300 border border-slate-300'
             }`}
           >
-            <Brain className="w-5 h-5" />
-            Mulai Tantangan Penalaran
+            <Brain className="w-5 h-5 shrink-0" />
+            <span>Mulai Tantangan Penalaran</span>
           </button>
           {!isPemantikFilled && (
             <span className="text-[11px] text-amber-700 font-medium text-center sm:text-right w-full">

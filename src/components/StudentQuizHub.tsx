@@ -89,9 +89,9 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 text-left pb-16">
+    <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 text-left pb-16">
       {/* Hero Banner with White Theme & Literacy-Numeracy Background */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 text-slate-900 relative overflow-hidden shadow-sm border border-slate-200/90 group">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-slate-900 relative overflow-hidden shadow-sm border border-slate-200/90 group">
         {/* Background Image: Literacy & Numeracy */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <img
@@ -105,32 +105,32 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
           <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-white/40 pointer-events-none" />
         </div>
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
           <div className="space-y-2 max-w-xl">
-            <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight text-[#1E293B]">
+            <h1 className="text-xl sm:text-3xl font-bold font-display tracking-tight text-[#1E293B] leading-snug">
               Uji Pemahaman Konsep <span className="text-blue-600">Literasi & Numerasi</span>
             </h1>
 
             {currentUser.isGroup && currentUser.groupMembers && (
-              <div className="pt-2 text-xs text-amber-800 flex items-center gap-1.5 font-semibold">
-                <Users className="w-3.5 h-3.5 text-amber-600" />
+              <div className="pt-1 text-xs text-amber-800 flex items-center gap-1.5 font-semibold flex-wrap">
+                <Users className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span>Anggota Tim: {currentUser.groupMembers.join(', ')}</span>
               </div>
             )}
           </div>
 
           {/* Quick Summary Box */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-3.5 rounded-2xl bg-white/90 border border-slate-200/90 shadow-2xs text-center min-w-[110px]">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+              <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/90 shadow-2xs text-center min-w-[100px] sm:min-w-[110px]">
                 <span className="text-[10px] text-slate-500 block font-semibold">Kuis Selesai</span>
-                <span className="text-xl font-bold font-display text-emerald-600">
+                <span className="text-lg sm:text-xl font-bold font-display text-emerald-600">
                   {mySubmissions.length} / {quizzes.length}
                 </span>
               </div>
-              <div className="p-3.5 rounded-2xl bg-white/90 border border-slate-200/90 shadow-2xs text-center min-w-[110px]">
+              <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/90 shadow-2xs text-center min-w-[100px] sm:min-w-[110px]">
                 <span className="text-[10px] text-slate-500 block font-semibold">Rata-rata Nilai</span>
-                <span className="text-xl font-bold font-display text-amber-600">
+                <span className="text-lg sm:text-xl font-bold font-display text-amber-600">
                   {averageScore} / 100
                 </span>
               </div>
@@ -140,14 +140,14 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
       </div>
 
       {/* Filter Mata Pelajaran (Dropdown) */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <Filter className="w-4 h-4" />
           </div>
           <div>
             <span className="text-xs font-bold text-slate-800 block">Pilih Mata Pelajaran</span>
-            <span className="text-[11px] text-slate-500 hidden sm:block">Menampilkan {filteredQuizzes.length} kuis tantangan</span>
+            <span className="text-[10px] sm:text-[11px] text-slate-500">Menampilkan {filteredQuizzes.length} kuis tantangan</span>
           </div>
         </div>
 
@@ -155,7 +155,7 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
           <select
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
-            className="w-full appearance-none px-4 py-2.5 pr-10 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 cursor-pointer shadow-2xs transition-all"
+            className="w-full appearance-none px-4 py-2.5 pr-10 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 cursor-pointer shadow-2xs transition-all min-h-[42px]"
           >
             <option value="all">Semua Mapel ({quizzes.length})</option>
             {subjects.map((subj) => (
@@ -169,7 +169,7 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
       </div>
 
       {/* Quiz List Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         {filteredQuizzes.map((quiz) => {
           const submission = mySubmissions.find((s) => s.quizId === quiz.id);
           const isDone = !!submission;
@@ -179,7 +179,7 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
           return (
             <div
               key={quiz.id}
-              className={`rounded-3xl p-6 border transition-all flex flex-col justify-between space-y-4 relative ${
+              className={`rounded-2xl sm:rounded-3xl p-4 sm:p-6 border transition-all flex flex-col justify-between space-y-4 relative ${
                 isLocked
                   ? 'bg-slate-50/70 border-slate-200/80 text-slate-400 opacity-95 shadow-none'
                   : isDone
@@ -189,12 +189,12 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
             >
               <div className="space-y-3">
                 {/* Header tags */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                       {quiz.subject}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
                       {quiz.grade}
                     </span>
                     {quiz.isAiGenerated && (
@@ -230,7 +230,7 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2.5">
                       <span className="text-[11px] text-white font-medium flex items-center gap-1">
-                        <BookOpen className="w-3 h-3 text-blue-300" /> Stimulus Visual Split Screen
+                        <BookOpen className="w-3 h-3 text-blue-300" /> Stimulus Visual
                       </span>
                     </div>
                   </div>
@@ -238,7 +238,7 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
 
                 {/* Title and Description */}
                 <div>
-                  <h3 className={`text-base font-bold leading-snug font-display ${isLocked ? 'text-slate-500 line-through decoration-slate-300' : 'text-[#1E293B]'}`}>
+                  <h3 className={`text-sm sm:text-base font-bold leading-snug font-display ${isLocked ? 'text-slate-500 line-through decoration-slate-300' : 'text-[#1E293B]'}`}>
                     {quiz.title}
                   </h3>
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed line-clamp-2">
@@ -248,7 +248,7 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
 
                 {/* Mission requirements status box */}
                 {isLocked ? (
-                  <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-100 text-xs text-amber-900 space-y-1.5">
+                  <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-100 text-xs text-amber-900 space-y-1.5">
                     <div className="flex items-center gap-1.5 font-bold">
                       <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                       <span>Uji Pemahaman Terkunci</span>
@@ -256,14 +256,14 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
                     <p className="text-[11px] text-amber-800 leading-relaxed font-normal">
                       Selesaikan <strong>semua 4 Misi Eksplorasi</strong> untuk mata pelajaran <strong>{quiz.subject}</strong> agar ujian ini terbuka.
                     </p>
-                    <div className="pt-1 flex items-center justify-between text-[11px]">
+                    <div className="pt-0.5 flex items-center justify-between text-[11px]">
                       <span className="font-semibold text-slate-500">Misi Selesai:</span>
                       <span className="px-2 py-0.5 bg-amber-100 rounded-md font-extrabold text-amber-900 border border-amber-200">
                         {missionStatus.completedCount} / {missionStatus.totalCount} Misi
                       </span>
                     </div>
                     <div className="flex gap-1 pt-1">
-                      {Array.from({ length: missionStatus.totalCount }).map((_, i) => (
+                      {Array.from({ length: Math.max(1, missionStatus.totalCount) }).map((_, i) => (
                         <div 
                           key={i} 
                           className={`h-2 flex-1 rounded-full ${
@@ -274,10 +274,10 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-100 text-xs text-emerald-900 flex items-start gap-2">
+                  <div className="p-3 rounded-2xl bg-emerald-50/60 border border-emerald-100 text-xs text-emerald-900 flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-emerald-950">Akses Terbuka</span>
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="font-bold text-emerald-950 block">Akses Terbuka</span>
                       <p className="text-[11px] text-emerald-800 font-normal leading-relaxed">
                         Kerja bagus! Seluruh {missionStatus.totalCount} misi telah diselesaikan. Uji pemahaman sekarang terbuka.
                       </p>
@@ -290,7 +290,7 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
                   <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-emerald-900">Predikat: {submission.predicate}</span>
-                      <span className="text-emerald-700 font-semibold">{submission.completedAt}</span>
+                      <span className="text-emerald-700 font-semibold text-[11px]">{submission.completedAt}</span>
                     </div>
                     {submission.needsManualGrading && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
@@ -309,7 +309,7 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
                 <button
                   disabled={isLocked}
                   onClick={() => !isLocked && setActiveQuizToPlay(quiz)}
-                  className={`w-full py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs ${
+                  className={`w-full py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all min-h-[46px] shadow-xs cursor-pointer ${
                     isLocked
                       ? 'bg-slate-100 text-slate-400 border border-slate-200/60 cursor-not-allowed shadow-none'
                       : isDone

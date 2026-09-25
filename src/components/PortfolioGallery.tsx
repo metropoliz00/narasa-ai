@@ -77,13 +77,13 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
   return (
     <div className="max-w-6xl mx-auto space-y-6 text-left">
       {/* Header */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="p-1.5 rounded-xl bg-blue-100 text-[#4F8EF7]">
               <FolderKanban className="w-5 h-5" />
             </span>
-            <h2 className="text-xl font-bold text-[#25324B] font-display">
+            <h2 className="text-lg sm:text-xl font-bold text-[#25324B] font-display">
               Portofolio Digital Murid
             </h2>
           </div>
@@ -93,43 +93,45 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
         </div>
 
         {/* Filter controls & Print Action */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
           {/* Global Print Portfolio Button */}
           <button
             onClick={() => handleOpenPrintModal('all')}
-            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
             title="Cetak Laporan Lengkap Portofolio (PDF)"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Cetak Rekap Portofolio (PDF)</span>
           </button>
 
-          {/* Subject Dropdown */}
-          <div className="relative min-w-[150px]">
-            <select
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value)}
-              className="w-full appearance-none pl-3 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 cursor-pointer shadow-2xs transition-all"
-            >
-              {subjects.map((subj) => (
-                <option key={subj} value={subj}>
-                  {subj === 'all' ? 'Semua Mapel' : subj}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+          {/* Subject Dropdown & Search bar row */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-36">
+              <select
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="w-full appearance-none pl-3 pr-8 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 cursor-pointer shadow-2xs transition-all"
+              >
+                {subjects.map((subj) => (
+                  <option key={subj} value={subj}>
+                    {subj === 'all' ? 'Semua Mapel' : subj}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
 
-          {/* Search bar */}
-          <div className="relative flex-1 md:w-44">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari karya..."
-              className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none shadow-2xs"
-            />
+            {/* Search bar */}
+            <div className="relative flex-1 sm:w-44">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari karya..."
+                className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none shadow-2xs"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -275,17 +277,17 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
               </div>
             </div>
 
-            <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-t border-slate-100">
               <button
                 onClick={() => {
                   const s = activeDetailSession;
                   setActiveDetailSession(null);
                   handleOpenPrintModal(s.id);
                 }}
-                className="px-4 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
-                <span>Cetak Dokumen Portofolio (PDF)</span>
+                <span>Cetak Dokumen (PDF)</span>
               </button>
 
               <button
@@ -294,7 +296,7 @@ export const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
                   setActiveDetailSession(null);
                   onOpenSessionPresentation(s);
                 }}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold text-xs sm:text-sm flex items-center gap-2"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
               >
                 <Play className="w-4 h-4 fill-white" />
                 <span>Buka Mode Presentasi</span>

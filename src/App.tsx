@@ -973,9 +973,9 @@ export default function App() {
             <div key={studentTab} className="animate-tab-fade space-y-6">
               {/* 1. STUDENT HOME TAB */}
               {studentTab === 'home' && (
-                  <div className="space-y-6 text-left">
+                  <div className="space-y-5 sm:space-y-6 text-left">
                     {/* Hero Student Banner (With Relevant Literacy & Numeracy Visual Background on Light Theme) */}
-                    <div className="rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-md relative overflow-hidden group border border-slate-200/90 bg-white">
+                    <div className="rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-md relative overflow-hidden group border border-slate-200/90 bg-white">
                       {/* Panoramic Background Image - High Visibility */}
                       <img
                         src={studentBannerBg}
@@ -984,28 +984,28 @@ export default function App() {
                         referrerPolicy="no-referrer"
                       />
                       {/* Crisp Light White Gradient Overlays */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-transparent sm:w-3/4 pointer-events-none" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-white/30 pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/98 via-white/90 to-transparent sm:w-3/4 pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-white/40 pointer-events-none" />
 
-                      <div className="relative z-10 space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
+                      <div className="relative z-10 space-y-2.5">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-xs backdrop-blur-sm">
                             <span>Halo, {currentUser.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim()}! 👋</span>
                           </div>
                           {currentUser.isGroup ? (
                             <>
                               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs backdrop-blur-sm">
-                                👥 Akun Kelompok Belajar ({currentUser.groupMembers?.length || 0} Anggota)
+                                👥 Kelompok ({currentUser.groupMembers?.length || 0} Anggota)
                               </span>
                               <button
                                 onClick={() => {
                                   setAccountModalEditingUser(currentUser);
                                   setIsAccountModalOpen(true);
                                 }}
-                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-xs cursor-pointer active:scale-95"
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-xs cursor-pointer active:scale-95 min-h-[32px]"
                               >
                                 <Camera className="w-3.5 h-3.5" />
-                                <span>Upload Foto Kelompok</span>
+                                <span>Foto Kelompok</span>
                               </button>
                             </>
                           ) : (
@@ -1014,7 +1014,7 @@ export default function App() {
                         </div>
 
                         {currentUser.isGroup && currentUser.groupMembers && currentUser.groupMembers.length > 0 && (
-                          <div className="pt-1 flex flex-wrap items-center gap-1.5">
+                          <div className="pt-0.5 flex flex-wrap items-center gap-1.5">
                             <span className="text-[11px] font-bold text-slate-600">Anggota Tim:</span>
                             {currentUser.groupMembers.map((m, mIdx) => (
                               <span key={mIdx} className="px-2 py-0.5 rounded-md bg-white/95 border border-amber-200 text-amber-900 text-[11px] font-medium shadow-xs">
@@ -1024,26 +1024,26 @@ export default function App() {
                           </div>
                         )}
 
-                        <h1 className="text-xl sm:text-3xl font-bold font-display leading-tight text-[#1E293B]">
+                        <h1 className="text-lg sm:text-2xl md:text-3xl font-bold font-display leading-snug sm:leading-tight text-[#1E293B]">
                           Foto Lingkungan Sekitar, Bangun Penalaran!
                         </h1>
                         <p className="text-xs sm:text-sm text-slate-700 max-w-xl leading-relaxed">
                           Eksplorasi fenomena nyata di sekitarmu melalui fotografi kontekstual. Amati objek di sekitar, temukan keteraturan sains serta pola numerasi, lalu kembangkan penalaran kritismu!
                         </p>
-                        <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                        <div className="pt-1 flex flex-col xs:flex-row sm:flex-row items-stretch xs:items-center sm:items-center gap-2 sm:gap-2.5">
                           <button
                             onClick={() => {
                               setActiveMission(null);
                               setIsCameraOpen(true);
                             }}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer min-h-[44px]"
                           >
                             <Camera className="w-4 h-4" />
                             <span>Ambil Foto Eksplorasi</span>
                           </button>
                           <button
                             onClick={() => setStudentTab('explore')}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/90 hover:bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:text-blue-600 transition-all cursor-pointer shadow-2xs"
+                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/95 hover:bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:text-blue-600 transition-all cursor-pointer shadow-2xs min-h-[44px]"
                           >
                             <BookOpen className="w-3.5 h-3.5 text-blue-600" />
                             <span>Pilih Misi Belajar</span>
@@ -1051,44 +1051,44 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* 5-Step Process Explainer (Clean Light Pills) */}
-                      <div className="relative z-10 mt-4 pt-4 border-t border-slate-200/80 grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-center text-slate-700 text-[11px] font-semibold">
-                        <div className="py-1.5 px-2 rounded-lg bg-white/95 border border-slate-200 shadow-xs backdrop-blur-xs">1. Foto Misi 📸</div>
-                        <div className="py-1.5 px-2 rounded-lg bg-white/95 border border-slate-200 shadow-xs backdrop-blur-xs">2. Hubungkan Konsep 🔗</div>
-                        <div className="py-1.5 px-2 rounded-lg bg-white/95 border border-slate-200 shadow-xs backdrop-blur-xs">3. Nalar Kritis 💡</div>
-                        <div className="py-1.5 px-2 rounded-lg bg-white/95 border border-slate-200 shadow-xs backdrop-blur-xs">4. Refleksi 🤔</div>
-                        <div className="py-1.5 px-2 rounded-lg bg-white/95 border border-slate-200 shadow-xs backdrop-blur-xs">5. Presentasi 🎤</div>
+                      {/* 5-Step Process Explainer (Clean Light Responsive Cards) */}
+                      <div className="relative z-10 mt-4 pt-3.5 border-t border-slate-200/80 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-1.5 text-center text-slate-700 text-[10px] sm:text-[11px] font-semibold">
+                        <div className="py-1.5 px-1.5 rounded-lg bg-white/95 border border-slate-200 shadow-2xs truncate">1. Foto Misi 📸</div>
+                        <div className="py-1.5 px-1.5 rounded-lg bg-white/95 border border-slate-200 shadow-2xs truncate">2. Hubungkan 🔗</div>
+                        <div className="py-1.5 px-1.5 rounded-lg bg-white/95 border border-slate-200 shadow-2xs truncate">3. Nalar Kritis 💡</div>
+                        <div className="py-1.5 px-1.5 rounded-lg bg-white/95 border border-slate-200 shadow-2xs truncate">4. Refleksi 🤔</div>
+                        <div className="col-span-2 xs:col-span-1 sm:col-span-1 py-1.5 px-1.5 rounded-lg bg-white/95 border border-slate-200 shadow-2xs truncate">5. Presentasi 🎤</div>
                       </div>
                     </div>
 
                     {/* 1.1 DASBOR PROGRES & KEMAMPUAN BELAJAR */}
-                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs space-y-4">
+                    <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-xs space-y-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
                         <div className="flex items-center gap-2">
-                          <span className="p-1.5 rounded-xl bg-indigo-50 text-[#7C5CFC]">
+                          <span className="p-1.5 rounded-xl bg-indigo-50 text-[#7C5CFC] shrink-0">
                             <Trophy className="w-5 h-5 text-[#7C5CFC]" />
                           </span>
-                          <div>
-                            <h2 className="text-base sm:text-lg font-extrabold text-[#25324B] font-display leading-none flex items-center gap-1.5">
-                              Dasbor Progres & Kemampuan Belajarmu
-                              <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200 font-bold uppercase tracking-wider animate-pulse">Live</span>
+                          <div className="min-w-0">
+                            <h2 className="text-sm sm:text-lg font-extrabold text-[#25324B] font-display leading-tight flex items-center gap-1.5 flex-wrap">
+                              Dasbor Progres Belajarmu
+                              <span className="text-[9px] sm:text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200 font-bold uppercase tracking-wider">Live</span>
                             </h2>
-                            <span className="text-[11px] text-slate-400 font-medium">
-                              Analisis tingkat kedalaman pemahaman kognitif secara real-time
+                            <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium block truncate">
+                              Analisis tingkat kedalaman pemahaman kognitif real-time
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl">
+                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-xl self-start sm:self-auto">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                          <span className="text-[10px] font-bold text-slate-600">Sinkronisasi Profil</span>
+                          <span className="text-[10px] font-bold text-slate-600">Sinkronisasi Aktif</span>
                         </div>
                       </div>
 
                       {/* 3 Main Capabilities Progress */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                         {/* 1. Literasi Sains */}
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/40 via-white to-white border border-emerald-100 space-y-2 text-left">
-                          <div className="flex items-center justify-between">
+                        <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-emerald-50/40 via-white to-white border border-emerald-100 space-y-2 text-left">
+                          <div className="flex items-center justify-between gap-1 flex-wrap">
                             <span className="text-xs font-bold text-emerald-800 flex items-center gap-1">
                               <span className="p-1 rounded-md bg-emerald-100 text-emerald-700 text-xs">🌱</span>
                               Literasi Sains
@@ -1097,8 +1097,8 @@ export default function App() {
                               {studentLitPred.label}
                             </span>
                           </div>
-                          <div className="flex items-baseline gap-1.5 pt-1">
-                            <span className="text-2xl font-black text-emerald-950">{avgLit}</span>
+                          <div className="flex items-baseline gap-1.5 pt-0.5">
+                            <span className="text-xl sm:text-2xl font-black text-emerald-950">{avgLit}</span>
                             <span className="text-[10px] font-bold text-slate-400">/ 100</span>
                           </div>
                           {/* Progress Bar */}
@@ -1106,13 +1106,13 @@ export default function App() {
                             <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${avgLit}%` }}></div>
                           </div>
                           <p className="text-[10px] text-slate-500 leading-tight italic pt-0.5">
-                            Mengamati detail objek nyata & mengaitkan fenomena lingkungan dengan konsep ilmiah secara logis.
+                            Mengamati detail objek nyata & mengaitkan fenomena lingkungan dengan konsep ilmiah logis.
                           </p>
                         </div>
 
                         {/* 2. Numerasi Kontekstual */}
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50/40 via-white to-white border border-blue-100 space-y-2 text-left">
-                          <div className="flex items-center justify-between">
+                        <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-blue-50/40 via-white to-white border border-blue-100 space-y-2 text-left">
+                          <div className="flex items-center justify-between gap-1 flex-wrap">
                             <span className="text-xs font-bold text-blue-800 flex items-center gap-1">
                               <span className="p-1 rounded-md bg-blue-100 text-blue-700 text-xs">📐</span>
                               Numerasi Kontekstual
@@ -1121,8 +1121,8 @@ export default function App() {
                               {studentNumPred.label}
                             </span>
                           </div>
-                          <div className="flex items-baseline gap-1.5 pt-1">
-                            <span className="text-2xl font-black text-blue-950">{avgNum}</span>
+                          <div className="flex items-baseline gap-1.5 pt-0.5">
+                            <span className="text-xl sm:text-2xl font-black text-blue-950">{avgNum}</span>
                             <span className="text-[10px] font-bold text-slate-400">/ 100</span>
                           </div>
                           {/* Progress Bar */}
@@ -1130,23 +1130,23 @@ export default function App() {
                             <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${avgNum}%` }}></div>
                           </div>
                           <p className="text-[10px] text-slate-500 leading-tight italic pt-0.5">
-                            Mengenali pola matematika, menghitung data empiris, dan menarik relasi kuantitatif dari foto sekitar.
+                            Mengenali pola matematika, menghitung data empiris, dan menarik relasi kuantitatif.
                           </p>
                         </div>
 
                         {/* 3. Penalaran Kritis & HOTS */}
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50/40 via-white to-white border border-purple-100 space-y-2 text-left">
-                          <div className="flex items-center justify-between">
+                        <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-purple-50/40 via-white to-white border border-purple-100 space-y-2 text-left">
+                          <div className="flex items-center justify-between gap-1 flex-wrap">
                             <span className="text-xs font-bold text-purple-800 flex items-center gap-1">
                               <span className="p-1 rounded-md bg-purple-100 text-purple-700 text-xs">💡</span>
-                              Penalaran Kritis & HOTS
+                              Penalaran Kritis
                             </span>
                             <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${studentReasonPred.color}`}>
                               {studentReasonPred.label}
                             </span>
                           </div>
-                          <div className="flex items-baseline gap-1.5 pt-1">
-                            <span className="text-2xl font-black text-purple-950">{avgReason}</span>
+                          <div className="flex items-baseline gap-1.5 pt-0.5">
+                            <span className="text-xl sm:text-2xl font-black text-purple-950">{avgReason}</span>
                             <span className="text-[10px] font-bold text-slate-400">/ 100</span>
                           </div>
                           {/* Progress Bar */}
@@ -1154,54 +1154,54 @@ export default function App() {
                             <div className="bg-purple-500 h-full transition-all duration-500" style={{ width: `${avgReason}%` }}></div>
                           </div>
                           <p className="text-[10px] text-slate-500 leading-tight italic pt-0.5">
-                            Merancang solusi inovatif, membangun prototipe rekayasa, mengevaluasi desain, dan berargumen logis.
+                            Merancang solusi inovatif, membangun prototipe rekayasa, dan berargumen logis.
                           </p>
                         </div>
                       </div>
 
                       {/* Stat Summary Metrics Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 pt-1">
                         {/* Misi Selesai */}
-                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-3 border border-slate-200/50 flex items-center gap-3 transition-colors text-left">
-                          <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                            <FolderKanban className="w-5 h-5" />
+                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-2.5 sm:p-3 border border-slate-200/50 flex items-center gap-2.5 transition-colors text-left">
+                          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                            <FolderKanban className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
-                          <div>
-                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider">Misi Selesai</span>
-                            <strong className="text-xs font-extrabold text-slate-800">{studentCompletedSessions.length} Aktivitas</strong>
+                          <div className="min-w-0">
+                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider truncate">Misi Selesai</span>
+                            <strong className="text-xs font-extrabold text-slate-800 block truncate">{studentCompletedSessions.length} Aktivitas</strong>
                           </div>
                         </div>
 
                         {/* Kuis Diikuti */}
-                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-3 border border-slate-200/50 flex items-center gap-3 transition-colors text-left">
-                          <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                            <Brain className="w-5 h-5" />
+                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-2.5 sm:p-3 border border-slate-200/50 flex items-center gap-2.5 transition-colors text-left">
+                          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <Brain className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
-                          <div>
-                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider">Kuis Diikuti</span>
-                            <strong className="text-xs font-extrabold text-slate-800">{studentQuizSubmissions.length} Asesmen</strong>
+                          <div className="min-w-0">
+                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider truncate">Kuis Diikuti</span>
+                            <strong className="text-xs font-extrabold text-slate-800 block truncate">{studentQuizSubmissions.length} Asesmen</strong>
                           </div>
                         </div>
 
                         {/* Tutor Bantuan (Scaffolding) */}
-                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-3 border border-slate-200/50 flex items-center gap-3 transition-colors text-left">
-                          <div className="w-9 h-9 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
-                            <HelpCircle className="w-5 h-5" />
+                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-2.5 sm:p-3 border border-slate-200/50 flex items-center gap-2.5 transition-colors text-left">
+                          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                            <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
-                          <div>
-                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider">Bantuan Tutor</span>
-                            <strong className="text-xs font-extrabold text-slate-800">{totalScaffoldingUsed} Petunjuk</strong>
+                          <div className="min-w-0">
+                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider truncate">Bantuan Tutor</span>
+                            <strong className="text-xs font-extrabold text-slate-800 block truncate">{totalScaffoldingUsed} Petunjuk</strong>
                           </div>
                         </div>
 
                         {/* Pencapaian Lencana */}
-                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-3 border border-slate-200/50 flex items-center gap-3 transition-colors text-left">
-                          <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                            <Award className="w-5 h-5" />
+                        <div className="bg-slate-50 hover:bg-slate-100/80 rounded-xl p-2.5 sm:p-3 border border-slate-200/50 flex items-center gap-2.5 transition-colors text-left">
+                          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                            <Award className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
-                          <div>
-                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider">Pencapaian</span>
-                            <strong className="text-xs font-extrabold text-slate-800">
+                          <div className="min-w-0">
+                            <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider truncate">Pencapaian</span>
+                            <strong className="text-xs font-extrabold text-slate-800 block truncate">
                               {studentCompletedSessions.length >= 3 ? 'Bintang 3 🌟' : studentCompletedSessions.length >= 1 ? 'Bintang 1 ⭐' : 'Pionir Belajar'}
                             </strong>
                           </div>
