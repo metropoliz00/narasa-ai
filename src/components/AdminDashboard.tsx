@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { UserProfile, UserRole, LearningMission, StudentActivitySession, StudentGroup } from '../types';
 import { toast } from './Toast';
 import { NarasaLogo } from './NarasaLogo';
+import { dbFetchSystemSettings, dbSaveSystemSettings } from '../lib/supabase';
 import {
   ShieldCheck,
   Cpu,
@@ -86,15 +87,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isTestingApiKey, setIsTestingApiKey] = useState(false);
   const [apiKeyTestResult, setApiKeyTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isSavedApiKey, setIsSavedApiKey] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
 
-  const handleSaveSchoolApiKey = () => {
-    localStorage.setItem('narasa_school_gemini_key', schoolApiKey.trim());
+  // Load saved API Key & Settings from Database on mount
+  useEffect(() => {
+    setIsLoadingSettings(true);
+    dbFetchSystemSettings()
+      .then((settings) => {
+        if (settings.geminiApiKey) {
+          setSchoolApiKey(settings.geminiApiKey);
+          localStorage.setItem('narasa_school_gemini_key', settings.geminiApiKey.trim());
+        }
+        if (settings.defaultModel) {
+          setModelName(settings.defaultModel);
+        }
+        if (settings.visionSensitivity) {
+          setStrictnessLevel(settings.visionSensitivity);
+        }
+      })
+      .catch((e) => console.warn('Gagal memuat pengaturan sistem:', e))
+      .finally(() => setIsLoadingSettings(false));
+  }, []);
+
+  const handleSaveSchoolApiKey = async () => {
+    const key = schoolApiKey.trim();
+    localStorage.setItem('narasa_school_gemini_key', key);
     setIsSavedApiKey(true);
+
+    // Save to Database (Server file system & Supabase)
+    await dbSaveSystemSettings({
+      geminiApiKey: key,
+      defaultModel: modelName,
+      visionSensitivity: strictnessLevel
+    });
+
     toast.success(
-      'API Key Sekolah Disimpan!',
-      'Kunci API Key Gemini Anda telah dikonfigurasi dan disimpan secara aman di perangkat lokal.'
+      'API Key Tersimpan di Database!',
+      'Kunci API Key Gemini Sekolah Anda telah tersimpan secara permanen di database server dan aktif untuk seluruh rombel & kelas.'
     );
-    setTimeout(() => setIsSavedApiKey(false), 3000);
+    setTimeout(() => setIsSavedApiKey(false), 3500);
   };
 
   const handleTestSchoolApiKey = async () => {
@@ -385,11 +416,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [scaffoldingSensitivity, setScaffoldingSensitivity] = useState('Tinggi (Responsif 4 Level)');
   const [isSaved, setIsSaved] = useState(false);
 
-  const handleSaveConfig = () => {
+  const handleSaveConfig = async () => {
     setIsSaved(true);
+    await dbSaveSystemSettings({
+      geminiApiKey: schoolApiKey.trim(),
+      defaultModel: modelName,
+      visionSensitivity: strictnessLevel
+    });
     toast.success(
-      'Konfigurasi Disimpan!',
-      'Pengaturan scaffold AI dan sensitivitas parameter kurikulum nasional berhasil diperbarui.'
+      'Konfigurasi Disimpan ke Database!',
+      'Pengaturan scaffold AI, model Gemini, dan sensitivitas kurikulum berhasil disimpan secara permanen di database server.'
     );
     setTimeout(() => setIsSaved(false), 2500);
   };
@@ -983,7 +1019,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </button>
                 </div>
                 <p className="text-[10px] text-slate-400">
-                  API Key ini disimpan secara aman di perangkat lokal browser admin sekolah dan digunakan untuk seluruh siswa & guru di sekolah ini tanpa antre dengan kuota platform global.
+                  API Key ini disimpan secara aman di database server dan disinkronkan otomatis untuk seluruh siswa & guru di sekolah ini tanpa antre dengan kuota platform global.
                 </p>
               </div>
 
@@ -997,11 +1033,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex items-center justify-between pt-2">
                 {isSavedApiKey ? (
                   <span className="text-xs text-emerald-600 font-bold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4" /> API Key Sekolah berhasil disimpan!
+                    <CheckCircle2 className="w-4 h-4" /> API Key berhasil disimpan ke Database Server!
                   </span>
                 ) : (
                   <span className="text-xs text-slate-400">
-                    Kosongkan jika ingin menggunakan kuota API Key utama platform.
+                    Kosongkan jika ingin menggunakan kuota API Key bawaan server.
                   </span>
                 )}
                 <button
@@ -1009,7 +1045,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Simpan API Key Sekolah</span>
+                  <span>Simpan API Key ke Database</span>
                 </button>
               </div>
             </div>

@@ -120,15 +120,81 @@ app.post("/api/quiz-submissions", (req, res) => {
 let aiClient: GoogleGenAI | null = null;
 let activeApiKey: string | null = null;
 
+function getStoredGeminiKey(): string {
+  try {
+    const file = path.join(DATA_DIR, "system_settings.json");
+    if (fs.existsSync(file)) {
+      const content = fs.readFileSync(file, "utf-8");
+      const data = JSON.parse(content || "{}");
+      if (data.geminiApiKey && typeof data.geminiApiKey === "string" && data.geminiApiKey.trim() !== "") {
+        return data.geminiApiKey.trim();
+      }
+    }
+  } catch (e) {}
+  return "";
+}
+
+// Database Endpoint: Fetch System Settings (including saved School Gemini API Key)
+app.get("/api/system-settings", (req, res) => {
+  try {
+    const file = path.join(DATA_DIR, "system_settings.json");
+    if (!fs.existsSync(file)) {
+      return res.json({
+        geminiApiKey: process.env.GEMINI_API_KEY || "",
+        defaultModel: "gemini-3.1-flash-lite",
+        visionSensitivity: "balanced"
+      });
+    }
+    const content = fs.readFileSync(file, "utf-8");
+    const data = JSON.parse(content || "{}");
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Database Endpoint: Save System Settings (including School Gemini API Key)
+app.post("/api/system-settings", (req, res) => {
+  try {
+    const settings = req.body || {};
+    const file = path.join(DATA_DIR, "system_settings.json");
+    let currentSettings: any = {};
+    if (fs.existsSync(file)) {
+      try {
+        const content = fs.readFileSync(file, "utf-8");
+        currentSettings = JSON.parse(content || "{}");
+      } catch (e) {
+        currentSettings = {};
+      }
+    }
+    const updated = {
+      ...currentSettings,
+      ...settings,
+      updatedAt: new Date().toISOString()
+    };
+    fs.writeFileSync(file, JSON.stringify(updated, null, 2), "utf-8");
+    return res.json({ success: true, settings: updated });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 function getAiClient(req?: express.Request): GoogleGenAI | null {
   const customKey = (req?.headers['x-school-gemini-key'] as string) || req?.body?.schoolApiKey;
+  const storedDbKey = getStoredGeminiKey();
   const envApiKey =
     process.env.GEMINI_API_KEY ||
     process.env.GOOGLE_GENAI_API_KEY ||
     process.env.GOOGLE_API_KEY ||
     process.env.VITE_GEMINI_API_KEY;
 
-  const apiKey = (customKey && customKey.trim() !== '') ? customKey.trim() : envApiKey;
+  const apiKey =
+    (customKey && customKey.trim() !== '')
+      ? customKey.trim()
+      : (storedDbKey && storedDbKey !== '')
+      ? storedDbKey
+      : envApiKey;
+
   if (!apiKey || apiKey === "MY_GEMINI_API_KEY" || apiKey.trim() === "") {
     return null;
   }

@@ -717,3 +717,112 @@ export async function syncAllToSupabase(
     };
   }
 }
+
+// ==========================================
+// SYSTEM SETTINGS & GEMINI API KEY REPOSITORY
+// ==========================================
+export interface SystemSettingsData {
+  geminiApiKey?: string;
+  defaultModel?: string;
+  visionSensitivity?: string;
+  maxDailyAnalysisPerStudent?: number;
+  enableCriticalQuizGen?: boolean;
+  enableVisionObjectAnalysis?: boolean;
+  updatedAt?: string;
+}
+
+export async function dbFetchSystemSettings(): Promise<SystemSettingsData> {
+  let settings: SystemSettingsData = {
+    geminiApiKey: '',
+    defaultModel: 'gemini-3.1-flash-lite',
+    visionSensitivity: 'balanced'
+  };
+
+  // 1. Fetch from server-side database
+  try {
+    const res = await fetch('/api/system-settings');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === 'object') {
+        settings = { ...settings, ...data };
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to fetch system settings from /api/system-settings:', e);
+  }
+
+  // 2. Fetch from Supabase if configured
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      const { data, error } = await client
+        .from('system_settings')
+        .select('*')
+        .eq('key', 'school_gemini_config')
+        .maybeSingle();
+
+      if (!error && data && data.value) {
+        const parsed = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        settings = { ...settings, ...parsed };
+      }
+    } catch (e) {
+      // Supabase table may not exist yet, fallback to server data
+    }
+  }
+
+  // 3. Fallback to localStorage if still empty
+  if (!settings.geminiApiKey && typeof window !== 'undefined') {
+    try {
+      const localKey = localStorage.getItem('narasa_school_gemini_key') || localStorage.getItem('school_gemini_api_key');
+      if (localKey) settings.geminiApiKey = localKey;
+    } catch (e) {}
+  }
+
+  return settings;
+}
+
+export async function dbSaveSystemSettings(newSettings: SystemSettingsData): Promise<boolean> {
+  let serverSuccess = false;
+
+  // 1. Save to server database /api/system-settings
+  try {
+    const res = await fetch('/api/system-settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newSettings)
+    });
+    if (res.ok) {
+      serverSuccess = true;
+    }
+  } catch (e) {
+    console.warn('Failed to save system settings to /api/system-settings:', e);
+  }
+
+  // 2. Save to Supabase if configured
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      await client.from('system_settings').upsert({
+        key: 'school_gemini_config',
+        value: newSettings,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+    } catch (e) {
+      console.warn('Supabase system_settings save error:', e);
+    }
+  }
+
+  // 3. Sync to localStorage
+  if (typeof window !== 'undefined' && newSettings.geminiApiKey !== undefined) {
+    try {
+      if (newSettings.geminiApiKey) {
+        localStorage.setItem('narasa_school_gemini_key', newSettings.geminiApiKey.trim());
+      } else {
+        localStorage.removeItem('narasa_school_gemini_key');
+      }
+    } catch (e) {}
+  }
+
+  return serverSuccess;
+}
+
