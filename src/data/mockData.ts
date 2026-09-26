@@ -681,7 +681,20 @@ export const INITIAL_COMPLETED_SESSION: StudentActivitySession = {
     observation: 'Saya melihat susunan anak tangga sekolah dengan penanda reflektor garis setiap kelipatan tertentu dan ubin berjarak sama. Pola ini berulang secara teratur di setiap undakan.',
     context: 'Pola keteraturan undakan dan interval langkah',
     learningBridge: 'Susunan undakan bertingkat menunjukkan pola yang berulang secara berkala. Jika ada dua penanda dengan selang jarak atau kegiatan tertentu (misalnya bel piket setiap 4 menit dan alarm stasiun baca setiap 6 menit), waktu mereka berbunyi bersama dapat dihitung menggunakan Kelipatan Persekutuan Terkecil (KPK).',
-    simpleMaterialSummary: 'KPK (Kelipatan Persekutuan Terkecil) adalah angka kelipatan yang sama dan paling kecil dari dua bilangan atau lebih. Bayangkan seperti dua pelari yang melangkah dengan panjang berbeda lalu menginjak garis yang sama pada jarak tertentu!',
+    simpleMaterialSummary: `📌 **Pengertian & Konsep Inti:**
+KPK (Kelipatan Persekutuan Terkecil) adalah bilangan kelipatan terkecil yang sama dari dua bilangan atau lebih. Konsep KPK digunakan saat kita ingin mengetahui kapan dua atau lebih peristiwa yang berulang secara berkala akan terjadi secara bersamaan lagi di waktu yang akan datang.
+
+🏷️ **Jenis & Bagian Penting:**
+1. **Kelipatan Suatu Bilangan:** Hasil perkalian bilangan dengan bilangan bulat positif berurutan (contoh kelipatan 4: 4, 8, 12, 16... dan kelipatan 6: 6, 12, 18, 24...).
+2. **Kelipatan Persekutuan:** Angka kelipatan yang bernilai sama pada dua bilangan (kelipatan sekutu 4 & 6 adalah 12, 24, 36...).
+3. **KPK (Nilai Terkecil):** Angka persekutuan terkecil yang pertama kali bertemu (KPK dari 4 dan 6 adalah **12**).
+
+🔍 **Ciri-Ciri & Contoh Nyata:**
+- **Ciri Soal KPK:** Menanyakan waktu pertemuan bersama kembali (*"Kapan berdering bersamaan lagi?"*, *"Kapan lampu berkedip berbarengan?"*).
+- **Contoh Nyata:** Interval bunyi bel sekolah, jadwal piket kelas, dan detak jarum jam dinding.
+
+💡 **Modal Belajar & Tips Mengingat:**
+- Mendaftar kelipatan kedua angka lalu cari angka kembar pertama, atau gunakan pohon faktor prima dan kalikan semua faktor prima dengan pangkat tertinggi!`,
     soloTaxonomyLevel: 'Relational',
     soloDescription: 'Siswa berhasil menghubungkan pengamatan pola susunan undakan dengan konsep interval waktu berulang dan prinsip kelipatan persekutuan terkecil (KPK).',
     guidingQuestions: [

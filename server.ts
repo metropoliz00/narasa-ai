@@ -26,60 +26,275 @@ if (!fs.existsSync(DATA_DIR)) {
   }
 }
 
-// Database Endpoint: Fetch all student activity sessions
-app.get("/api/sessions", (req, res) => {
+// Generic Database Helper Functions
+function readDbFile<T>(filename: string, defaultData: T): T {
   try {
-    const file = path.join(DATA_DIR, "sessions.json");
+    const file = path.join(DATA_DIR, filename);
     if (!fs.existsSync(file)) {
-      return res.json([]);
+      fs.writeFileSync(file, JSON.stringify(defaultData, null, 2), "utf-8");
+      return defaultData;
     }
     const content = fs.readFileSync(file, "utf-8");
-    const data = JSON.parse(content || "[]");
-    return res.json(data);
+    return JSON.parse(content || "null") || defaultData;
+  } catch (e) {
+    return defaultData;
+  }
+}
+
+function writeDbFile<T>(filename: string, data: T): boolean {
+  try {
+    const file = path.join(DATA_DIR, filename);
+    fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf-8");
+    return true;
+  } catch (e) {
+    console.error(`Error writing to ${filename}:`, e);
+    return false;
+  }
+}
+
+// 1. DATABASE ENDPOINT: USERS
+app.get("/api/users", (req, res) => {
+  try {
+    const users = readDbFile<any[]>("users.json", []);
+    return res.json(users);
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
 });
 
-// Database Endpoint: Save / Upsert a student activity session
+app.post("/api/users", (req, res) => {
+  try {
+    const user = req.body;
+    if (!user || !user.id) {
+      return res.status(400).json({ error: "Data pengguna atau ID tidak valid" });
+    }
+    const users = readDbFile<any[]>("users.json", []);
+    const idx = users.findIndex((u: any) => u.id === user.id);
+    if (idx >= 0) {
+      users[idx] = { ...users[idx], ...user };
+    } else {
+      users.unshift(user);
+    }
+    writeDbFile("users.json", users);
+    return res.json({ success: true, count: users.length, user, users });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/users/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: "ID pengguna diperlukan" });
+    }
+    const users = readDbFile<any[]>("users.json", []);
+    const filtered = users.filter((u: any) => u.id !== id);
+    writeDbFile("users.json", filtered);
+    return res.json({ success: true, count: filtered.length, deletedId: id });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. DATABASE ENDPOINT: LEARNING MISSIONS
+app.get("/api/missions", (req, res) => {
+  try {
+    const missions = readDbFile<any[]>("missions.json", []);
+    return res.json(missions);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/missions", (req, res) => {
+  try {
+    const mission = req.body;
+    if (!mission || !mission.id) {
+      return res.status(400).json({ error: "Data misi atau ID tidak valid" });
+    }
+    const missions = readDbFile<any[]>("missions.json", []);
+    const idx = missions.findIndex((m: any) => m.id === mission.id);
+    if (idx >= 0) {
+      missions[idx] = { ...missions[idx], ...mission };
+    } else {
+      missions.unshift(mission);
+    }
+    writeDbFile("missions.json", missions);
+    return res.json({ success: true, count: missions.length, mission, missions });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/missions/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: "ID misi diperlukan" });
+    }
+    const missions = readDbFile<any[]>("missions.json", []);
+    const filtered = missions.filter((m: any) => m.id !== id);
+    writeDbFile("missions.json", filtered);
+    return res.json({ success: true, count: filtered.length, deletedId: id });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. DATABASE ENDPOINT: STUDENT ACTIVITY SESSIONS
+app.get("/api/sessions", (req, res) => {
+  try {
+    const sessions = readDbFile<any[]>("sessions.json", []);
+    return res.json(sessions);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/sessions", (req, res) => {
   try {
     const session = req.body;
     if (!session || !session.id) {
       return res.status(400).json({ error: "Session data atau ID tidak ditemukan" });
     }
-    const file = path.join(DATA_DIR, "sessions.json");
-    let sessions: any[] = [];
-    if (fs.existsSync(file)) {
-      try {
-        const content = fs.readFileSync(file, "utf-8");
-        sessions = JSON.parse(content || "[]");
-      } catch (e) {
-        sessions = [];
-      }
-    }
+    const sessions = readDbFile<any[]>("sessions.json", []);
     const existingIndex = sessions.findIndex((s: any) => s.id === session.id);
     if (existingIndex >= 0) {
       sessions[existingIndex] = session;
     } else {
       sessions.unshift(session);
     }
-    fs.writeFileSync(file, JSON.stringify(sessions, null, 2), "utf-8");
-    return res.json({ success: true, count: sessions.length, session });
+    writeDbFile("sessions.json", sessions);
+    return res.json({ success: true, count: sessions.length, session, sessions });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
 });
 
-// Database Endpoint: Fetch quiz submissions
+app.delete("/api/sessions/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: "ID sesi diperlukan" });
+    }
+    const sessions = readDbFile<any[]>("sessions.json", []);
+    const filtered = sessions.filter((s: any) => s.id !== id);
+    writeDbFile("sessions.json", filtered);
+    return res.json({ success: true, count: filtered.length, deletedId: id });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. DATABASE ENDPOINT: STUDENT GROUPS
+app.get("/api/groups", (req, res) => {
+  try {
+    const groups = readDbFile<any[]>("groups.json", []);
+    return res.json(groups);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/groups", (req, res) => {
+  try {
+    const group = req.body;
+    if (!group || !group.id) {
+      return res.status(400).json({ error: "Data kelompok tidak valid" });
+    }
+    const groups = readDbFile<any[]>("groups.json", []);
+    const idx = groups.findIndex((g: any) => g.id === group.id);
+    if (idx >= 0) {
+      groups[idx] = { ...groups[idx], ...group };
+    } else {
+      groups.push(group);
+    }
+    writeDbFile("groups.json", groups);
+    return res.json({ success: true, count: groups.length, group, groups });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/groups/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: "ID kelompok diperlukan" });
+    }
+    const groups = readDbFile<any[]>("groups.json", []);
+    const filtered = groups.filter((g: any) => g.id !== id);
+    writeDbFile("groups.json", filtered);
+    return res.json({ success: true, count: filtered.length, deletedId: id });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. DATABASE ENDPOINT: ASSESSMENTS & RUBRICS
+app.get("/api/assessments", (req, res) => {
+  try {
+    const assessments = readDbFile<any[]>("assessments.json", []);
+    return res.json(assessments);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/assessments", (req, res) => {
+  try {
+    const assessment = req.body;
+    if (!assessment || !assessment.id) {
+      return res.status(400).json({ error: "Data penilaian tidak valid" });
+    }
+    const assessments = readDbFile<any[]>("assessments.json", []);
+    const idx = assessments.findIndex((a: any) => a.id === assessment.id);
+    if (idx >= 0) {
+      assessments[idx] = { ...assessments[idx], ...assessment };
+    } else {
+      assessments.unshift(assessment);
+    }
+    writeDbFile("assessments.json", assessments);
+    return res.json({ success: true, count: assessments.length, assessment, assessments });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 6. DATABASE ENDPOINT: TEACHER INSIGHTS
+app.get("/api/teacher-insights", (req, res) => {
+  try {
+    const insights = readDbFile<any[]>("insights.json", []);
+    return res.json(insights);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/teacher-insights", (req, res) => {
+  try {
+    const insight = req.body;
+    if (!insight) {
+      return res.status(400).json({ error: "Data insight guru tidak valid" });
+    }
+    const insights = readDbFile<any[]>("insights.json", []);
+    insights.unshift({
+      ...insight,
+      id: insight.id || `ins-${Date.now()}`,
+      createdAt: new Date().toISOString()
+    });
+    writeDbFile("insights.json", insights);
+    return res.json({ success: true, count: insights.length, insights });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 7. Database Endpoint: Fetch quiz submissions
 app.get("/api/quiz-submissions", (req, res) => {
   try {
-    const file = path.join(DATA_DIR, "quiz_submissions.json");
-    if (!fs.existsSync(file)) {
-      return res.json([]);
-    }
-    const content = fs.readFileSync(file, "utf-8");
-    const data = JSON.parse(content || "[]");
+    const data = readDbFile<any[]>("quiz_submissions.json", []);
     return res.json(data);
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -93,23 +308,14 @@ app.post("/api/quiz-submissions", (req, res) => {
     if (!submission || !submission.id) {
       return res.status(400).json({ error: "Data submission kuis tidak valid" });
     }
-    const file = path.join(DATA_DIR, "quiz_submissions.json");
-    let submissions: any[] = [];
-    if (fs.existsSync(file)) {
-      try {
-        const content = fs.readFileSync(file, "utf-8");
-        submissions = JSON.parse(content || "[]");
-      } catch (e) {
-        submissions = [];
-      }
-    }
+    const submissions = readDbFile<any[]>("quiz_submissions.json", []);
     const existingIndex = submissions.findIndex((s: any) => s.id === submission.id);
     if (existingIndex >= 0) {
       submissions[existingIndex] = submission;
     } else {
       submissions.unshift(submission);
     }
-    fs.writeFileSync(file, JSON.stringify(submissions, null, 2), "utf-8");
+    writeDbFile("quiz_submissions.json", submissions);
     return res.json({ success: true, count: submissions.length, submission });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -675,7 +881,12 @@ Tugas Anda:
    - Jika "Weak", berikan alasan ramah dan saran konteks alternatif.
 3. Rancang "Yang Saya Lihat" (Gunakan data pengamatan murid tersebut ditambah penjelasan tambahan logis & ramah anak SD dari Anda).
 4. Rancang "Hubungannya dengan Pelajaran" (Learning Bridge konkret menghubungkan objek hasil temuan murid dengan konsep materi guru).
-5. Buat "simpleMaterialSummary" (Ringkasan Materi Sederhana untuk Murid): Rangkum esensi materi ${mission.material} dengan bahasa yang sangat ramah anak SD, hangat, ringkas, dan mudah dipahami (menggunakan analogi sehari-hari yang dekat dengan dunia anak).
+5. Buat "simpleMaterialSummary" (Ringkasan Materi Lengkap & Jelas sebagai Modal Belajar Murid):
+   Rancang ringkasan materi "${mission.material}" (Mata Pelajaran: ${mission.subject}) secara terstruktur, komprehensif, dan mudah dipahami oleh murid SD (Fase B/C). Rangkuman ini menjadi bekal/modal utama murid sebelum mengerjakan tantangan. Format teks HARUS terstruktur rapi dengan memuat:
+   - 📌 **Pengertian & Konsep Inti**: Jelaskan definisi hakiki materi dengan bahasa ramah anak, jelas, hangat, dan analogi konkret yang dekat dengan dunia anak.
+   - 🏷️ **Jenis-Jenis / Klasifikasi / Komponen Utama**: Uraikan secara jelas pembagian jenis-jenis, kategori, rumus, atau komponen utama materi tersebut (contoh: jika KPK & FPB uraikan pengertian KPK, FPB, dan perbedaannya; jika Ekosistem uraikan biotik, abiotik, produsen, konsumen, dekomposer; jika Pecahan uraikan pecahan biasa, campuran, desimal, persen; jika Bangun Ruang uraikan jenis kubus, balok, prisma, tabung beserta sifatnya; jika Gaya uraikan gaya otot, gesek, gravitasi, pegas, magnet).
+   - 🔍 **Ciri-Ciri & Contoh Nyata**: Berikan karakteristik khas dan 2-3 contoh penerapan konkret dalam kehidupan sehari-hari di sekitar sekolah atau rumah.
+   - 💡 **Modal Belajar & Tips Mengingat**: Berikan trik mudah mengingat, kata kunci penyelidikan, atau langkah praktis yang membantu murid memahami konsep secara mendalam.
 6. Tentukan Taksonomi SOLO (Structure of Observed Learning Outcomes) untuk eksplorasi pemahaman materi ini: "soloTaxonomyLevel" (pilih salah satu: "Uni-structural", "Multi-structural", "Relational", "Extended Abstract") beserta "soloDescription" (penjelasan singkat bagaimana temuan eksplorasi ini mencerminkan tingkat kedalaman pemahaman SOLO tersebut).
 7. Buat 2-3 Pertanyaan Pematik (Guiding Questions) yang memancing rasa ingin tahu murid dan menghubungkan langsung temuan objek mereka dengan materi pelajaran yang sedang dibahas.
 8. Rancang 4 Pertanyaan Eksplorasi Terstruktur mengikuti 4 Pilar Berpikir Komputasional (Computational Thinking) jenjang Sekolah Dasar:
@@ -703,7 +914,7 @@ Kembalikan HANYA format JSON valid tanpa tanda kutip markdown, sesuai skema:
   "observation": "penjelasan apa yang dilaporkan oleh murid beserta analisis tambahan visual logis dari AI",
   "context": "konteks situasi di lingkungan sekolah/anak",
   "learningBridge": "penjelasan jembatan konsep dari objek temuan murid menuju materi pelajaran guru",
-  "simpleMaterialSummary": "ringkasan materi yang dipelajari dengan bahasa yang sangat mudah dipahami oleh murid SD",
+  "simpleMaterialSummary": "📌 Pengertian & Konsep Inti:\n...\n\n🏷️ Jenis-Jenis / Bagian Utama:\n...\n\n🔍 Ciri-Ciri & Contoh Nyata:\n...\n\n💡 Modal Belajar & Tips Mengingat:\n...",
   "soloTaxonomyLevel": "Relational",
   "soloDescription": "penjelasan tingkat pemahaman Taksonomi SOLO untuk eksplorasi ini",
   "guidingQuestions": [
@@ -1821,6 +2032,21 @@ function generatePedagogicalFallback(mission: any, objectHint?: string, imageBas
         observation: "Jam dinding bundar dengan 12 penanda angka besar dan 60 garis penanda menit kecil. Jarum detik berdetak tiap 1 detik, jarum menit berputar penuh tiap 60 menit.",
         context: "Siklus pengulangan waktu dan interval bel tanda pergantian kegiatan kelas.",
         learningBridge: "Jam dinding menunjukkan peristiwa yang berulang secara berkala. Ketika dua kegiatan memiliki interval waktu yang berbeda, waktu bertemunya kembali dapat ditentukan menggunakan Kelipatan Persekutuan Terkecil (KPK).",
+        simpleMaterialSummary: `📌 **Pengertian & Konsep Inti:**
+KPK (Kelipatan Persekutuan Terkecil) adalah bilangan kelipatan terkecil yang sama dari dua bilangan atau lebih. Konsep KPK digunakan saat kita ingin mengetahui kapan dua atau lebih peristiwa yang berulang secara berkala akan terjadi secara bersamaan lagi di waktu yang akan datang.
+
+🏷️ **Jenis & Bagian Penting:**
+1. **Kelipatan Suatu Bilangan:** Hasil perkalian bilangan tersebut dengan bilangan bulat berurutan (contoh kelipatan 4: 4, 8, 12, 16, 20... dan kelipatan 6: 6, 12, 18, 24...).
+2. **Kelipatan Persekutuan:** Angka-angka kelipatan yang bernilai sama pada dua bilangan (kelipatan sekutu 4 & 6 adalah 12, 24, 36...).
+3. **KPK (Nilai Terkecil):** Angka kelipatan bersama yang paling pertama atau terkecil (KPK dari 4 dan 6 adalah **12**).
+
+🔍 **Ciri-Ciri Soal & Contoh Nyata:**
+- **Ciri Khas Masalah KPK:** Soal memuat kata kunci waktu pengulangan bersama, seperti: *"Kapan berdering bersamaan lagi?"*, *"Kapan lampu berkedip berbarengan?"*, atau *"Kapan mereka bertemu kembali di titik start?"*.
+- **Contoh Nyata:** Jam dinding & jadwal bel sekolah, interval ronda piket, siklus lampu merah lalu lintas, dan putaran roda sepeda.
+
+💡 **Modal Belajar & Tips Mengingat Murid:**
+- **Metode 1 (Mendaftar Kelipatan):** Buat deret kelipatan masing-masing angka, lalu lingkari angka sama yang paling awal muncul.
+- **Metode 2 (Faktorisasi Prima / Pohon Faktor):** Tuliskan faktor prima dari masing-masing bilangan. Ambil semua faktor prima yang ada; jika ada angka prima yang sama, pilihlah pangkat yang **terbesar**, lalu kalikan semuanya!`,
         guidingQuestions: [
           "Bagaimana jarum jam yang berputar terus-menerus bisa membantu kita memperkirakan waktu pertemuan dua jadwal berbeda?",
           "Pernahkah kamu memperhatikan bunyi bel sekolah yang berdering bersamaan? Kapan itu terjadi?"
@@ -1896,6 +2122,21 @@ function generatePedagogicalFallback(mission: any, objectHint?: string, imageBas
         observation: "Terdapat 24 kue pastel dan 36 lemper ketan yang ditata di atas nampan stan kantin sekolah.",
         context: "Pembagian kotak snack bingkisan perayaan hari guru.",
         learningBridge: "Ketika kita ingin membagi dua jenis makanan berbeda ke dalam sebanyak-banyaknya kotak dengan isi yang sama banyak dan tanpa sisa, kita menggunakan konsep FPB.",
+        simpleMaterialSummary: `📌 **Pengertian & Konsep Inti:**
+FPB (Faktor Persekutuan Terbesar) adalah bilangan pembagi terbesar yang dapat membagi habis dua bilangan atau lebih tanpa meninggalkan sisa. FPB digunakan ketika kita ingin membagikan atau mengelompokkan beberapa benda yang berbeda ke dalam sebanyak-banyaknya wadah/bungkusan secara adil dengan jumlah isi yang persis sama.
+
+🏷️ **Jenis & Bagian Penting:**
+1. **Faktor Suatu Bilangan:** Semua bilangan yang dapat membagi habis bilangan tersebut (contoh faktor 24: 1, 2, 3, 4, 6, 8, 12, 24 dan faktor 36: 1, 2, 3, 4, 6, 9, 12, 18, 36).
+2. **Faktor Persekutuan:** Angka-angka pembagi yang sama pada kedua bilangan (faktor sekutu 24 & 36 adalah 1, 2, 3, 4, 6, 12).
+3. **FPB (Nilai Terbesar):** Angka pembagi bersama yang bernilai paling besar (FPB dari 24 dan 36 adalah **12**).
+
+🔍 **Ciri-Ciri Soal & Contoh Nyata:**
+- **Ciri Khas Masalah FPB:** Soal memuat kata kunci pembagian barang sama rata, seperti: *"Berapa kotak/bingkisan paling banyak yang dapat dibuat?"*, *"Berapa anak paling banyak yang menerima hadiah sama rata?"*, atau *"Membagi tanpa sisa"*.
+- **Contoh Nyata:** Mengemas bingkisan kue kotak di kantin, membagikan paket alat tulis untuk teman, menata buah ke dalam piring sajian pesta.
+
+💡 **Modal Belajar & Tips Mengingat Murid:**
+- **Metode 1 (Mendaftar Faktor):** Tuliskan semua bilangan pembagi habis, lalu cari angka terbesar yang kembar pada kedua bilangan.
+- **Metode 2 (Faktorisasi Prima / Pohon Faktor):** Tuliskan faktor prima dari masing-masing bilangan. Ambil **HANYA** faktor prima yang sama (kembar) di kedua bilangan, pilihlah pangkat yang **terkecil**, lalu kalikan!`,
         guidingQuestions: [
           "Bagaimana cara kita membagikan makanan ke dalam kotak secara adil tanpa ada yang bersisa?",
           "Apa hubungan antara jumlah makanan yang banyak dengan ukuran kotak terbanyak yang bisa dibuat?"
@@ -1972,6 +2213,21 @@ function generatePedagogicalFallback(mission: any, objectHint?: string, imageBas
         observation: "Objek teramati memiliki struktur berulang, elemen terhitung, dan penataan yang terorganisasi.",
         context: "Penataan ruang dan frekuensi pemakaian di lingkungan siswa.",
         learningBridge: "Karakteristik objek ini dapat dihubungkan dengan pola matematika keteraturan dan persekutuan nilai kelipatan.",
+        simpleMaterialSummary: `📌 **Pengertian & Konsep Inti:**
+Materi **${mission.material || 'Penalaran Matematika'}** berfokus pada cara kita mengenali keteraturan, menghitung pola berulang, serta memecahkan masalah kuantitatif di dunia nyata dengan langkah yang teratur dan logis.
+
+🏷️ **Jenis-Jenis & Komponen Utama:**
+1. **Pola Bilangan & Pengukuran:** Menghitung barisan angka yang bertambah secara teratur atau mengukur dimensi panjang, luas, volume, dan sudut.
+2. **Operasi Hitung Terstruktur:** Penjumlahan berulang (perkalian), pembagian adil, hingga perbandingan nilai pecahan.
+3. **Representasi Bentuk:** Bangun datar (segitiga, persegi, lingkaran) dan bangun ruang yang membentuk benda di sekitar kita.
+
+🔍 **Ciri-Ciri & Contoh Nyata:**
+- **Ciri Khas:** Selalu ada data terukur (angka, bentuk simetris, atau interval waktu) yang dapat dimodelkan secara matematis.
+- **Contoh Nyata:** Menghitung ubin lantai ruang kelas, memperkirakan kapasitas botol air minum, atau membuat jadwal kegiatan kelas.
+
+💡 **Modal Belajar & Tips Mengingat Murid:**
+- Amati data angka dengan cermat dan tentukan apa yang dicari (target hitungan).
+- Gunakan sketsa gambar atau coretan langkah demi langkah untuk mempermudah perhitungan!`,
         guidingQuestions: [
           "Apa pola atau keteraturan yang bisa kamu amati dari objek ini?",
           "Bagaimana konsep matematika yang sedang kita pelajari dapat membantu menjelaskan bentuk atau jumlah objek ini?"
@@ -2028,6 +2284,24 @@ function generatePedagogicalFallback(mission: any, objectHint?: string, imageBas
       observation: "Pohon besar yang rindang dengan daun hijau lebar bertingkat, dahan kokoh, akar yang menancap di tanah berpasir, dan naungan sejuk.",
       context: "Keseimbangan ekosistem halaman sekolah dan tempat bernaung hewan kecil.",
       learningBridge: "Pohon ini berperan sebagai produsen primer (komponen biotik) yang memerlukan sinar matahari, air, dan unsur hara tanah (komponen abiotik) untuk fotosintesis dan menghasilkan oksigen bagi siswa.",
+      simpleMaterialSummary: `📌 **Pengertian & Konsep Inti:**
+Materi **${mission.material || 'Ekosistem & Interaksi Makhluk Hidup'}** mempelajari hubungan timbal balik yang saling bergantung antara makhluk hidup (lingkungan biotik) dengan benda tak hidup (lingkungan abiotik) di sekitarnya. Tumbuhan hijau berperan sebagai produsen utama yang menghasilkan makanan sendiri melalui fotosintesis.
+
+🏷️ **Jenis-Jenis & Komponen Utama:**
+1. **Komponen Biotik (Makhluk Hidup):**
+   - **Produsen:** Tumbuhan hijau pembuat makanan & oksigen lewat fotosintesis.
+   - **Konsumen:** Herbivor (pemakan tumbuhan), Karnivor (pemakan daging), dan Omnivor (pemakan segala).
+   - **Pengurai (Dekomposer):** Cacing tanah, jamur, dan bakteri pengurai zat organik.
+2. **Komponen Abiotik (Benda Tak Hidup):** Sinar matahari, air, udara (oksigen & karbon dioksida), tanah, dan suhu udara.
+3. **Bagian Tumbuhan:** Akar (penyerap air/hara), Batang (penyalur zat), Daun (dapur fotosintesis), dan Bunga/Buah (reproduksi).
+
+🔍 **Ciri-Ciri & Contoh Nyata:**
+- **Karakteristik Khas:** Terjadi pertukaran energi dan siklus materi (contoh: tumbuhan menyerap karbon dioksida lalu menghasilkan oksigen bersih).
+- **Contoh Nyata:** Pohon pelindung sekolah menjadi habitat burung gereja dan semut, serta menahan erosi tanah halaman saat hujan deras.
+
+💡 **Modal Belajar & Tips Mengingat Murid:**
+- **Rumus Kunci Fotosintesis:** Air + Karbon Dioksida + Cahaya Matahari (Klorofil) ➡️ Makanan (Glukosa) + Gas Oksigen ($O_2$)!
+- Pahami bahwa semua makhluk hidup saling membutuhkan dan tidak bisa hidup sendiri tanpa lingkungan yang sehat.`,
       subject: mission.subject,
       material: mission.material,
       learningTarget: mission.tp,
@@ -2100,6 +2374,21 @@ function generatePedagogicalFallback(mission: any, objectHint?: string, imageBas
       observation: "Tiga wadah tempat sampah berjejer rapi dengan warna berbeda: hijau (organik), kuning (anorganik), dan merah (B3/residu). Ada tulisan petunjuk jelas di tutupnya.",
       context: "Edukasi pembiasaan disiplin memilah sampah di lingkungan sekolah.",
       learningBridge: "Objek ini menjadi sarana observasi autentik untuk menyusun teks deskripsi berdasarkan pengamatan panca indra dan merancang prototipe edukasi pemilahan sampah.",
+      simpleMaterialSummary: `📌 **Pengertian & Konsep Inti:**
+Materi **${mission.material || 'Teks Deskripsi & Observasi Lingkungan'}** melatih kita untuk mengamati suatu benda, tempat, atau peristiwa menggunakan panca indra (penglihatan, pendengaran, peraba, penciuman, dan perasa), lalu menggambarkannya secara rinci sehingga orang yang membaca seolah-olah melihat dan merasakannya sendiri.
+
+🏷️ **Jenis-Jenis & Struktur Teks:**
+1. **Identifikasi Umum (Pernyataan Pembuka):** Mengenalkan nama objek, lokasi, atau gambaran umum benda yang diamati.
+2. **Deskripsi Bagian (Rincian Fisik):** Menjelaskan warna, bentuk, ukuran, bahan penyusun, serta ciri-ciri khusus objek secara detail.
+3. **Penutup / Simpulan & Kesan:** Menyampaikan manfaat, fungsi penting, atau kesan dan ajakan positif terkait objek yang diamati.
+
+🔍 **Ciri-Ciri & Contoh Nyata:**
+- **Karakteristik Teks:** Menggunakan kata sifat yang kaya (seperti: *bersih, mengilap, kokoh, berjenjang, berwarna cerah*), kata kerja aksi, dan kalimat rincian konkret.
+- **Contoh Nyata:** Mendeskripsikan tempat sampah pilah 3 warna di perpustakaan sekolah untuk mengedukasi warga sekolah agar tertib menjaga kebersihan.
+
+💡 **Modal Belajar & Tips Mengingat Murid:**
+- Amati objek secara berurutan: dari bentuk keseluruhan, warna, bagian-bagian kecil, hingga fungsinya.
+- Gunakan perbandingan atau analogi menarik agar pembaca semakin mudah membayangkan objekmu!`,
       subject: mission.subject,
       material: mission.material,
       learningTarget: mission.tp,

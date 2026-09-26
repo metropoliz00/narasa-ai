@@ -127,6 +127,89 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
     onStartChallenge(combinedResponse);
   };
 
+  const renderFormattedSummary = (text: string) => {
+    if (!text) return null;
+    const paragraphs = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+
+    return (
+      <div className="space-y-3.5">
+        {paragraphs.map((para, idx) => {
+          const isHeader =
+            para.startsWith('📌') ||
+            para.startsWith('🏷️') ||
+            para.startsWith('🔍') ||
+            para.startsWith('💡') ||
+            para.startsWith('#');
+          const lines = para.split('\n');
+
+          const getCardStyle = () => {
+            if (para.startsWith('📌')) return 'bg-blue-50/70 border-blue-200 text-blue-950';
+            if (para.startsWith('🏷️')) return 'bg-purple-50/70 border-purple-200 text-purple-950';
+            if (para.startsWith('🔍')) return 'bg-emerald-50/70 border-emerald-200 text-emerald-950';
+            if (para.startsWith('💡')) return 'bg-amber-50/80 border-amber-200 text-amber-950';
+            return 'bg-slate-50 border-slate-200/80 text-slate-800';
+          };
+
+          return (
+            <div
+              key={idx}
+              className={`rounded-2xl p-3.5 sm:p-4 border transition-all shadow-2xs ${getCardStyle()}`}
+            >
+              {lines.map((line, lineIdx) => {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return null;
+
+                const parts = trimmedLine.split(/(\*\*.*?\*\*)/g);
+                const formattedLine = parts.map((part, pIdx) => {
+                  if (part.startsWith('**') && part.endsWith('**')) {
+                    return (
+                      <strong key={pIdx} className="font-extrabold text-inherit">
+                        {part.slice(2, -2)}
+                      </strong>
+                    );
+                  }
+                  return part;
+                });
+
+                const isBullet = trimmedLine.startsWith('- ') || trimmedLine.startsWith('• ');
+                const isNumbered = /^\d+\.\s/.test(trimmedLine);
+
+                if (lineIdx === 0 && isHeader) {
+                  return (
+                    <div
+                      key={lineIdx}
+                      className="font-black text-xs sm:text-sm tracking-wide mb-1.5 flex items-center gap-1.5 leading-snug"
+                    >
+                      {formattedLine}
+                    </div>
+                  );
+                }
+
+                if (isBullet || isNumbered) {
+                  return (
+                    <div
+                      key={lineIdx}
+                      className="flex items-start gap-2 text-xs sm:text-sm font-medium leading-relaxed my-1 pl-1"
+                    >
+                      <span className="text-inherit opacity-70 shrink-0 select-none">•</span>
+                      <span className="flex-1">{formattedLine}</span>
+                    </div>
+                  );
+                }
+
+                return (
+                  <p key={lineIdx} className="text-xs sm:text-sm font-medium leading-relaxed my-0.5">
+                    {formattedLine}
+                  </p>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5 sm:space-y-6 max-w-4xl mx-auto text-left">
       {/* Top Banner with Photo & Object Detected */}
@@ -309,22 +392,34 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
           </div>
         </div>
 
-        {/* Card: 📖 Ringkasan Materi Sederhana untuk Murid */}
+        {/* Card: 📖 Ringkasan Materi & Modal Belajar Murid */}
         {bridgeResult.simpleMaterialSummary && (
-          <div className="bg-gradient-to-br from-teal-50/60 via-white to-emerald-50/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-teal-200 shadow-sm hover:shadow-md transition-all space-y-3 md:col-span-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-teal-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <BookOpen className="w-5 h-5" />
+          <div className="bg-gradient-to-br from-teal-50/70 via-white to-blue-50/70 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-teal-300 shadow-sm hover:shadow-md transition-all space-y-4 md:col-span-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-black text-teal-950 tracking-wide uppercase flex items-center gap-1.5">
+                    <span>📖 Modal Belajar: Ringkasan & Konsep Kunci</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
+                      Bekal Eksplorasi
+                    </span>
+                  </h3>
+                  <p className="text-[10px] sm:text-[11px] text-teal-700 font-semibold">
+                    Pengertian hakiki, jenis-jenis penting, ciri khusus, dan tips penyelidikan
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-extrabold text-teal-950 tracking-wide uppercase">
-                  📖 Ringkasan Materi Sederhana
-                </h3>
-                <p className="text-[10px] sm:text-[11px] text-teal-700 font-bold">Rangkuman konsep inti dengan bahasa mudah dipahami</p>
-              </div>
+              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-[11px] font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                <span>Siap Belajar Mandiri</span>
+              </span>
             </div>
-            <div className="bg-white p-3.5 sm:p-4 rounded-2xl border-2 border-teal-100 text-xs sm:text-sm text-slate-800 font-semibold leading-relaxed shadow-2xs">
-              {bridgeResult.simpleMaterialSummary}
+
+            <div className="bg-white p-3.5 sm:p-5 rounded-2xl border-2 border-teal-100 shadow-2xs">
+              {renderFormattedSummary(bridgeResult.simpleMaterialSummary)}
             </div>
           </div>
         )}

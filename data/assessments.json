@@ -1,0 +1,46 @@
+[
+  {
+    "id": "ass-1",
+    "studentId": "user-student-1",
+    "studentName": "Adit Pratama",
+    "type": "pre",
+    "literacyScore": 68,
+    "numeracyScore": 70,
+    "reasoningScore": 64,
+    "date": "2026-08-25",
+    "notes": "Pemahaman dasar cukup baik, namun sering kesulitan merangkai alasan tertulis."
+  },
+  {
+    "id": "ass-2",
+    "studentId": "user-student-1",
+    "studentName": "Adit Pratama",
+    "type": "post",
+    "literacyScore": 82,
+    "numeracyScore": 88,
+    "reasoningScore": 84,
+    "date": "2026-09-17",
+    "notes": "Peningkatan signifikan pada artikulasi alasan dan pemilihan konsep KPK/FPB kontekstual."
+  },
+  {
+    "id": "ass-3",
+    "studentId": "user-student-2",
+    "studentName": "Siti Rahma",
+    "type": "pre",
+    "literacyScore": 75,
+    "numeracyScore": 68,
+    "reasoningScore": 69,
+    "date": "2026-08-25",
+    "notes": "Literasi awal tinggi, numerasi perlu peningkatan dalam permodelan soal cerita."
+  },
+  {
+    "id": "ass-4",
+    "studentId": "user-student-2",
+    "studentName": "Siti Rahma",
+    "type": "post",
+    "literacyScore": 89,
+    "numeracyScore": 81,
+    "reasoningScore": 82,
+    "date": "2026-09-17",
+    "notes": "Sangat baik dalam menghubungkan teks deskripsi dengan data kuantitatif."
+  }
+]

@@ -61,7 +61,21 @@ export const AIClientService = {
         observation: 'Objek teramati memiliki struktur yang teratur, pola hitung yang jelas, dan berada di sekitar lingkungan sekolah murid.',
         context: 'Aktivitas eksplorasi lingkungan sekolah.',
         learningBridge: `Objek ini menjadi sarana konkret untuk memahami konsep ${mission.material} melalui pengamatan langsung dan penalaran bertahap.`,
-        simpleMaterialSummary: `Hari ini kita belajar tentang ${mission.material}. Materi ini mengajarkan kita bagaimana mengenali pola, menghitung, atau memahami aturan di sekitar kita dengan cara yang menyenangkan seperti melihat benda-benda di sekitar sekolah.`,
+        simpleMaterialSummary: `📌 **Pengertian & Konsep Inti:**
+Materi **${mission.material}** (${mission.subject}) membantu kita memahami bagaimana aturan, pola keteraturan, dan konsep ilmiah bekerja di dunia nyata di sekitar kita.
+
+🏷️ **Jenis-Jenis / Komponen Utama:**
+1. **Konsep Dasar & Struktur:** Memahami bagian-bagian penyusun, aturan hitung, atau sifat-sifat pokok materi.
+2. **Kategori & Pengelompokan:** Membedakan ragam jenis atau bentuk sesuai kaidah pembelajaran.
+3. **Penerapan Kontekstual:** Menghubungkan konsep teoritis dengan aksi pemecahan masalah nyata.
+
+🔍 **Ciri-Ciri & Contoh Nyata:**
+- **Karakteristik:** Memiliki pola keteraturan, data yang teramati, dan manfaat konkret bagi kehidupan sehari-hari.
+- **Contoh Nyata:** Ditemukan pada benda, rutinitas, atau fenomena alam di lingkungan sekolah dan rumah.
+
+💡 **Modal Belajar & Tips Mengingat Murid:**
+- Amati objek dengan teliti dan hubungkan dengan materi yang dijelaskan guru.
+- Gunakan 4 Langkah Berpikir Komputasional (Dekomposisi, Pengenalan Pola, Abstraksi, dan Algoritma) untuk memecahkan setiap tantangan!`,
         soloTaxonomyLevel: 'Relational',
         soloDescription: 'Siswa mampu menghubungkan temuan objek konkret di sekitar dengan konsep materi pembelajaran secara utuh.',
         guidingQuestions: [

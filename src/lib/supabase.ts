@@ -1,6 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { UserProfile, LearningMission, StudentActivitySession, TeacherInsight, AssessmentRecord, SchoolProfile } from '../types';
-import { INITIAL_SYSTEM_USERS, DEFAULT_MISSIONS, INITIAL_COMPLETED_SESSION, TEACHER_INSIGHTS, ASSESSMENT_DATA } from '../data/mockData';
+import { UserProfile, LearningMission, StudentActivitySession, TeacherInsight, AssessmentRecord, SchoolProfile, StudentGroup } from '../types';
 import { getDefaultAvatar, UserGender } from '../data/avatarData';
 
 // Universal Environment Variable Resolver for Supabase
@@ -94,12 +93,75 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; mess
 }
 
 // ==========================================
-// USER REPOSITORY
+// USER REPOSITORY (REAL DATABASE)
 // ==========================================
 export async function dbFetchUsers(): Promise<UserProfile[]> {
+  let userList: UserProfile[] = [];
+
+  // 1. Fetch from server database (/api/users)
+  try {
+    const res = await fetch('/api/users');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        userList = data.map((u: any) => {
+          const gender: UserGender = u.gender || 'male';
+          const isCustomBase64 = u.avatar && u.avatar.startsWith('data:image');
+          return {
+            ...u,
+            gender,
+            avatar: isCustomBase64 ? u.avatar : getDefaultAvatar(u.role, gender)
+          };
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('Gagal memuat pengguna dari /api/users:', e);
+  }
+
+  // 2. Fetch from Supabase if configured
   const client = getSupabaseClient();
-  if (!client) {
-    // Return from localStorage or initial mock data
+  if (client) {
+    try {
+      const { data, error } = await client
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        userList = data.map((row: any) => {
+          const gender: UserGender = row.gender || 'male';
+          const isCustomBase64 = row.avatar && row.avatar.startsWith('data:image');
+          const avatar = isCustomBase64 ? row.avatar : getDefaultAvatar(row.role, gender);
+          return {
+            id: row.id,
+            name: row.name,
+            role: row.role,
+            gender,
+            avatar,
+            schoolName: row.school_name,
+            schoolId: row.school_id || 'SDN01',
+            className: row.class_name,
+            classId: row.class_id || 'V-A',
+            email: row.email,
+            status: row.status,
+            nisnNip: row.nisn_nip,
+            username: row.username || undefined,
+            password: row.password || undefined,
+            phone: row.phone,
+            joinedDate: row.joined_date,
+            isGroup: row.is_group || false,
+            groupMembers: Array.isArray(row.group_members) ? row.group_members : []
+          };
+        });
+      }
+    } catch (err) {
+      console.error('Error in Supabase dbFetchUsers:', err);
+    }
+  }
+
+  // 3. Fallback to localStorage cache if still empty
+  if (userList.length === 0) {
     try {
       const saved = localStorage.getItem('narasa_users_data');
       if (saved) {
@@ -117,61 +179,20 @@ export async function dbFetchUsers(): Promise<UserProfile[]> {
         }
       }
     } catch (e) {}
-    return INITIAL_SYSTEM_USERS;
+  } else {
+    try {
+      localStorage.setItem('narasa_users_data', JSON.stringify(userList));
+    } catch (e) {}
   }
 
-  try {
-    const { data, error } = await client
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.warn('Supabase users fetch error:', error.message);
-      return [];
-    }
-
-    if (!data || data.length === 0) {
-      console.warn('Supabase users table is empty');
-      return [];
-    }
-
-    return data.map((row: any) => {
-      const gender: UserGender = row.gender || 'male';
-      const isCustomBase64 = row.avatar && row.avatar.startsWith('data:image');
-      const avatar = isCustomBase64 ? row.avatar : getDefaultAvatar(row.role, gender);
-      return {
-        id: row.id,
-        name: row.name,
-        role: row.role,
-        gender,
-        avatar,
-        schoolName: row.school_name,
-        schoolId: row.school_id || 'SDN01',
-        className: row.class_name,
-        classId: row.class_id || 'V-A',
-        email: row.email,
-        status: row.status,
-        nisnNip: row.nisn_nip,
-        username: row.username || undefined,
-        password: row.password || undefined,
-        phone: row.phone,
-        joinedDate: row.joined_date,
-        isGroup: row.is_group || false,
-        groupMembers: Array.isArray(row.group_members) ? row.group_members : []
-      };
-    });
-  } catch (err) {
-    console.error('Error in dbFetchUsers:', err);
-    return [];
-  }
+  return userList;
 }
 
 export async function dbUpsertUser(user: UserProfile): Promise<boolean> {
-  // Always update local storage first
+  // 1. Update local storage cache
   try {
     const saved = localStorage.getItem('narasa_users_data');
-    let currentUsers: UserProfile[] = saved ? JSON.parse(saved) : INITIAL_SYSTEM_USERS;
+    let currentUsers: UserProfile[] = saved ? JSON.parse(saved) : [];
     const exists = currentUsers.some(u => u.id === user.id);
     if (exists) {
       currentUsers = currentUsers.map(u => u.id === user.id ? user : u);
@@ -181,6 +202,18 @@ export async function dbUpsertUser(user: UserProfile): Promise<boolean> {
     localStorage.setItem('narasa_users_data', JSON.stringify(currentUsers));
   } catch (e) {}
 
+  // 2. Persist to server database (/api/users)
+  try {
+    await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    });
+  } catch (e) {
+    console.warn('Gagal menyimpan user ke /api/users:', e);
+  }
+
+  // 3. Persist to Supabase if connected
   const client = getSupabaseClient();
   if (!client) return true;
 
@@ -189,6 +222,7 @@ export async function dbUpsertUser(user: UserProfile): Promise<boolean> {
       id: user.id,
       name: user.name,
       role: user.role,
+      gender: user.gender || 'male',
       avatar: user.avatar,
       school_name: user.schoolName,
       school_id: user.schoolId || 'SDN01',
@@ -218,6 +252,7 @@ export async function dbUpsertUser(user: UserProfile): Promise<boolean> {
 }
 
 export async function dbDeleteUser(userId: string): Promise<boolean> {
+  // 1. Remove from local storage cache
   try {
     const saved = localStorage.getItem('narasa_users_data');
     if (saved) {
@@ -227,6 +262,16 @@ export async function dbDeleteUser(userId: string): Promise<boolean> {
     }
   } catch (e) {}
 
+  // 2. Delete from server database (/api/users/:id)
+  try {
+    await fetch(`/api/users/${userId}`, {
+      method: 'DELETE'
+    });
+  } catch (e) {
+    console.warn('Gagal menghapus user dari /api/users:', e);
+  }
+
+  // 3. Delete from Supabase if connected
   const client = getSupabaseClient();
   if (!client) return true;
 
@@ -461,69 +506,121 @@ export async function dbDeleteSchool(schoolId: string): Promise<boolean> {
 }
 
 // ==========================================
-// LEARNING MISSIONS REPOSITORY
+// LEARNING MISSIONS REPOSITORY (REAL DATABASE)
 // ==========================================
 export async function dbFetchMissions(): Promise<LearningMission[]> {
-  const client = getSupabaseClient();
-  if (!client) return DEFAULT_MISSIONS;
+  let missionsList: LearningMission[] = [];
 
+  // 1. Fetch from server database (/api/missions)
   try {
-    const { data, error } = await client.from('learning_missions').select('*').order('created_at', { ascending: false });
-    if (error) {
-      console.warn('Supabase missions fetch error:', error.message);
-      return [];
+    const res = await fetch('/api/missions');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        missionsList = data;
+      }
     }
-    if (!data || data.length === 0) {
-      console.warn('Supabase missions table is empty');
-      return [];
-    }
-
-    return data.map((row: any) => {
-      const subject = row.subject || 'Matematika';
-      const mapelIdMap: Record<string, string> = {
-        'Matematika': 'matematika',
-        'IPAS': 'ipas',
-        'Bahasa Indonesia': 'bahasa_indonesia',
-        'Pendidikan Pancasila': 'pancasila',
-        'Seni Budaya': 'seni_budaya'
-      };
-      const idMapel = row.id_mapel || mapelIdMap[subject] || subject.toLowerCase().replace(/\s+/g, '_');
-
-      return {
-        id: row.id,
-        idMapel,
-        title: row.title,
-        grade: row.grade,
-        phase: row.phase,
-        subject,
-        material: row.material,
-        cp: row.cp,
-        tp: row.tp,
-        indicators: Array.isArray(row.indicators) ? row.indicators : [],
-        targetCompetency: row.target_competency,
-        cognitiveLevel: row.cognitive_level,
-        strictCurriculumMode: row.strict_curriculum_mode,
-        features: row.features || {
-          adaptiveDifficulty: true,
-          scaffolding: true,
-          reasoning: true,
-          evidence: true,
-          reflection: true,
-          presentation: true,
-          peerQuestion: true
-        },
-        description: row.description,
-        isActive: row.is_active,
-        createdAt: row.created_at,
-        suggestedObjects: Array.isArray(row.suggested_objects) ? row.suggested_objects : []
-      };
-    });
   } catch (e) {
-    return [];
+    console.warn('Gagal memuat misi dari /api/missions:', e);
   }
+
+  // 2. Fetch from Supabase if configured
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      const { data, error } = await client.from('learning_missions').select('*').order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) {
+        const mapped = data.map((row: any) => {
+          const subject = row.subject || 'Matematika';
+          const mapelIdMap: Record<string, string> = {
+            'Matematika': 'matematika',
+            'IPAS': 'ipas',
+            'Bahasa Indonesia': 'bahasa_indonesia',
+            'Pendidikan Pancasila': 'pancasila',
+            'Seni Budaya': 'seni_budaya'
+          };
+          const idMapel = row.id_mapel || mapelIdMap[subject] || subject.toLowerCase().replace(/\s+/g, '_');
+
+          return {
+            id: row.id,
+            idMapel,
+            title: row.title,
+            grade: row.grade,
+            phase: row.phase,
+            subject,
+            material: row.material,
+            cp: row.cp,
+            tp: row.tp,
+            indicators: Array.isArray(row.indicators) ? row.indicators : [],
+            targetCompetency: row.target_competency,
+            cognitiveLevel: row.cognitive_level,
+            strictCurriculumMode: row.strict_curriculum_mode,
+            features: row.features || {
+              adaptiveDifficulty: true,
+              scaffolding: true,
+              reasoning: true,
+              evidence: true,
+              reflection: true,
+              presentation: true,
+              peerQuestion: true
+            },
+            description: row.description,
+            isActive: row.is_active,
+            createdAt: row.created_at,
+            suggestedObjects: Array.isArray(row.suggested_objects) ? row.suggested_objects : []
+          };
+        });
+        if (mapped.length > 0) missionsList = mapped;
+      }
+    } catch (e) {
+      console.warn('Supabase fetch missions error:', e);
+    }
+  }
+
+  // 3. Fallback to localStorage cache
+  if (missionsList.length === 0) {
+    try {
+      const saved = localStorage.getItem('narasa_missions_data_v3');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  } else {
+    try {
+      localStorage.setItem('narasa_missions_data_v3', JSON.stringify(missionsList));
+    } catch (e) {}
+  }
+
+  return missionsList;
 }
 
 export async function dbUpsertMission(mission: LearningMission): Promise<boolean> {
+  // 1. Update localStorage cache
+  try {
+    const saved = localStorage.getItem('narasa_missions_data_v3');
+    let current: LearningMission[] = saved ? JSON.parse(saved) : [];
+    const idx = current.findIndex(m => m.id === mission.id);
+    if (idx >= 0) {
+      current[idx] = mission;
+    } else {
+      current.unshift(mission);
+    }
+    localStorage.setItem('narasa_missions_data_v3', JSON.stringify(current));
+  } catch (e) {}
+
+  // 2. Persist to server database (/api/missions)
+  try {
+    await fetch('/api/missions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mission)
+    });
+  } catch (e) {
+    console.warn('Gagal menyimpan misi ke /api/missions:', e);
+  }
+
+  // 3. Persist to Supabase if configured
   const client = getSupabaseClient();
   if (!client) return true;
 
@@ -555,13 +652,59 @@ export async function dbUpsertMission(mission: LearningMission): Promise<boolean
   }
 }
 
+export async function dbDeleteMission(missionId: string): Promise<boolean> {
+  // 1. Update local storage
+  try {
+    const saved = localStorage.getItem('narasa_missions_data_v3');
+    if (saved) {
+      const current: LearningMission[] = JSON.parse(saved);
+      const filtered = current.filter(m => m.id !== missionId);
+      localStorage.setItem('narasa_missions_data_v3', JSON.stringify(filtered));
+    }
+  } catch (e) {}
+
+  // 2. Delete from server database (/api/missions/:id)
+  try {
+    await fetch(`/api/missions/${missionId}`, {
+      method: 'DELETE'
+    });
+  } catch (e) {
+    console.warn('Gagal menghapus misi dari /api/missions:', e);
+  }
+
+  // 3. Delete from Supabase if configured
+  const client = getSupabaseClient();
+  if (!client) return true;
+
+  try {
+    const { error } = await client.from('learning_missions').delete().eq('id', missionId);
+    return !error;
+  } catch (e) {
+    return false;
+  }
+}
+
 // ==========================================
-// STUDENT ACTIVITY SESSIONS REPOSITORY
+// STUDENT ACTIVITY SESSIONS REPOSITORY (REAL DATABASE)
 // ==========================================
 export async function dbFetchSessions(): Promise<StudentActivitySession[]> {
+  let sessionList: StudentActivitySession[] = [];
+
+  // 1. Fetch from server database (/api/sessions)
+  try {
+    const res = await fetch('/api/sessions');
+    if (res.ok) {
+      const serverSessions = await res.json();
+      if (Array.isArray(serverSessions) && serverSessions.length > 0) {
+        sessionList = serverSessions;
+      }
+    }
+  } catch (e) {
+    console.warn('Gagal memuat sesi dari /api/sessions:', e);
+  }
+
+  // 2. Fetch from Supabase if configured
   const client = getSupabaseClient();
-  
-  // 1. If Supabase client configured, try fetching remote
   if (client) {
     try {
       const { data, error } = await client.from('student_sessions').select('*').order('created_at', { ascending: false });
@@ -590,84 +733,38 @@ export async function dbFetchSessions(): Promise<StudentActivitySession[]> {
             scaffoldingUsedCount: 0
           }
         }));
-        try {
-          localStorage.setItem('narasa_sessions_data', JSON.stringify(mapped));
-        } catch (e) {}
-        return mapped;
+        if (mapped.length > 0) sessionList = mapped;
       }
     } catch (e) {
       console.warn('Supabase fetch sessions error:', e);
     }
   }
 
-  // 2. Try fetching from server-side database (/api/sessions)
-  try {
-    const res = await fetch('/api/sessions');
-    if (res.ok) {
-      const serverSessions = await res.json();
-      if (Array.isArray(serverSessions)) {
-        // Read local sessions to merge
-        const saved = localStorage.getItem('narasa_sessions_data');
-        let localList: StudentActivitySession[] = [];
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) localList = parsed;
-          } catch (e) {}
-        }
-
-        const sessionMap = new Map<string, StudentActivitySession>();
-        serverSessions.forEach((s: StudentActivitySession) => sessionMap.set(s.id, s));
-        localList.forEach((s: StudentActivitySession) => {
-          if (!sessionMap.has(s.id)) {
-            sessionMap.set(s.id, s);
-            // Push un-synced local session to the server database
-            fetch('/api/sessions', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(s)
-            }).catch(() => {});
-          }
-        });
-
-        const merged = Array.from(sessionMap.values());
-        if (merged.length > 0) {
-          try {
-            localStorage.setItem('narasa_sessions_data', JSON.stringify(merged));
-          } catch (e) {}
-          return merged;
+  // 3. Fallback to localStorage cache
+  if (sessionList.length === 0) {
+    try {
+      const saved = localStorage.getItem('narasa_sessions_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
         }
       }
-    }
-  } catch (e) {
-    // server API unavailable, proceed to localStorage
+    } catch (e) {}
+  } else {
+    try {
+      localStorage.setItem('narasa_sessions_data', JSON.stringify(sessionList));
+    } catch (e) {}
   }
 
-  // 3. Fallback to localStorage
-  try {
-    const saved = localStorage.getItem('narasa_sessions_data');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch (e) {}
-
-  return [INITIAL_COMPLETED_SESSION];
+  return sessionList;
 }
 
 export async function dbUpsertSession(session: StudentActivitySession): Promise<boolean> {
-  // 1. Immediately store in localStorage so student work is always preserved locally
+  // 1. Immediately store in localStorage cache
   try {
     const saved = localStorage.getItem('narasa_sessions_data');
-    let list: StudentActivitySession[] = [];
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) list = parsed;
-      } catch (e) {}
-    }
+    let list: StudentActivitySession[] = saved ? JSON.parse(saved) : [];
     const idx = list.findIndex((s) => s.id === session.id);
     if (idx >= 0) {
       list[idx] = session;
@@ -680,14 +777,12 @@ export async function dbUpsertSession(session: StudentActivitySession): Promise<
   }
 
   // 2. Immediately persist to server-side database (/api/sessions)
-  let serverOk = false;
   try {
-    const res = await fetch('/api/sessions', {
+    await fetch('/api/sessions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(session)
     });
-    serverOk = res.ok;
   } catch (e) {
     console.warn('POST /api/sessions error:', e);
   }
@@ -722,6 +817,225 @@ export async function dbUpsertSession(session: StudentActivitySession): Promise<
   } catch (e) {
     return false;
   }
+}
+
+export async function dbDeleteSession(sessionId: string): Promise<boolean> {
+  // 1. Remove from local storage
+  try {
+    const saved = localStorage.getItem('narasa_sessions_data');
+    if (saved) {
+      const current: StudentActivitySession[] = JSON.parse(saved);
+      const filtered = current.filter(s => s.id !== sessionId);
+      localStorage.setItem('narasa_sessions_data', JSON.stringify(filtered));
+    }
+  } catch (e) {}
+
+  // 2. Delete from server database (/api/sessions/:id)
+  try {
+    await fetch(`/api/sessions/${sessionId}`, {
+      method: 'DELETE'
+    });
+  } catch (e) {
+    console.warn('Gagal menghapus sesi dari /api/sessions:', e);
+  }
+
+  // 3. Delete from Supabase if connected
+  const client = getSupabaseClient();
+  if (!client) return true;
+
+  try {
+    const { error } = await client.from('student_sessions').delete().eq('id', sessionId);
+    return !error;
+  } catch (e) {
+    return false;
+  }
+}
+
+// ==========================================
+// STUDENT GROUPS REPOSITORY (REAL DATABASE)
+// ==========================================
+export async function dbFetchGroups(): Promise<StudentGroup[]> {
+  let groupsList: StudentGroup[] = [];
+
+  // 1. Fetch from server database (/api/groups)
+  try {
+    const res = await fetch('/api/groups');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        groupsList = data;
+      }
+    }
+  } catch (e) {
+    console.warn('Gagal memuat kelompok dari /api/groups:', e);
+  }
+
+  // 2. Fallback to localStorage cache
+  if (groupsList.length === 0) {
+    try {
+      const saved = localStorage.getItem('narasa_groups_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  } else {
+    try {
+      localStorage.setItem('narasa_groups_data', JSON.stringify(groupsList));
+    } catch (e) {}
+  }
+
+  return groupsList;
+}
+
+export async function dbUpsertGroup(group: StudentGroup): Promise<boolean> {
+  // 1. Save to local storage
+  try {
+    const saved = localStorage.getItem('narasa_groups_data');
+    let list: StudentGroup[] = saved ? JSON.parse(saved) : [];
+    const idx = list.findIndex(g => g.id === group.id);
+    if (idx >= 0) {
+      list[idx] = group;
+    } else {
+      list.push(group);
+    }
+    localStorage.setItem('narasa_groups_data', JSON.stringify(list));
+  } catch (e) {}
+
+  // 2. Save to server database
+  try {
+    await fetch('/api/groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(group)
+    });
+  } catch (e) {
+    console.warn('Gagal menyimpan group ke /api/groups:', e);
+  }
+
+  return true;
+}
+
+export async function dbDeleteGroup(groupId: string): Promise<boolean> {
+  try {
+    const saved = localStorage.getItem('narasa_groups_data');
+    if (saved) {
+      const list: StudentGroup[] = JSON.parse(saved);
+      const filtered = list.filter(g => g.id !== groupId);
+      localStorage.setItem('narasa_groups_data', JSON.stringify(filtered));
+    }
+  } catch (e) {}
+
+  try {
+    await fetch(`/api/groups/${groupId}`, {
+      method: 'DELETE'
+    });
+  } catch (e) {}
+
+  return true;
+}
+
+// ==========================================
+// ASSESSMENT & TEACHER INSIGHTS (REAL DATABASE)
+// ==========================================
+export async function dbFetchAssessmentData(): Promise<AssessmentRecord[]> {
+  let records: AssessmentRecord[] = [];
+
+  try {
+    const res = await fetch('/api/assessments');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        records = data;
+      }
+    }
+  } catch (e) {
+    console.warn('Gagal memuat assessment dari /api/assessments:', e);
+  }
+
+  if (records.length === 0) {
+    try {
+      const saved = localStorage.getItem('narasa_assessment_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  } else {
+    try {
+      localStorage.setItem('narasa_assessment_data', JSON.stringify(records));
+    } catch (e) {}
+  }
+
+  return records;
+}
+
+export async function dbUpsertAssessment(record: AssessmentRecord): Promise<boolean> {
+  try {
+    const saved = localStorage.getItem('narasa_assessment_data');
+    let list: AssessmentRecord[] = saved ? JSON.parse(saved) : [];
+    const idx = list.findIndex(r => r.id === record.id);
+    if (idx >= 0) {
+      list[idx] = record;
+    } else {
+      list.unshift(record);
+    }
+    localStorage.setItem('narasa_assessment_data', JSON.stringify(list));
+  } catch (e) {}
+
+  try {
+    await fetch('/api/assessments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    });
+  } catch (e) {}
+
+  return true;
+}
+
+export async function dbFetchTeacherInsights(): Promise<TeacherInsight[]> {
+  let insights: TeacherInsight[] = [];
+
+  try {
+    const res = await fetch('/api/teacher-insights');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        insights = data;
+      }
+    }
+  } catch (e) {
+    console.warn('Gagal memuat teacher insights dari /api/teacher-insights:', e);
+  }
+
+  if (insights.length === 0) {
+    try {
+      const saved = localStorage.getItem('narasa_teacher_insights_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+  } else {
+    try {
+      localStorage.setItem('narasa_teacher_insights_data', JSON.stringify(insights));
+    } catch (e) {}
+  }
+
+  return insights;
+}
+
+export async function dbSaveTeacherInsight(insight: Partial<TeacherInsight>): Promise<boolean> {
+  try {
+    await fetch('/api/teacher-insights', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(insight)
+    });
+  } catch (e) {}
+
+  return true;
 }
 
 // Bulk Sync All Local Data to Supabase

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "ti-1",
+    "title": "Kekuatan: Murid Mahir Menemukan Bukti Sensorik Visual",
+    "type": "strength",
+    "content": "Sebagian besar murid (84%) sudah mampu mengidentifikasi objek dan menuliskan informasi kuantitatif dari foto secara rinci.",
+    "evidenceData": "Rata-rata skor tahap Observasi & Identify mencapai 89/100 pada misi pola interval dan kantin.",
+    "targetMissions": [
+      "mission-kpk-fpb",
+      "mission-ipas-ekosistem"
+    ],
+    "actionRecommendation": "Pertahankan aktivitas observasi langsung. Mulai tingkatkan ke tahap evaluasi kritis (C5)."
+  },
+  {
+    "id": "ti-2",
+    "title": "Perhatian: Murid Membutuhkan Bantuan dalam Menjelaskan Bukti (Evidence)",
+    "type": "need_scaffold",
+    "content": "Beberapa murid (32%) langsung menuliskan jawaban akhir tanpa menguraikan deret kelipatan atau pohon faktor sebagai bukti verifikasi.",
+    "evidenceData": "Level scaffolding yang paling sering diminta adalah Level 1 & 2 pada pertanyaan bukti matematis.",
+    "targetMissions": [
+      "mission-kpk-fpb"
+    ],
+    "actionRecommendation": "Aktifkan scaffolding otomatis bertingkat dan gunakan template kalimat bukti penuntun."
+  },
+  {
+    "id": "ti-3",
+    "title": "Tips Pedagogis: Optimalkan Sesi Tanya Teman di Proyektor Kelas",
+    "type": "pedagogical_tip",
+    "content": "Saat presentasi kelas ditayangkan, interaksi tanya-jawab antar murid terbukti meningkatkan pemahaman nalar sebesar 18%.",
+    "evidenceData": "Sesi peer question Adit & Siti menghasilkan retensi konsep KPK yang stabil pada kuis berikutnya.",
+    "targetMissions": [
+      "mission-kpk-fpb",
+      "mission-b-indo-deskripsi"
+    ],
+    "actionRecommendation": "Jadwalkan 10 menit di akhir jam pelajaran untuk fitur Presentasi Kelas."
+  }
+]

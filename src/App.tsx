@@ -64,10 +64,15 @@ import {
   dbFetchSessions,
   dbFetchSchools,
   dbFetchSystemSettings,
+  dbFetchGroups,
   dbUpsertUser,
   dbDeleteUser,
   dbUpsertMission,
+  dbDeleteMission,
   dbUpsertSession,
+  dbDeleteSession,
+  dbUpsertGroup,
+  dbDeleteGroup,
   isSupabaseConfigured
 } from './lib/supabase';
 import {
@@ -374,12 +379,13 @@ export default function App() {
   // Initial load from Supabase / Remote Database
   const refreshDatabase = useCallback(async () => {
     try {
-      const [remoteUsers, remoteMissions, remoteSessions, remoteSettings, remoteSchools] = await Promise.all([
+      const [remoteUsers, remoteMissions, remoteSessions, remoteSettings, remoteSchools, remoteGroups] = await Promise.all([
         dbFetchUsers(),
         dbFetchMissions(),
         dbFetchSessions(),
         dbFetchSystemSettings(),
-        dbFetchSchools()
+        dbFetchSchools(),
+        dbFetchGroups()
       ]);
       if (remoteSettings && remoteSettings.geminiApiKey) {
         localStorage.setItem('narasa_school_gemini_key', remoteSettings.geminiApiKey.trim());
@@ -388,6 +394,9 @@ export default function App() {
         try {
           localStorage.setItem('narasa_schools_profile_data', JSON.stringify(remoteSchools));
         } catch (e) {}
+      }
+      if (remoteGroups && remoteGroups.length > 0) {
+        setGroups(remoteGroups);
       }
       if (isSupabaseConfigured()) {
         setUsers(remoteUsers || []);
