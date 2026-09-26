@@ -19,7 +19,9 @@ import {
   Brain,
   Users,
   Settings,
-  Building2
+  Building2,
+  IdCard,
+  Sparkles
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -287,43 +289,72 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {/* Dropdown Menu Box (Vibrant & Playful) */}
                 {isDropdownOpen && (
                   <div className="fixed sm:absolute right-3 sm:right-0 top-16 sm:top-auto sm:mt-2 w-[calc(100vw-1.5rem)] sm:w-80 max-w-sm bg-white rounded-2xl shadow-2xl border-2 border-indigo-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                    {/* User Mini Card in Dropdown */}
-                    <div className="p-4 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border-b-2 border-indigo-100 flex items-start gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsDropdownOpen(false);
-                          onOpenEditProfile();
-                        }}
-                        className="relative group rounded-xl overflow-hidden shrink-0 cursor-pointer shadow-xs"
-                        title="Klik untuk ubah foto profil"
-                      >
-                        <img
-                          src={currentUser.avatar}
-                          alt={currentUser.name}
-                          className="w-12 h-12 rounded-xl object-cover ring-2 ring-indigo-400"
-                        />
-                        <span className="absolute inset-0 bg-slate-900/50 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
-                          <Camera className="w-4 h-4" />
-                        </span>
-                      </button>
-                      <div className="space-y-1 min-w-0 flex-1 text-left">
-                        <div className="flex items-center justify-between gap-1 flex-wrap">
-                          <h4 className="font-black text-sm text-[#1E293B] truncate">
-                            {currentUser.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim()}
-                          </h4>
-                          {getRoleBadge(currentUser)}
+                    {/* User Mini Card Header in Dropdown */}
+                    <div className="relative p-4 bg-gradient-to-br from-[#2D31FA] via-[#4F8EF7] to-[#7C5CFC] text-white overflow-hidden shadow-md">
+                      {/* Decorative Background Accents */}
+                      <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none" />
+                      <div className="absolute right-3 top-3 opacity-20 pointer-events-none">
+                        <Sparkles className="w-12 h-12 text-white" />
+                      </div>
+
+                      <div className="relative flex items-start gap-3.5 z-10">
+                        {/* Avatar & Camera Edit */}
+                        <div className="relative shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsDropdownOpen(false);
+                              onOpenEditProfile();
+                            }}
+                            className="relative group rounded-2xl overflow-hidden cursor-pointer shadow-lg block ring-3 ring-white/30 hover:ring-white transition-all active:scale-95"
+                            title="Klik untuk ubah foto profil"
+                          >
+                            <img
+                              src={currentUser.avatar}
+                              alt={currentUser.name}
+                              className="w-12 h-12 rounded-2xl object-cover"
+                            />
+                            <span className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                              <Camera className="w-4 h-4" />
+                            </span>
+                          </button>
+                          <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 ring-2 ring-white shadow-xs" title="Online" />
                         </div>
-                        {currentUser.username && !currentUser.username.toLowerCase().includes('superadmin') && currentUser.role !== 'central_admin' && currentUser.role !== 'school_admin' && currentUser.role !== 'admin' ? (
-                          <p className="text-xs text-indigo-700 font-bold truncate">@{currentUser.username}</p>
-                        ) : currentUser.nisnNip ? (
-                          <p className="text-xs text-slate-600 font-mono font-bold truncate">
-                            {currentUser.role === 'student' ? `NISN: ${currentUser.nisnNip}` : `NIP. ${currentUser.nisnNip}`}
-                          </p>
-                        ) : null}
-                        <p className="text-[11px] text-slate-500 font-medium truncate">
-                          {currentUser.className?.replace(/•?\s*Superadmin\s*Nasional/gi, '').replace(/\/\s*Superadmin/gi, '').trim()} • {currentUser.schoolName}
-                        </p>
+
+                        {/* Details */}
+                        <div className="space-y-1.5 min-w-0 flex-1 text-left">
+                          {/* Name */}
+                          <div className="flex items-center justify-between gap-1 flex-wrap">
+                            <h4 className="font-extrabold text-base text-white tracking-tight truncate drop-shadow-xs">
+                              {currentUser.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim()}
+                            </h4>
+                          </div>
+
+                          {/* NISN / NIP Badge */}
+                          {currentUser.nisnNip && (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-white/15 backdrop-blur-md border border-white/25 text-white/95 text-[11px] font-extrabold font-mono shadow-2xs">
+                              <IdCard className="w-3.5 h-3.5 text-indigo-200 shrink-0" />
+                              <span>{currentUser.role === 'student' ? `NISN: ${currentUser.nisnNip}` : `NIP: ${currentUser.nisnNip}`}</span>
+                            </div>
+                          )}
+
+                          {/* Class & School Name */}
+                          <div className="pt-0.5 space-y-1 text-xs text-white/90">
+                            {currentUser.className && (
+                              <div className="flex items-center gap-1.5 font-bold">
+                                <GraduationCap className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                                <span className="bg-amber-400/95 text-slate-900 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                                  {currentUser.className.replace(/•?\s*Superadmin\s*Nasional/gi, '').replace(/\/\s*Superadmin/gi, '').trim()}
+                                </span>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-100 truncate">
+                              <Building2 className="w-3.5 h-3.5 text-indigo-200 shrink-0" />
+                              <span className="truncate">{currentUser.schoolName}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 

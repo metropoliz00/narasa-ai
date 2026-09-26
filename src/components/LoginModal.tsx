@@ -160,12 +160,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
           {/* Password */}
           <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-[#25324B]">
-                Password
-              </label>
-              <span className="text-[10px] text-slate-400">Default: 123456</span>
-            </div>
+            <label className="text-xs font-bold text-[#25324B]">
+              Password
+            </label>
             <div className="relative">
               <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
