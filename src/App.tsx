@@ -173,7 +173,16 @@ export default function App() {
     } catch (e) {}
     return DEFAULT_MISSIONS;
   });
-  const [sessions, setSessions] = useState<StudentActivitySession[]>([]);
+  const [sessions, setSessions] = useState<StudentActivitySession[]>(() => {
+    try {
+      const saved = localStorage.getItem('narasa_sessions_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [INITIAL_COMPLETED_SESSION];
+  });
   const [activeMission, setActiveMission] = useState<LearningMission | null>(null);
 
   const handleToggleMissionActive = (missionId: string) => {
@@ -401,6 +410,53 @@ export default function App() {
   const [isReflectionOpen, setIsReflectionOpen] = useState(false);
   const [completedStudentAnswers, setCompletedStudentAnswers] = useState<StudentAnswers | null>(null);
   const [scaffoldingHistory, setScaffoldingHistory] = useState<{ questionId: string; level: 1 | 2 | 3 | 4; hintText: string; requestedAt: string }[]>([]);
+
+  // Auto-save active exploration session to localStorage
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const explorationDraftKey = `narasa_active_exploration_${currentUser.id}`;
+    if (activeLearningBridge && currentCapturedImage) {
+      try {
+        localStorage.setItem(
+          explorationDraftKey,
+          JSON.stringify({
+            activeLearningBridge,
+            currentCapturedImage,
+            currentImageLabel,
+            isChallengeActive,
+            activeMissionId: activeMission?.id || null,
+            updatedAt: new Date().toISOString()
+          })
+        );
+      } catch (e) {}
+    } else if (!isChallengeActive && !isReflectionOpen) {
+      try {
+        localStorage.removeItem(explorationDraftKey);
+      } catch (e) {}
+    }
+  }, [activeLearningBridge, currentCapturedImage, currentImageLabel, isChallengeActive, isReflectionOpen, activeMission, currentUser?.id]);
+
+  // Restore active exploration session draft on initial load
+  useEffect(() => {
+    if (!currentUser?.id || activeLearningBridge) return;
+    try {
+      const explorationDraftKey = `narasa_active_exploration_${currentUser.id}`;
+      const saved = localStorage.getItem(explorationDraftKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.activeLearningBridge && parsed.currentCapturedImage) {
+          setActiveLearningBridge(parsed.activeLearningBridge);
+          setCurrentCapturedImage(parsed.currentCapturedImage);
+          setCurrentImageLabel(parsed.currentImageLabel || 'Foto Murid');
+          setIsChallengeActive(Boolean(parsed.isChallengeActive));
+          if (parsed.activeMissionId) {
+            const foundMission = missions.find((m) => m.id === parsed.activeMissionId);
+            if (foundMission) setActiveMission(foundMission);
+          }
+        }
+      }
+    } catch (e) {}
+  }, [currentUser?.id, missions]);
 
   // Active Presentation States
   const [activeSlides, setActiveSlides] = useState<PresentationSlide[]>([]);
@@ -708,12 +764,26 @@ export default function App() {
         presentation: generatedSlides.length > 0 ? generatedSlides : []
       };
 
-      setSessions([finalSession, ...sessions]);
-      if (isAuthenticated) {
-        dbUpsertSession(finalSession).catch((err) => {
-          console.warn('Gagal menyimpan karya portofolio ke Supabase:', err);
-        });
-      }
+      const updatedSessions = [finalSession, ...sessions.filter((s) => s.id !== finalSession.id)];
+      setSessions(updatedSessions);
+
+      // Save to localStorage immediately so student work is always preserved locally
+      try {
+        localStorage.setItem('narasa_sessions_data', JSON.stringify(updatedSessions));
+        if (currentUser?.id) {
+          localStorage.removeItem(`narasa_active_exploration_${currentUser.id}`);
+          localStorage.removeItem(`narasa_challenge_draft_${currentUser.id}_${currentMissionTarget.id}`);
+          localStorage.removeItem(`narasa_reflection_draft_${currentUser.id}`);
+        }
+        localStorage.removeItem('narasa_challenge_draft_current');
+        localStorage.removeItem('narasa_reflection_draft_current');
+      } catch (e) {}
+
+      // DIRECTLY push into database (both /api/sessions and Supabase)
+      dbUpsertSession(finalSession).catch((err) => {
+        console.warn('Gagal menyimpan karya portofolio ke database:', err);
+      });
+
       setActiveSlides(finalSession.presentation);
       setActiveSessionForViewer(finalSession);
       setActiveLearningBridge(null);
@@ -725,8 +795,8 @@ export default function App() {
       }
 
       toast.success(
-        'Eksplorasi Selesai!',
-        'Slide presentasi otomatis telah dirangkum dan siap ditampilkan.'
+        'Jawaban Disimpan & Masuk Database! 🎉',
+        'Karyamu telah tersimpan di Local Storage perangkat dan langsung masuk ke database portofolio murid.'
       );
 
       // Celebration Confetti
@@ -854,6 +924,8 @@ export default function App() {
                   questions={activeLearningBridge.questions}
                   learningBridge={activeLearningBridge}
                   photoUrl={currentCapturedImage}
+                  studentId={currentUser?.id}
+                  missionId={activeMission?.id || 'misi-eksplorasi'}
                   onCompleteChallenge={handleChallengeComplete}
                 />
               </div>
@@ -1051,30 +1123,40 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* 5-Step Process Explainer (Vibrant, Colorful Child-Friendly Cards) */}
-                      <div className="relative z-10 mt-4 pt-4 border-t border-slate-200/80 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2 text-center text-[10px] sm:text-[11px] font-bold">
-                        <div className="py-2 px-2 rounded-xl bg-gradient-to-br from-amber-50 to-orange-100 border-2 border-amber-300 text-amber-900 shadow-xs hover:-translate-y-0.5 transition-transform flex items-center justify-center gap-1">
-                          <span className="text-sm">📸</span> 1. Foto Misi
+                      {/* 5-Step Process Explainer (Soft Pastel, Literasi & Numerasi Aligned Cards) */}
+                      <div className="relative z-10 mt-4 pt-4 border-t border-slate-200/80 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2.5 text-center text-[10px] sm:text-[11px] font-extrabold">
+                        <div className="py-2.5 px-2 rounded-2xl bg-amber-50/90 hover:bg-amber-100/90 border border-amber-200/90 text-amber-900 shadow-2xs hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1">
+                          <span className="text-base">📸</span>
+                          <span>1. Foto Misi</span>
+                          <span className="text-[9px] font-bold text-amber-700 bg-amber-100/80 px-1.5 py-0.2 rounded-md">Objek Nyata</span>
                         </div>
-                        <div className="py-2 px-2 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-100 border-2 border-blue-300 text-blue-900 shadow-xs hover:-translate-y-0.5 transition-transform flex items-center justify-center gap-1">
-                          <span className="text-sm">🔗</span> 2. Hubungkan
+                        <div className="py-2.5 px-2 rounded-2xl bg-sky-50/90 hover:bg-sky-100/90 border border-sky-200/90 text-sky-950 shadow-2xs hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1">
+                          <span className="text-base">🔗</span>
+                          <span>2. Jembatan Konsep</span>
+                          <span className="text-[9px] font-bold text-sky-700 bg-sky-100/80 px-1.5 py-0.2 rounded-md">📖 Literasi</span>
                         </div>
-                        <div className="py-2 px-2 rounded-xl bg-gradient-to-br from-purple-50 to-fuchsia-100 border-2 border-purple-300 text-purple-900 shadow-xs hover:-translate-y-0.5 transition-transform flex items-center justify-center gap-1">
-                          <span className="text-sm">💡</span> 3. Nalar Kritis
+                        <div className="py-2.5 px-2 rounded-2xl bg-indigo-50/90 hover:bg-indigo-100/90 border border-indigo-200/90 text-indigo-950 shadow-2xs hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1">
+                          <span className="text-base">💡</span>
+                          <span>3. Nalar Kritis</span>
+                          <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100/80 px-1.5 py-0.2 rounded-md">📐 Numerasi</span>
                         </div>
-                        <div className="py-2 px-2 rounded-xl bg-gradient-to-br from-rose-50 to-pink-100 border-2 border-rose-300 text-rose-900 shadow-xs hover:-translate-y-0.5 transition-transform flex items-center justify-center gap-1">
-                          <span className="text-sm">🤔</span> 4. Refleksi
+                        <div className="py-2.5 px-2 rounded-2xl bg-rose-50/90 hover:bg-rose-100/90 border border-rose-200/90 text-rose-950 shadow-2xs hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1">
+                          <span className="text-base">🤔</span>
+                          <span>4. Refleksi Diri</span>
+                          <span className="text-[9px] font-bold text-rose-700 bg-rose-100/80 px-1.5 py-0.2 rounded-md">Evaluasi</span>
                         </div>
-                        <div className="col-span-2 xs:col-span-1 sm:col-span-1 py-2 px-2 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-100 border-2 border-emerald-300 text-emerald-900 shadow-xs hover:-translate-y-0.5 transition-transform flex items-center justify-center gap-1">
-                          <span className="text-sm">🎤</span> 5. Presentasi
+                        <div className="col-span-2 xs:col-span-1 sm:col-span-1 py-2.5 px-2 rounded-2xl bg-emerald-50/90 hover:bg-emerald-100/90 border border-emerald-200/90 text-emerald-950 shadow-2xs hover:-translate-y-0.5 transition-all flex flex-col items-center justify-center gap-1">
+                          <span className="text-base">🎤</span>
+                          <span>5. Presentasi</span>
+                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/80 px-1.5 py-0.2 rounded-md">Komunikasi</span>
                         </div>
                       </div>
                     </div>
 
                     {/* 1.1 DASBOR PROGRES & KEMAMPUAN BELAJAR */}
-                    <div className="bg-gradient-to-b from-white to-blue-50/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-blue-100 shadow-xs space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-blue-100">
-                        <div className="flex items-center gap-2">
+                    <div className="bg-gradient-to-b from-slate-50/70 via-white to-blue-50/30 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-xs space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+                        <div className="flex items-center gap-2.5">
                           <span className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xs shrink-0">
                             <Trophy className="w-5 h-5 text-white" />
                           </span>
@@ -1084,24 +1166,24 @@ export default function App() {
                               <span className="text-[9px] sm:text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full border border-indigo-300 font-bold uppercase tracking-wider">Live</span>
                             </h2>
                             <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block truncate">
-                              Pantau pencapaian dan kedalaman pemahamanmu setiap hari!
+                              Pantau pencapaian dan kedalaman pemahaman literasi & numerasimu setiap hari!
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 bg-white border border-emerald-200 px-2.5 py-1 rounded-xl self-start sm:self-auto shadow-2xs">
+                        <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl self-start sm:self-auto shadow-2xs">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                          <span className="text-[10px] font-bold text-emerald-700">Sinkronisasi Aktif</span>
+                          <span className="text-[10px] font-bold text-emerald-800">Sinkronisasi Aktif</span>
                         </div>
                       </div>
 
-                      {/* 3 Main Capabilities Progress */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-                        {/* 1. Literasi Sains */}
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-teal-50/50 border-2 border-emerald-200 shadow-xs hover:shadow-md transition-all space-y-2.5 text-left">
+                      {/* 3 Main Capabilities Progress in Soft Themed Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
+                        {/* 1. Literasi Sains (Soft Emerald & Mint) */}
+                        <div className="p-4 sm:p-4.5 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/60 border-2 border-emerald-200 shadow-2xs hover:shadow-md transition-all space-y-2.5 text-left">
                           <div className="flex items-center justify-between gap-1 flex-wrap">
-                            <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
-                              <span className="p-1 rounded-lg bg-emerald-200 text-emerald-800 text-sm">🌱</span>
-                              Literasi Sains
+                            <span className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                              <span className="p-1 rounded-lg bg-emerald-100 text-emerald-800 text-sm">🌱</span>
+                              Literasi Sains & Teks
                             </span>
                             <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border shadow-2xs ${studentLitPred.color}`}>
                               {studentLitPred.label}
@@ -1110,21 +1192,24 @@ export default function App() {
                           <div className="flex items-baseline gap-1.5 pt-0.5">
                             <span className="text-2xl sm:text-3xl font-black text-emerald-950 font-display">{avgLit}</span>
                             <span className="text-[11px] font-bold text-slate-400">/ 100</span>
+                            <span className="ml-auto text-[10px] font-extrabold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-md">
+                              📖 Dimensi L1-L6
+                            </span>
                           </div>
                           {/* Progress Bar */}
-                          <div className="w-full bg-emerald-100 h-2.5 rounded-full overflow-hidden p-0.5">
+                          <div className="w-full bg-emerald-100/80 h-2.5 rounded-full overflow-hidden p-0.5 border border-emerald-200">
                             <div className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-500" style={{ width: `${avgLit}%` }}></div>
                           </div>
-                          <p className="text-[10px] text-slate-600 leading-tight italic pt-0.5 font-medium">
+                          <p className="text-[10px] text-slate-600 leading-snug italic pt-0.5 font-medium">
                             Mengamati detail objek nyata & mengaitkan fenomena lingkungan dengan konsep ilmiah logis.
                           </p>
                         </div>
 
-                        {/* 2. Numerasi Kontekstual */}
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 via-white to-cyan-50/50 border-2 border-blue-200 shadow-xs hover:shadow-md transition-all space-y-2.5 text-left">
+                        {/* 2. Numerasi Kontekstual (Soft Sky & Blue) */}
+                        <div className="p-4 sm:p-4.5 rounded-2xl bg-gradient-to-br from-sky-50/90 via-white to-indigo-50/60 border-2 border-sky-200 shadow-2xs hover:shadow-md transition-all space-y-2.5 text-left">
                           <div className="flex items-center justify-between gap-1 flex-wrap">
-                            <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
-                              <span className="p-1 rounded-lg bg-blue-200 text-blue-800 text-sm">📐</span>
+                            <span className="text-xs font-black text-sky-950 flex items-center gap-1.5">
+                              <span className="p-1 rounded-lg bg-sky-100 text-sky-800 text-sm">📐</span>
                               Numerasi Kontekstual
                             </span>
                             <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border shadow-2xs ${studentNumPred.color}`}>
@@ -1132,24 +1217,27 @@ export default function App() {
                             </span>
                           </div>
                           <div className="flex items-baseline gap-1.5 pt-0.5">
-                            <span className="text-2xl sm:text-3xl font-black text-blue-950 font-display">{avgNum}</span>
+                            <span className="text-2xl sm:text-3xl font-black text-sky-950 font-display">{avgNum}</span>
                             <span className="text-[11px] font-bold text-slate-400">/ 100</span>
+                            <span className="ml-auto text-[10px] font-extrabold text-sky-700 bg-sky-100/90 px-2 py-0.5 rounded-md">
+                              🔢 Dimensi N1-N8
+                            </span>
                           </div>
                           {/* Progress Bar */}
-                          <div className="w-full bg-blue-100 h-2.5 rounded-full overflow-hidden p-0.5">
-                            <div className="bg-gradient-to-r from-blue-400 to-indigo-500 h-full rounded-full transition-all duration-500" style={{ width: `${avgNum}%` }}></div>
+                          <div className="w-full bg-sky-100/80 h-2.5 rounded-full overflow-hidden p-0.5 border border-sky-200">
+                            <div className="bg-gradient-to-r from-sky-400 to-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${avgNum}%` }}></div>
                           </div>
-                          <p className="text-[10px] text-slate-600 leading-tight italic pt-0.5 font-medium">
+                          <p className="text-[10px] text-slate-600 leading-snug italic pt-0.5 font-medium">
                             Mengenali pola matematika, menghitung data empiris, dan menarik relasi kuantitatif.
                           </p>
                         </div>
 
-                        {/* 3. Penalaran Kritis & HOTS */}
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 via-white to-fuchsia-50/50 border-2 border-purple-200 shadow-xs hover:shadow-md transition-all space-y-2.5 text-left">
+                        {/* 3. Penalaran Kritis & HOTS (Soft Lavender & Purple) */}
+                        <div className="p-4 sm:p-4.5 rounded-2xl bg-gradient-to-br from-purple-50/90 via-white to-fuchsia-50/60 border-2 border-purple-200 shadow-2xs hover:shadow-md transition-all space-y-2.5 text-left">
                           <div className="flex items-center justify-between gap-1 flex-wrap">
-                            <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
-                              <span className="p-1 rounded-lg bg-purple-200 text-purple-800 text-sm">💡</span>
-                              Penalaran Kritis
+                            <span className="text-xs font-black text-purple-950 flex items-center gap-1.5">
+                              <span className="p-1 rounded-lg bg-purple-100 text-purple-800 text-sm">💡</span>
+                              Penalaran Kritis (HOTS)
                             </span>
                             <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border shadow-2xs ${studentReasonPred.color}`}>
                               {studentReasonPred.label}
@@ -1158,12 +1246,15 @@ export default function App() {
                           <div className="flex items-baseline gap-1.5 pt-0.5">
                             <span className="text-2xl sm:text-3xl font-black text-purple-950 font-display">{avgReason}</span>
                             <span className="text-[11px] font-bold text-slate-400">/ 100</span>
+                            <span className="ml-auto text-[10px] font-extrabold text-purple-700 bg-purple-100/90 px-2 py-0.5 rounded-md">
+                              ✨ Berpikir Komputasional
+                            </span>
                           </div>
                           {/* Progress Bar */}
-                          <div className="w-full bg-purple-100 h-2.5 rounded-full overflow-hidden p-0.5">
+                          <div className="w-full bg-purple-100/80 h-2.5 rounded-full overflow-hidden p-0.5 border border-purple-200">
                             <div className="bg-gradient-to-r from-purple-400 to-fuchsia-500 h-full rounded-full transition-all duration-500" style={{ width: `${avgReason}%` }}></div>
                           </div>
-                          <p className="text-[10px] text-slate-600 leading-tight italic pt-0.5 font-medium">
+                          <p className="text-[10px] text-slate-600 leading-snug italic pt-0.5 font-medium">
                             Merancang solusi inovatif, membangun argumen logis, dan berpikir mandiri.
                           </p>
                         </div>
@@ -1172,7 +1263,7 @@ export default function App() {
                       {/* Stat Summary Metrics Grid */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 pt-1">
                         {/* Misi Selesai */}
-                        <div className="bg-gradient-to-br from-indigo-50 to-white hover:to-indigo-50 rounded-xl p-3 border-2 border-indigo-200/80 flex items-center gap-2.5 transition-all text-left shadow-2xs">
+                        <div className="bg-gradient-to-br from-indigo-50/80 to-white hover:to-indigo-50 rounded-2xl p-3 border border-indigo-200/80 flex items-center gap-2.5 transition-all text-left shadow-2xs">
                           <div className="w-9 h-9 rounded-xl bg-indigo-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                             <FolderKanban className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
@@ -1183,7 +1274,7 @@ export default function App() {
                         </div>
 
                         {/* Kuis Diikuti */}
-                        <div className="bg-gradient-to-br from-amber-50 to-white hover:to-amber-50 rounded-xl p-3 border-2 border-amber-200/80 flex items-center gap-2.5 transition-all text-left shadow-2xs">
+                        <div className="bg-gradient-to-br from-amber-50/80 to-white hover:to-amber-50 rounded-2xl p-3 border border-amber-200/80 flex items-center gap-2.5 transition-all text-left shadow-2xs">
                           <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                             <Brain className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
@@ -1194,7 +1285,7 @@ export default function App() {
                         </div>
 
                         {/* Tutor Bantuan (Scaffolding) */}
-                        <div className="bg-gradient-to-br from-teal-50 to-white hover:to-teal-50 rounded-xl p-3 border-2 border-teal-200/80 flex items-center gap-2.5 transition-all text-left shadow-2xs">
+                        <div className="bg-gradient-to-br from-teal-50/80 to-white hover:to-teal-50 rounded-2xl p-3 border border-teal-200/80 flex items-center gap-2.5 transition-all text-left shadow-2xs">
                           <div className="w-9 h-9 rounded-xl bg-teal-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                             <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
@@ -1205,7 +1296,7 @@ export default function App() {
                         </div>
 
                         {/* Pencapaian Lencana */}
-                        <div className="bg-gradient-to-br from-purple-50 to-white hover:to-purple-50 rounded-xl p-3 border-2 border-purple-200/80 flex items-center gap-2.5 transition-all text-left shadow-2xs">
+                        <div className="bg-gradient-to-br from-purple-50/80 to-white hover:to-purple-50 rounded-2xl p-3 border border-purple-200/80 flex items-center gap-2.5 transition-all text-left shadow-2xs">
                           <div className="w-9 h-9 rounded-xl bg-purple-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                             <Award className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
@@ -1219,12 +1310,12 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Uji Pemahaman Konsep Section with Vibrant Theme */}
-                    <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/60 rounded-3xl p-6 sm:p-7 text-slate-900 shadow-sm border-2 border-amber-200 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6 group">
+                    {/* Uji Pemahaman Konsep Section with Soft Warm Theme */}
+                    <div className="bg-gradient-to-br from-amber-50/70 via-white to-orange-50/50 rounded-3xl p-6 sm:p-7 text-slate-900 shadow-sm border-2 border-amber-200/90 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6 group">
                       <div className="relative z-10 space-y-2 max-w-xl">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
                           <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Asesmen Pemahaman Konsep & Skor Langsung</span>
+                          <span>Asesmen Pemahaman Konsep • Literasi & Numerasi</span>
                         </div>
                         <h3 className="text-xl sm:text-2xl font-bold font-display text-[#1E293B]">
                           Uji Pemahaman Konsep {currentUser.isGroup ? 'Kelompok' : 'Murid'} 🎯
@@ -1264,22 +1355,27 @@ export default function App() {
                         {sessions.slice(0, 2).map((s) => (
                           <div
                             key={s.id}
-                            className="bg-white rounded-3xl p-4 border border-slate-200 shadow-xs flex items-center gap-4 hover:shadow-md transition-all"
+                            className="bg-gradient-to-br from-slate-50/60 via-white to-blue-50/30 rounded-3xl p-4 border border-slate-200 shadow-2xs flex items-center gap-4 hover:shadow-md transition-all"
                           >
                             <img
                               src={s.image}
                               alt={s.imageLabel}
-                              className="w-20 h-20 rounded-2xl object-cover shrink-0"
+                              className="w-20 h-20 rounded-2xl object-cover shrink-0 border border-slate-200 shadow-2xs"
                             />
                             <div className="flex-1 min-w-0 space-y-1">
-                              <span className="text-[10px] font-bold text-blue-600 uppercase">
-                                {s.subject}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 uppercase">
+                                  {s.subject}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-500">
+                                  📖 Rekam Nalar
+                                </span>
+                              </div>
                               <h3 className="text-sm font-bold text-[#25324B] truncate">
                                 {s.imageLabel}
                               </h3>
                               <p className="text-xs text-slate-500 line-clamp-1">
-                                {s.answers.challengeAnswer}
+                                {s.answers.challengeAnswer || s.answers.reason}
                               </p>
                               <div className="pt-1 flex items-center gap-2">
                                 <button
@@ -1303,11 +1399,16 @@ export default function App() {
                   <div className="space-y-6 text-left">
                     <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
-                        <h2 className="text-lg sm:text-xl font-bold text-[#25324B] font-display">
-                          Pilih Misi Pembelajaran
-                        </h2>
+                        <div className="flex items-center gap-2">
+                          <span className="p-1.5 rounded-xl bg-blue-100 text-blue-700">
+                            <BookOpen className="w-4 h-4" />
+                          </span>
+                          <h2 className="text-lg sm:text-xl font-bold text-[#25324B] font-display">
+                            Pilih Misi Pembelajaran Kontekstual
+                          </h2>
+                        </div>
                         <p className="text-xs text-slate-500 mt-1">
-                          Setiap misi dirancang oleh guru dengan tujuan pembelajaran dan kriteria kurikulum yang jelas. Pilih misi untuk mulai memotret objek.
+                          Setiap misi dirancang untuk mengasah penalaran literasi sains & numerasi kontekstual dari benda nyata di sekitarmu.
                         </p>
                       </div>
 
@@ -1336,30 +1437,45 @@ export default function App() {
                         .filter((m) => studentSelectedSubjectId === 'all' || m.idMapel === studentSelectedSubjectId)
                         .map((m) => {
                           const isCurrent = activeMission ? m.id === activeMission.id : false;
+                          const isNumeracy = m.targetCompetency === 'numeracy' || m.subject.toLowerCase().includes('matematika');
+                          const isLiteracy = m.targetCompetency === 'literacy' || m.subject.toLowerCase().includes('bahasa') || m.subject.toLowerCase().includes('ipa');
                         return (
                           <div
                             key={m.id}
-                            className={`bg-white rounded-3xl p-6 border transition-all flex flex-col justify-between space-y-4 ${
+                            className={`rounded-3xl p-6 border-2 transition-all flex flex-col justify-between space-y-4 ${
                               isCurrent
-                                ? 'border-[#4F8EF7] ring-2 ring-blue-500/10 shadow-md'
-                                : 'border-slate-200 hover:border-slate-300 shadow-xs'
+                                ? 'border-[#4F8EF7] bg-blue-50/40 ring-2 ring-blue-500/20 shadow-md'
+                                : isNumeracy
+                                ? 'bg-gradient-to-br from-sky-50/50 via-white to-blue-50/30 border-sky-200/80 hover:border-sky-300 shadow-2xs hover:shadow-md'
+                                : isLiteracy
+                                ? 'bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 border-emerald-200/80 hover:border-emerald-300 shadow-2xs hover:shadow-md'
+                                : 'bg-gradient-to-br from-purple-50/50 via-white to-indigo-50/30 border-purple-200/80 hover:border-purple-300 shadow-2xs hover:shadow-md'
                             }`}
                           >
                             <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700">
-                                  {m.subject} • {m.grade}
-                                </span>
+                              <div className="flex items-center justify-between flex-wrap gap-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                    {m.subject} • {m.grade}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${
+                                    isNumeracy
+                                      ? 'bg-sky-100 text-sky-800 border border-sky-200'
+                                      : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  }`}>
+                                    {isNumeracy ? '📐 Numerasi' : isLiteracy ? '🌱 Literasi Sains' : '🌟 Terpadu'}
+                                  </span>
+                                </div>
                                 {isCurrent ? (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white shadow-2xs">
                                     Sedang Dipilih
                                   </span>
                                 ) : m.isActive ? (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
                                     Diaktifkan Guru
                                   </span>
                                 ) : (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
                                     Belum Diaktifkan
                                   </span>
                                 )}
@@ -1368,21 +1484,23 @@ export default function App() {
                               <h3 className="text-lg font-bold text-[#25324B] leading-snug">
                                 {m.title}
                               </h3>
-                              <p className="text-xs text-slate-600">
-                                Materi: <strong>{m.material}</strong>
+                              <p className="text-xs text-slate-600 font-medium">
+                                Materi: <strong className="text-slate-800">{m.material}</strong>
                               </p>
                               <p className="text-xs text-slate-500 leading-relaxed">
                                 {m.description}
                               </p>
 
                               {m.suggestedObjects && m.suggestedObjects.length > 0 && (
-                                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1 text-[11px] text-slate-600">
-                                  <strong>Ide Benda yang Bisa Difoto:</strong>
+                                <div className="bg-white/80 p-3 rounded-2xl border border-slate-200/80 space-y-1 text-[11px] text-slate-600 shadow-2xs">
+                                  <strong className="text-slate-800 flex items-center gap-1">
+                                    <span>📸 Ide Benda yang Bisa Difoto:</span>
+                                  </strong>
                                   <div className="flex flex-wrap gap-1.5 pt-1">
                                     {m.suggestedObjects.map((obj, oIdx) => (
                                       <span
                                         key={oIdx}
-                                        className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700"
+                                        className="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-semibold"
                                       >
                                         {obj}
                                       </span>
@@ -1392,14 +1510,14 @@ export default function App() {
                               )}
                             </div>
 
-                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <div className="pt-3 border-t border-slate-200/70 flex items-center justify-between">
                               {m.isActive ? (
                                 <button
                                   onClick={() => {
                                     setActiveMission(m);
                                     setIsCameraOpen(true);
                                   }}
-                                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold text-xs flex items-center justify-center gap-2 hover:shadow-md transition-all cursor-pointer"
+                                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold text-xs flex items-center justify-center gap-2 hover:shadow-md transition-all cursor-pointer shadow-xs"
                                 >
                                   <Camera className="w-4 h-4" />
                                   <span>Pilih Misi Ini & Mulai Foto</span>
@@ -1613,6 +1731,7 @@ export default function App() {
             isOpen={isReflectionOpen}
             onFinishReflection={handleFinishReflection}
             onClose={() => setIsReflectionOpen(false)}
+            studentId={currentUser?.id}
             defaultValues={{
               q1Found: q1Text
             }}

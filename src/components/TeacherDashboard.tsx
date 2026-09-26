@@ -238,29 +238,29 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </div>
         </div>
 
-        {/* 4 Stat Cards */}
+        {/* 4 Stat Cards in Soft Themed Tones */}
         <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-5 sm:mt-6 pt-5 sm:pt-6 border-t border-slate-200/80">
-          <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/70 shadow-2xs backdrop-blur-xs">
-            <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block">Total Murid</span>
-            <span className="text-lg sm:text-2xl font-bold font-display text-[#1E293B]">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-50/90 to-white border border-indigo-200/80 shadow-2xs backdrop-blur-xs">
+            <span className="text-[10px] sm:text-[11px] text-indigo-700 font-bold block">👥 Total Murid</span>
+            <span className="text-lg sm:text-2xl font-black font-display text-indigo-950">
               {studentAccounts.length} Murid
             </span>
           </div>
-          <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/70 shadow-2xs backdrop-blur-xs">
-            <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block">Kelompok Belajar</span>
-            <span className="text-lg sm:text-2xl font-bold font-display text-blue-600">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-sky-50/90 to-white border border-sky-200/80 shadow-2xs backdrop-blur-xs">
+            <span className="text-[10px] sm:text-[11px] text-sky-700 font-bold block">🤝 Kelompok Belajar</span>
+            <span className="text-lg sm:text-2xl font-black font-display text-sky-950">
               {groups.length} Tim
             </span>
           </div>
-          <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/70 shadow-2xs backdrop-blur-xs">
-            <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block">Uji Pemahaman</span>
-            <span className="text-lg sm:text-2xl font-bold font-display text-emerald-600">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/90 to-white border border-emerald-200/80 shadow-2xs backdrop-blur-xs">
+            <span className="text-[10px] sm:text-[11px] text-emerald-700 font-bold block">📐 Asesmen Nilai (HOTS)</span>
+            <span className="text-lg sm:text-2xl font-black font-display text-emerald-950">
               {quizSubmissions.length} Nilai
             </span>
           </div>
-          <div className="p-3 rounded-2xl bg-white/90 border border-slate-200/70 shadow-2xs backdrop-blur-xs">
-            <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block">Eksplorasi Masuk</span>
-            <span className="text-lg sm:text-2xl font-bold font-display text-amber-600">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50/90 to-white border border-amber-200/80 shadow-2xs backdrop-blur-xs">
+            <span className="text-[10px] sm:text-[11px] text-amber-700 font-bold block">📖 Rekam Nalar Murid</span>
+            <span className="text-lg sm:text-2xl font-black font-display text-amber-950">
               {sessions.length} Karya
             </span>
           </div>
@@ -494,79 +494,103 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {missions
               .filter((m) => selectedSubjectId === 'all' || m.idMapel === selectedSubjectId)
-              .map((m) => (
-              <div
-                key={m.id}
-                className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                      {m.subject} • {m.grade}
-                    </span>
-                    <span className="text-[10px] font-semibold text-slate-400">
-                      Fase C
-                    </span>
+              .map((m) => {
+                const isNumeracy = m.targetCompetency === 'numeracy' || m.subject.toLowerCase().includes('matematika');
+                const isLiteracy = m.targetCompetency === 'literacy' || m.subject.toLowerCase().includes('bahasa') || m.subject.toLowerCase().includes('ipa');
+                return (
+                <div
+                  key={m.id}
+                  className={`rounded-3xl p-5 border-2 transition-all flex flex-col justify-between space-y-4 ${
+                    isNumeracy
+                      ? 'bg-gradient-to-br from-sky-50/60 via-white to-blue-50/30 border-sky-200 hover:border-sky-300 shadow-2xs hover:shadow-md'
+                      : isLiteracy
+                      ? 'bg-gradient-to-br from-emerald-50/60 via-white to-teal-50/30 border-emerald-200 hover:border-emerald-300 shadow-2xs hover:shadow-md'
+                      : 'bg-gradient-to-br from-purple-50/60 via-white to-indigo-50/30 border-purple-200 hover:border-purple-300 shadow-2xs hover:shadow-md'
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                          {m.subject} • {m.grade}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${
+                          isNumeracy
+                            ? 'bg-sky-100 text-sky-800 border border-sky-200'
+                            : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                        }`}>
+                          {isNumeracy ? '📐 Numerasi' : isLiteracy ? '🌱 Literasi Sains' : '🌟 Terpadu'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                        Fase C
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-base font-bold text-[#25324B] leading-snug">
+                        {m.title}
+                      </h4>
+                      <p className="text-xs text-slate-600 mt-1 line-clamp-2 font-medium">
+                        Materi: <strong className="text-slate-800">{m.material}</strong>
+                      </p>
+                    </div>
+
+                    <div className="bg-white/80 p-3 rounded-2xl border border-slate-200/80 space-y-1.5 text-[11px] text-slate-600 shadow-2xs">
+                      <p className="leading-snug">
+                        <strong className="text-slate-800">🎯 TP:</strong> {m.tp}
+                      </p>
+                      <div className="flex items-center justify-between pt-0.5 text-[10px]">
+                        <span className="font-extrabold text-blue-700">
+                          Target: {m.targetCompetency === 'literacy' ? '📖 Literasi' : m.targetCompetency === 'numeracy' ? '📐 Numerasi' : '🌟 Lit-Num Terpadu'}
+                        </span>
+                        <span className="font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded">
+                          Level Kognitif {m.cognitiveLevel}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <h4 className="text-base font-bold text-[#25324B] leading-snug">
-                      {m.title}
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                      {m.material}
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1 text-[11px] text-slate-600">
-                    <p>
-                      <strong>TP:</strong> {m.tp}
-                    </p>
-                    <p>
-                      <strong>Target:</strong> {m.targetCompetency === 'literacy' ? 'LITERASI' : m.targetCompetency === 'numeracy' ? 'NUMERASI' : 'LITERASI & NUMERASI'} • Level {m.cognitiveLevel}
-                    </p>
+                  <div className="pt-3 border-t border-slate-200/70 flex items-center justify-between gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => onToggleMissionActive?.(m.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        m.isActive
+                          ? 'bg-emerald-100/80 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 shadow-2xs'
+                          : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'
+                      }`}
+                      title={m.isActive ? 'Misi sedang aktif untuk murid. Klik untuk nonaktifkan.' : 'Klik untuk mengaktifkan misi ini agar dikerjakan murid'}
+                    >
+                      {m.isActive ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Diaktifkan untuk Murid</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-2 h-2 rounded-full bg-slate-400" />
+                          <span>Belum Diaktifkan</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onOpenEditMissionModal) {
+                          onOpenEditMissionModal(m);
+                        }
+                      }}
+                      className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                      title="Edit misi pembelajaran ini"
+                    >
+                      <Edit className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Edit</span>
+                    </button>
                   </div>
                 </div>
-
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => onToggleMissionActive?.(m.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                      m.isActive
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
-                        : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
-                    }`}
-                    title={m.isActive ? 'Misi sedang aktif untuk murid. Klik untuk nonaktifkan.' : 'Klik untuk mengaktifkan misi ini agar dikerjakan murid'}
-                  >
-                    {m.isActive ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Diaktifkan untuk Murid</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="w-2 h-2 rounded-full bg-slate-400" />
-                        <span>Belum Diaktifkan</span>
-                      </>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onOpenEditMissionModal) {
-                        onOpenEditMissionModal(m);
-                      }
-                    }}
-                    className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-                    title="Edit misi pembelajaran ini"
-                  >
-                    <Edit className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Edit</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

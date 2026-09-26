@@ -493,49 +493,139 @@ export async function dbUpsertMission(mission: LearningMission): Promise<boolean
 // ==========================================
 export async function dbFetchSessions(): Promise<StudentActivitySession[]> {
   const client = getSupabaseClient();
-  if (!client) return [INITIAL_COMPLETED_SESSION];
-
-  try {
-    const { data, error } = await client.from('student_sessions').select('*').order('created_at', { ascending: false });
-    if (error) {
-      console.warn('Supabase sessions fetch error:', error.message);
-      return [];
-    }
-    if (!data || data.length === 0) {
-      console.warn('Supabase sessions table is empty');
-      return [];
-    }
-
-    return data.map((row: any) => ({
-      id: row.id,
-      missionId: row.mission_id,
-      missionTitle: row.mission_title,
-      subject: row.subject,
-      studentId: row.student_id,
-      studentName: row.student_name,
-      image: row.image,
-      imageLabel: row.image_label,
-      learningBridge: row.learning_bridge,
-      answers: row.answers,
-      scaffoldingHistory: row.scaffolding_history || [],
-      reflection: row.reflection,
-      presentation: row.presentation || [],
-      peerQuestions: row.peer_questions || [],
-      completedAt: row.completed_at,
-      status: row.status || 'completed',
-      metrics: row.metrics || {
-        literacyScore: 88,
-        numeracyScore: 92,
-        reasoningScore: 90,
-        scaffoldingUsedCount: 0
+  
+  // 1. If Supabase client configured, try fetching remote
+  if (client) {
+    try {
+      const { data, error } = await client.from('student_sessions').select('*').order('created_at', { ascending: false });
+      if (!error && data && data.length > 0) {
+        const mapped = data.map((row: any) => ({
+          id: row.id,
+          missionId: row.mission_id,
+          missionTitle: row.mission_title,
+          subject: row.subject,
+          studentId: row.student_id,
+          studentName: row.student_name,
+          image: row.image,
+          imageLabel: row.image_label,
+          learningBridge: row.learning_bridge,
+          answers: row.answers,
+          scaffoldingHistory: row.scaffolding_history || [],
+          reflection: row.reflection,
+          presentation: row.presentation || [],
+          peerQuestions: row.peer_questions || [],
+          completedAt: row.completed_at,
+          status: row.status || 'completed',
+          metrics: row.metrics || {
+            literacyScore: 88,
+            numeracyScore: 92,
+            reasoningScore: 90,
+            scaffoldingUsedCount: 0
+          }
+        }));
+        try {
+          localStorage.setItem('narasa_sessions_data', JSON.stringify(mapped));
+        } catch (e) {}
+        return mapped;
       }
-    }));
-  } catch (e) {
-    return [];
+    } catch (e) {
+      console.warn('Supabase fetch sessions error:', e);
+    }
   }
+
+  // 2. Try fetching from server-side database (/api/sessions)
+  try {
+    const res = await fetch('/api/sessions');
+    if (res.ok) {
+      const serverSessions = await res.json();
+      if (Array.isArray(serverSessions)) {
+        // Read local sessions to merge
+        const saved = localStorage.getItem('narasa_sessions_data');
+        let localList: StudentActivitySession[] = [];
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) localList = parsed;
+          } catch (e) {}
+        }
+
+        const sessionMap = new Map<string, StudentActivitySession>();
+        serverSessions.forEach((s: StudentActivitySession) => sessionMap.set(s.id, s));
+        localList.forEach((s: StudentActivitySession) => {
+          if (!sessionMap.has(s.id)) {
+            sessionMap.set(s.id, s);
+            // Push un-synced local session to the server database
+            fetch('/api/sessions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(s)
+            }).catch(() => {});
+          }
+        });
+
+        const merged = Array.from(sessionMap.values());
+        if (merged.length > 0) {
+          try {
+            localStorage.setItem('narasa_sessions_data', JSON.stringify(merged));
+          } catch (e) {}
+          return merged;
+        }
+      }
+    }
+  } catch (e) {
+    // server API unavailable, proceed to localStorage
+  }
+
+  // 3. Fallback to localStorage
+  try {
+    const saved = localStorage.getItem('narasa_sessions_data');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+
+  return [INITIAL_COMPLETED_SESSION];
 }
 
 export async function dbUpsertSession(session: StudentActivitySession): Promise<boolean> {
+  // 1. Immediately store in localStorage so student work is always preserved locally
+  try {
+    const saved = localStorage.getItem('narasa_sessions_data');
+    let list: StudentActivitySession[] = [];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) list = parsed;
+      } catch (e) {}
+    }
+    const idx = list.findIndex((s) => s.id === session.id);
+    if (idx >= 0) {
+      list[idx] = session;
+    } else {
+      list.unshift(session);
+    }
+    localStorage.setItem('narasa_sessions_data', JSON.stringify(list));
+  } catch (e) {
+    console.warn('Gagal menyimpan session ke localStorage:', e);
+  }
+
+  // 2. Immediately persist to server-side database (/api/sessions)
+  let serverOk = false;
+  try {
+    const res = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(session)
+    });
+    serverOk = res.ok;
+  } catch (e) {
+    console.warn('POST /api/sessions error:', e);
+  }
+
+  // 3. Persist to Supabase if connected
   const client = getSupabaseClient();
   if (!client) return true;
 

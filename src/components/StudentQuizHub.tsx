@@ -175,16 +175,20 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
           const isDone = !!submission;
           const missionStatus = checkMissionsCompletedForSubject(quiz.subject);
           const isLocked = !missionStatus.isAllCompleted;
+          const isNumeracy = quiz.subject.toLowerCase().includes('matematika');
+          const isLiteracy = quiz.subject.toLowerCase().includes('bahasa') || quiz.subject.toLowerCase().includes('ipa');
 
           return (
             <div
               key={quiz.id}
               className={`rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 transition-all flex flex-col justify-between space-y-4 relative ${
                 isLocked
-                  ? 'bg-slate-50 border-slate-200 text-slate-400 opacity-95 shadow-none'
+                  ? 'bg-slate-50/80 border-slate-200 text-slate-400 opacity-95 shadow-none'
                   : isDone
-                  ? 'bg-gradient-to-br from-emerald-50/70 via-white to-teal-50/50 border-emerald-300 shadow-xs hover:shadow-md'
-                  : 'bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/50 border-blue-200 shadow-xs hover:shadow-md hover:-translate-y-0.5'
+                  ? 'bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/50 border-emerald-300 shadow-2xs hover:shadow-md'
+                  : isNumeracy
+                  ? 'bg-gradient-to-br from-sky-50/70 via-white to-blue-50/40 border-sky-200 shadow-2xs hover:shadow-md hover:-translate-y-0.5'
+                  : 'bg-gradient-to-br from-emerald-50/70 via-white to-teal-50/40 border-emerald-200 shadow-2xs hover:shadow-md hover:-translate-y-0.5'
               }`}
             >
               <div className="space-y-3">
@@ -194,7 +198,10 @@ export const StudentQuizHub: React.FC<StudentQuizHubProps> = ({
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-800 border border-blue-200">
                       {quiz.subject}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-sky-50 text-sky-800 border border-sky-200">
+                      {isNumeracy ? '📐 Numerasi' : isLiteracy ? '🌱 Literasi' : '🌟 Terpadu'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700">
                       {quiz.grade}
                     </span>
                     {quiz.isAiGenerated && (

@@ -44,14 +44,57 @@ export const ConceptQuizPlayer: React.FC<ConceptQuizPlayerProps> = ({
   onSubmitResult,
   previousSubmission
 }) => {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const quizDraftKey = `narasa_quiz_draft_${quiz.id}_${currentUser.id}`;
+
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, any>>(() => {
-    return previousSubmission?.selectedAnswers || {};
+    if (previousSubmission?.selectedAnswers) return previousSubmission.selectedAnswers;
+    try {
+      const saved = localStorage.getItem(quizDraftKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.answers) return parsed.answers;
+      }
+    } catch (e) {}
+    return {};
   });
+
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(quizDraftKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed?.questionIndex === 'number' && parsed.questionIndex >= 0 && parsed.questionIndex < quiz.questions.length) {
+          return parsed.questionIndex;
+        }
+      }
+    } catch (e) {}
+    return 0;
+  });
+
+  const [lastAutoSavedTime, setLastAutoSavedTime] = useState<string | null>(null);
   const [isCompleted, setIsCompleted] = useState<boolean>(!!previousSubmission);
   const [submissionResult, setSubmissionResult] = useState<QuizSubmission | null>(previousSubmission || null);
   const [secondsElapsed, setSecondsElapsed] = useState(0);
   const [isZoomImageOpen, setIsZoomImageOpen] = useState(false);
+
+  // Auto-save quiz draft to localStorage
+  useEffect(() => {
+    if (isCompleted) return;
+    try {
+      if (Object.keys(selectedAnswers).length > 0 || currentQuestionIndex > 0) {
+        const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        localStorage.setItem(
+          quizDraftKey,
+          JSON.stringify({
+            answers: selectedAnswers,
+            questionIndex: currentQuestionIndex,
+            lastSavedAt: now
+          })
+        );
+        setLastAutoSavedTime(now);
+      }
+    } catch (e) {}
+  }, [selectedAnswers, currentQuestionIndex, isCompleted, quizDraftKey]);
 
   // Timer
   useEffect(() => {
@@ -315,6 +358,9 @@ export const ConceptQuizPlayer: React.FC<ConceptQuizPlayerProps> = ({
 
     setSubmissionResult(submission);
     setIsCompleted(true);
+    try {
+      localStorage.removeItem(quizDraftKey);
+    } catch (e) {}
     onSubmitResult(submission);
 
     if (finalScore >= 75) {

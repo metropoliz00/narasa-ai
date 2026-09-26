@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
@@ -14,6 +15,106 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: "25mb" }));
+
+// Persistent Data Storage Directory (Server-side Database)
+const DATA_DIR = path.join(__dirname, "data");
+if (!fs.existsSync(DATA_DIR)) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (e) {
+    console.warn("Unable to create data directory:", e);
+  }
+}
+
+// Database Endpoint: Fetch all student activity sessions
+app.get("/api/sessions", (req, res) => {
+  try {
+    const file = path.join(DATA_DIR, "sessions.json");
+    if (!fs.existsSync(file)) {
+      return res.json([]);
+    }
+    const content = fs.readFileSync(file, "utf-8");
+    const data = JSON.parse(content || "[]");
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Database Endpoint: Save / Upsert a student activity session
+app.post("/api/sessions", (req, res) => {
+  try {
+    const session = req.body;
+    if (!session || !session.id) {
+      return res.status(400).json({ error: "Session data atau ID tidak ditemukan" });
+    }
+    const file = path.join(DATA_DIR, "sessions.json");
+    let sessions: any[] = [];
+    if (fs.existsSync(file)) {
+      try {
+        const content = fs.readFileSync(file, "utf-8");
+        sessions = JSON.parse(content || "[]");
+      } catch (e) {
+        sessions = [];
+      }
+    }
+    const existingIndex = sessions.findIndex((s: any) => s.id === session.id);
+    if (existingIndex >= 0) {
+      sessions[existingIndex] = session;
+    } else {
+      sessions.unshift(session);
+    }
+    fs.writeFileSync(file, JSON.stringify(sessions, null, 2), "utf-8");
+    return res.json({ success: true, count: sessions.length, session });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Database Endpoint: Fetch quiz submissions
+app.get("/api/quiz-submissions", (req, res) => {
+  try {
+    const file = path.join(DATA_DIR, "quiz_submissions.json");
+    if (!fs.existsSync(file)) {
+      return res.json([]);
+    }
+    const content = fs.readFileSync(file, "utf-8");
+    const data = JSON.parse(content || "[]");
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Database Endpoint: Save / Upsert quiz submission
+app.post("/api/quiz-submissions", (req, res) => {
+  try {
+    const submission = req.body;
+    if (!submission || !submission.id) {
+      return res.status(400).json({ error: "Data submission kuis tidak valid" });
+    }
+    const file = path.join(DATA_DIR, "quiz_submissions.json");
+    let submissions: any[] = [];
+    if (fs.existsSync(file)) {
+      try {
+        const content = fs.readFileSync(file, "utf-8");
+        submissions = JSON.parse(content || "[]");
+      } catch (e) {
+        submissions = [];
+      }
+    }
+    const existingIndex = submissions.findIndex((s: any) => s.id === submission.id);
+    if (existingIndex >= 0) {
+      submissions[existingIndex] = submission;
+    } else {
+      submissions.unshift(submission);
+    }
+    fs.writeFileSync(file, JSON.stringify(submissions, null, 2), "utf-8");
+    return res.json({ success: true, count: submissions.length, submission });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
 
 // Lazy initializer for Gemini API client with User-Agent header & dynamic key detection
 let aiClient: GoogleGenAI | null = null;

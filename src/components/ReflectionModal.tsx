@@ -17,33 +17,78 @@ interface ReflectionModalProps {
   onFinishReflection: (reflection: StudentReflection) => void;
   onClose?: () => void;
   defaultValues?: Partial<StudentReflection>;
+  studentId?: string;
 }
 
 export const ReflectionModal: React.FC<ReflectionModalProps> = ({
   isOpen,
   onFinishReflection,
   onClose,
-  defaultValues
+  defaultValues,
+  studentId
 }) => {
+  const reflectionDraftKey = studentId
+    ? `narasa_reflection_draft_${studentId}`
+    : 'narasa_reflection_draft_current';
+
   const [q1, setQ1] = useState('');
   const [q2, setQ2] = useState('');
   const [q3, setQ3] = useState('');
   const [q4, setQ4] = useState('');
   const [q5, setQ5] = useState('');
+  const [isDraftRestored, setIsDraftRestored] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setQ1(defaultValues?.q1Found || '');
-      setQ2(defaultValues?.q2Learned || '');
-      setQ3(defaultValues?.q3Hardest || '');
-      setQ4(defaultValues?.q4Solved || '');
-      setQ5(defaultValues?.q5Improvement || '');
+      // Try restoring from localStorage draft first, fallback to defaultValues
+      let restored = false;
+      try {
+        const saved = localStorage.getItem(reflectionDraftKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && (parsed.q1 || parsed.q2 || parsed.q3 || parsed.q4 || parsed.q5)) {
+            setQ1(parsed.q1 || defaultValues?.q1Found || '');
+            setQ2(parsed.q2 || defaultValues?.q2Learned || '');
+            setQ3(parsed.q3 || defaultValues?.q3Hardest || '');
+            setQ4(parsed.q4 || defaultValues?.q4Solved || '');
+            setQ5(parsed.q5 || defaultValues?.q5Improvement || '');
+            restored = true;
+            setIsDraftRestored(true);
+          }
+        }
+      } catch (e) {}
+
+      if (!restored) {
+        setQ1(defaultValues?.q1Found || '');
+        setQ2(defaultValues?.q2Learned || '');
+        setQ3(defaultValues?.q3Hardest || '');
+        setQ4(defaultValues?.q4Solved || '');
+        setQ5(defaultValues?.q5Improvement || '');
+      }
     }
-  }, [isOpen, defaultValues]);
+  }, [isOpen, defaultValues, reflectionDraftKey]);
+
+  // Auto-save reflection answers as student types
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      if (q1 || q2 || q3 || q4 || q5) {
+        localStorage.setItem(
+          reflectionDraftKey,
+          JSON.stringify({ q1, q2, q3, q4, q5, updatedAt: new Date().toISOString() })
+        );
+      }
+    } catch (e) {}
+  }, [q1, q2, q3, q4, q5, isOpen, reflectionDraftKey]);
 
   if (!isOpen) return null;
 
   const handleSubmit = () => {
+    // Clear saved draft on completion
+    try {
+      localStorage.removeItem(reflectionDraftKey);
+    } catch (e) {}
+
     // Fire celebration confetti
     try {
       confetti({
@@ -74,9 +119,15 @@ export const ReflectionModal: React.FC<ReflectionModalProps> = ({
               <Sparkles className="w-6 h-6 text-yellow-300" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-bold font-display">🤔 REFLEKSI SAYA</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg sm:text-xl font-bold font-display">🤔 REFLEKSI SAYA</h2>
+                <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full border border-white/30 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  💾 Draf Tersimpan di Perangkat
+                </span>
+              </div>
               <p className="text-xs text-white/80">
-                Pikirkan kembali perjalanan belajarmu hari ini
+                Pikirkan kembali perjalanan belajarmu hari ini (aman saat keluar)
               </p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ExplorationQuestion, ScaffoldingLevels, AILearningBridgeResult, STEMStage, STEM_STAGES_CONFIG, STEMStageDefinition, StudentAnswers } from '../types';
 import {
   Globe,
@@ -32,11 +32,13 @@ import {
   LayoutGrid,
   Filter,
   ListOrdered,
-  ZoomIn
+  ZoomIn,
+  Save
 } from 'lucide-react';
 import { PhotoZoomModal } from './PhotoZoomModal';
 import { PatternPuzzleGame } from './PatternPuzzleGame';
 import { StudentWritingAssistant } from './StudentWritingAssistant';
+import { toast } from './Toast';
 
 // Helper to generate natural, child-friendly, logical descriptions contextualized to the observed object
 export const getStageContextualDescription = (
@@ -65,6 +67,8 @@ interface ChallengeStepProps {
   questions: ExplorationQuestion[];
   learningBridge: AILearningBridgeResult;
   photoUrl: string;
+  studentId?: string;
+  missionId?: string;
   onCompleteChallenge: (
     answers: StudentAnswers,
     scaffoldingUsed: { questionId: string; level: 1 | 2 | 3 | 4; hintText: string; requestedAt: string }[]
@@ -75,19 +79,74 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
   questions,
   learningBridge,
   photoUrl,
+  studentId,
+  missionId,
   onCompleteChallenge
 }) => {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  // Storage key for student draft (scoped per student & mission with general fallback)
+  const draftKey = studentId
+    ? `narasa_challenge_draft_${studentId}_${missionId || 'general'}`
+    : 'narasa_challenge_draft_current';
+
+  // Helper to load saved draft from specific key or fallback key
+  const loadSavedDraft = () => {
+    try {
+      const keysToTry = [draftKey, 'narasa_challenge_draft_current'];
+      for (const k of keysToTry) {
+        const saved = localStorage.getItem(k);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.answers) {
+            const hasText = Object.values(parsed.answers).some((val: any) => typeof val === 'string' && val.trim().length > 0);
+            if (hasText || parsed.stepIndex > 0) {
+              return parsed;
+            }
+          }
+        }
+      }
+    } catch (e) {}
+    return null;
+  };
+
+  const initialDraft = useMemo(() => loadSavedDraft(), [draftKey]);
+  const [isRestoredFromDraft, setIsRestoredFromDraft] = useState<boolean>(() => {
+    if (initialDraft && initialDraft.answers) {
+      return Object.values(initialDraft.answers).some((val: any) => typeof val === 'string' && val.trim().length > 0);
+    }
+    return false;
+  });
+
+  // Form states for all 4 CT steps with localStorage persistence
+  const [stemAnswers, setStemAnswers] = useState<Record<string, string>>(() => {
+    if (initialDraft && initialDraft.answers) {
+      return {
+        decomposition: initialDraft.answers.decomposition || '',
+        pattern_recognition: initialDraft.answers.pattern_recognition || '',
+        abstraction: initialDraft.answers.abstraction || '',
+        algorithmic_thinking: initialDraft.answers.algorithmic_thinking || ''
+      };
+    }
+    return {
+      decomposition: '',
+      pattern_recognition: '',
+      abstraction: '',
+      algorithmic_thinking: ''
+    };
+  });
+
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(() => {
+    if (initialDraft && typeof initialDraft.stepIndex === 'number' && initialDraft.stepIndex >= 0 && initialDraft.stepIndex <= 3) {
+      return initialDraft.stepIndex;
+    }
+    return 0;
+  });
+
+  const [lastAutoSavedTime, setLastAutoSavedTime] = useState<string | null>(() => {
+    return initialDraft?.lastSavedAt || null;
+  });
+
   const [isPhotoZoomOpen, setIsPhotoZoomOpen] = useState(false);
   const [isPatternPuzzleSolved, setIsPatternPuzzleSolved] = useState(false);
-
-  // Form states for all 4 CT steps
-  const [stemAnswers, setStemAnswers] = useState<Record<string, string>>({
-    decomposition: '',
-    pattern_recognition: '',
-    abstraction: '',
-    algorithmic_thinking: ''
-  });
 
   // State for popup modal showing activity & instructions for a clicked stage
   const [selectedStageModal, setSelectedStageModal] = useState<{
@@ -96,12 +155,49 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
     question: ExplorationQuestion;
   } | null>(null);
 
-  // Scaffolding state
+  // Scaffolding state with localStorage restoration
   const [showScaffolding, setShowScaffolding] = useState(false);
   const [currentScaffoldLevel, setCurrentScaffoldLevel] = useState<1 | 2 | 3 | 4>(1);
   const [scaffoldingHistory, setScaffoldingHistory] = useState<
     { questionId: string; level: 1 | 2 | 3 | 4; hintText: string; requestedAt: string }[]
-  >([]);
+  >(() => {
+    if (initialDraft && Array.isArray(initialDraft.scaffoldingHistory)) {
+      return initialDraft.scaffoldingHistory;
+    }
+    return [];
+  });
+
+  // Helper to persist draft to localStorage
+  const saveDraftToLocalStorage = (
+    answersToSave: Record<string, string>,
+    stepIdx: number,
+    scaffolding: typeof scaffoldingHistory
+  ) => {
+    try {
+      const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const payload = JSON.stringify({
+        answers: answersToSave,
+        stepIndex: stepIdx,
+        scaffoldingHistory: scaffolding,
+        lastSavedAt: now
+      });
+      localStorage.setItem(draftKey, payload);
+      localStorage.setItem('narasa_challenge_draft_current', payload);
+      setLastAutoSavedTime(now);
+      return now;
+    } catch (e) {
+      console.warn('Gagal menyimpan draft ke localStorage:', e);
+      return null;
+    }
+  };
+
+  // Auto-save draft whenever answers or step changes
+  useEffect(() => {
+    const hasAnyContent = Object.values(stemAnswers).some((v) => v.trim().length > 0);
+    if (hasAnyContent || currentStepIndex > 0) {
+      saveDraftToLocalStorage(stemAnswers, currentStepIndex, scaffoldingHistory);
+    }
+  }, [stemAnswers, currentStepIndex, scaffoldingHistory, draftKey]);
 
   // Build the complete 4 Computational Thinking questions list, merging AI questions or constructing tailored contextual questions
   const stemQuestions: ExplorationQuestion[] = useMemo(() => {
@@ -377,10 +473,26 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
   const currentAnswerValue = stemAnswers[activeStageConfig.id] || '';
 
   const handleUpdateCurrentAnswer = (val: string) => {
-    setStemAnswers((prev) => ({
-      ...prev,
-      [activeStageConfig.id]: val
-    }));
+    setStemAnswers((prev) => {
+      const updated = {
+        ...prev,
+        [activeStageConfig.id]: val
+      };
+      saveDraftToLocalStorage(updated, currentStepIndex, scaffoldingHistory);
+      return updated;
+    });
+  };
+
+  const handleManualSaveDraft = () => {
+    const savedTime = saveDraftToLocalStorage(stemAnswers, currentStepIndex, scaffoldingHistory);
+    if (savedTime) {
+      toast.success(
+        'Draf Isian Tersimpan!',
+        `Jawabanmu tersimpan di Local Storage (${savedTime}). Kamu bisa keluar aplikasi kapan saja tanpa khawatir jawabanmu hilang.`
+      );
+    } else {
+      toast.error('Pemberitahuan', 'Penyimpanan lokal perangkat tidak dapat diakses.');
+    }
   };
 
   const getStageLockStatus = (idx: number) => {
@@ -465,12 +577,33 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
       };
 
       onCompleteChallenge(formattedAnswers, scaffoldingHistory);
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (e) {}
+    }
+  };
+
+  const handleResetDraft = () => {
+    if (window.confirm('Apakah kamu ingin mengosongkan draf jawaban dan memulai kembali dari awal?')) {
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (e) {}
+      setStemAnswers({
+        decomposition: '',
+        pattern_recognition: '',
+        abstraction: '',
+        algorithmic_thinking: ''
+      });
+      setCurrentStepIndex(0);
+      setScaffoldingHistory([]);
+      setLastAutoSavedTime(null);
     }
   };
 
   const currentHint = getHintText(activeQuestion?.scaffolding, currentScaffoldLevel);
   const isCurrentStepFilled = currentAnswerValue.trim().length >= 3;
   const answeredCount = Object.values(stemAnswers).filter((v) => v.trim().length >= 3).length;
+  const hasDraftContent = Object.values(stemAnswers).some((v) => v.trim().length > 0);
 
   return (
     <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6 text-left">
@@ -498,13 +631,48 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-center">
+          <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
+            {/* Auto-saved badge */}
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-300 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span>Draf Tersimpan di Perangkat {lastAutoSavedTime ? `(${lastAutoSavedTime})` : ''}</span>
+            </div>
+
             <span className="text-[11px] sm:text-xs font-black text-emerald-800 bg-emerald-100/90 px-3 py-1.5 rounded-xl border border-emerald-300 flex items-center gap-1.5 shadow-2xs">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>{answeredCount}/{stemQuestions.length} Selesai ✨</span>
             </span>
+
+            {hasDraftContent && (
+              <button
+                type="button"
+                onClick={handleResetDraft}
+                className="text-[10px] font-bold text-slate-500 hover:text-rose-600 bg-white hover:bg-rose-50 px-2 py-1.5 rounded-xl border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer shadow-2xs"
+                title="Hapus draf jawaban ini dan mulai dari awal"
+              >
+                Hapus Draf
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Restored from local draft notification */}
+        {isRestoredFromDraft && (
+          <div className="bg-emerald-50 border-2 border-emerald-300 text-emerald-950 px-4 py-2.5 rounded-2xl flex items-center justify-between text-xs font-semibold animate-tab-fade shadow-2xs">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Draf isian jawabanmu berhasil dimuat otomatis dari penyimpanan lokal (Local Storage)! Kamu dapat melanjutkan pengisian.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsRestoredFromDraft(false)}
+              className="text-slate-400 hover:text-slate-700 text-xs cursor-pointer p-1"
+              title="Tutup pesan"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Lock Warning Toast Notification if any */}
         {lockWarning && (
@@ -1196,7 +1364,17 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end flex-wrap">
+            <button
+              type="button"
+              onClick={handleManualSaveDraft}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-2xl border-2 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 font-extrabold text-emerald-900 transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer min-h-[46px] shadow-2xs"
+              title="Simpan draf jawaban saat ini ke penyimpanan lokal perangkat (Local Storage)"
+            >
+              <Save className="w-4 h-4 text-emerald-600" />
+              <span>Simpan Draf ke Perangkat</span>
+            </button>
+
             <button
               type="button"
               onClick={handleAdvance}

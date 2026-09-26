@@ -81,7 +81,7 @@ export const TeacherAnalytics: React.FC<TeacherAnalyticsProps> = ({
         <div className="flex items-center gap-2 px-1">
           <Lightbulb className="w-4 h-4 text-[#7C5CFC]" />
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600">
-            Rekomendasi Pedagogis Guru (Berdasarkan Pola Belajar Murid)
+            Rekomendasi Pedagogis Guru • Literasi & Numerasi Berbasis Bukti
           </h3>
         </div>
 
@@ -89,43 +89,44 @@ export const TeacherAnalytics: React.FC<TeacherAnalyticsProps> = ({
           {insights.map((ins) => (
             <div
               key={ins.id}
-              className={`rounded-3xl p-5 border shadow-xs space-y-3 flex flex-col justify-between ${
+              className={`rounded-3xl p-5 border-2 shadow-2xs space-y-3 flex flex-col justify-between transition-all hover:shadow-md ${
                 ins.type === 'strength'
-                  ? 'bg-emerald-50/50 border-emerald-200'
+                  ? 'bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/50 border-emerald-200'
                   : ins.type === 'need_scaffold'
-                  ? 'bg-amber-50/50 border-amber-200'
-                  : 'bg-purple-50/50 border-purple-200'
+                  ? 'bg-gradient-to-br from-amber-50/80 via-white to-orange-50/50 border-amber-200'
+                  : 'bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/50 border-purple-200'
               }`}
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider shadow-2xs ${
                       ins.type === 'strength'
-                        ? 'bg-emerald-100 text-emerald-800'
+                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
                         : ins.type === 'need_scaffold'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-purple-100 text-purple-800'
+                        ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                        : 'bg-purple-100 text-purple-900 border border-purple-300'
                     }`}
                   >
-                    {ins.type === 'strength' && 'Kekuatan Terdeteksi'}
-                    {ins.type === 'need_scaffold' && 'Perlu Bantuan'}
-                    {ins.type === 'pedagogical_tip' && 'Saran Pedagogis'}
+                    {ins.type === 'strength' && '🌱 Kekuatan Terdeteksi'}
+                    {ins.type === 'need_scaffold' && '📐 Perlu Scaffolding'}
+                    {ins.type === 'pedagogical_tip' && '💡 Saran Pedagogis'}
                   </span>
                 </div>
                 <h4 className="text-xs sm:text-sm font-bold text-[#25324B] leading-snug">
                   {ins.title}
                 </h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
+                <p className="text-xs text-slate-600 leading-relaxed font-medium">
                   {ins.content}
                 </p>
-                <div className="p-2.5 rounded-xl bg-white/80 border border-slate-100 text-[11px] text-slate-500">
-                  <strong>Bukti Data:</strong> {ins.evidenceData}
+                <div className="p-2.5 rounded-xl bg-white/90 border border-slate-200/80 text-[11px] text-slate-600 shadow-2xs">
+                  <strong className="text-slate-800">📊 Bukti Data:</strong> {ins.evidenceData}
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-slate-200/60 text-[11px] font-semibold text-purple-900">
-                💡 Rekomendasi Guru: {ins.actionRecommendation}
+              <div className="pt-2.5 border-t border-slate-200/80 text-[11px] font-bold text-purple-950 flex items-center gap-1.5">
+                <span>💡 Aksi Guru:</span>
+                <span className="font-semibold text-slate-800">{ins.actionRecommendation}</span>
               </div>
             </div>
           ))}
@@ -295,13 +296,19 @@ export const TeacherAnalytics: React.FC<TeacherAnalyticsProps> = ({
       {/* Tab: Literacy Dimension (Section 10 & 32) */}
       {activeTab === 'literacy' && (
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-5">
-          <div>
-            <h3 className="text-base font-bold text-[#25324B] font-display">
-              Dimensi Kemampuan Literasi (L1 – L6)
-            </h3>
-            <p className="text-xs text-slate-500">
-              Perkembangan dari menemukan informasi, memahami, menafsirkan, membuat inferensi, mengevaluasi, hingga argumentasi
-            </p>
+          <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="text-base font-bold text-[#25324B] font-display flex items-center gap-2">
+                <span className="p-1 rounded-lg bg-emerald-100 text-emerald-800 text-sm">🌱</span>
+                <span>Dimensi Kemampuan Literasi Siswa (L1 – L6)</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Perkembangan dari menemukan informasi, memahami, menafsirkan, membuat inferensi, mengevaluasi, hingga argumentasi
+              </p>
+            </div>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+              📖 Rata-rata: {selectedStudent.overallLiteracy}%
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -313,17 +320,17 @@ export const TeacherAnalytics: React.FC<TeacherAnalyticsProps> = ({
               { code: 'L5', name: 'Mengevaluasi & Alasan', desc: 'Memberikan argumentasi kuat berbasis bukti', val: selectedStudent.literacyProgress.evaluate },
               { code: 'L6', name: 'Komunikasi & Kreasi', desc: 'Menyusun teks deskripsi dan menyajikan hasil', val: selectedStudent.literacyProgress.communicate }
             ].map((item) => (
-              <div key={item.code} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2">
+              <div key={item.code} className="p-4.5 rounded-2xl border-2 border-emerald-100 bg-gradient-to-br from-emerald-50/60 via-white to-teal-50/30 space-y-2.5 shadow-2xs hover:shadow-xs transition-all">
                 <div className="flex items-center justify-between">
-                  <span className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                  <span className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-xs border border-emerald-200 shadow-2xs">
                     {item.code}
                   </span>
-                  <span className="text-sm font-bold text-[#25324B]">{item.val}%</span>
+                  <span className="text-sm font-black text-emerald-950 font-display">{item.val}%</span>
                 </div>
                 <h4 className="text-xs font-bold text-[#25324B]">{item.name}</h4>
-                <p className="text-[11px] text-slate-500">{item.desc}</p>
-                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                  <div className="bg-[#4F8EF7] h-full rounded-full" style={{ width: `${item.val}%` }} />
+                <p className="text-[11px] text-slate-500 font-medium leading-snug">{item.desc}</p>
+                <div className="w-full bg-emerald-100/80 h-2.5 rounded-full overflow-hidden p-0.5 border border-emerald-200">
+                  <div className="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-500" style={{ width: `${item.val}%` }} />
                 </div>
               </div>
             ))}
@@ -334,36 +341,42 @@ export const TeacherAnalytics: React.FC<TeacherAnalyticsProps> = ({
       {/* Tab: Numeracy Dimension (Section 11 & 32) */}
       {activeTab === 'numeracy' && (
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-5">
-          <div>
-            <h3 className="text-base font-bold text-[#25324B] font-display">
-              Dimensi Kemampuan Numerasi (N1 – N7)
-            </h3>
-            <p className="text-xs text-slate-500">
-              Mengenali info kuantitatif, membuat representasi, memilih strategi, menalar, mengevaluasi kewajaran hasil, dan mengomunikasikan matematika
-            </p>
+          <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="text-base font-bold text-[#25324B] font-display flex items-center gap-2">
+                <span className="p-1 rounded-lg bg-sky-100 text-sky-800 text-sm">📐</span>
+                <span>Dimensi Kemampuan Numerasi Siswa (N1 – N8)</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Mengenali info kuantitatif, membuat representasi, memilih strategi, menalar, mengevaluasi kewajaran hasil, dan mengomunikasikan matematika
+              </p>
+            </div>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200">
+              🔢 Rata-rata: {selectedStudent.overallNumeracy}%
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { code: 'N1', name: 'Informasi Kuantitatif', val: selectedStudent.numeracyProgress.identify },
-              { code: 'N2', name: 'Representasi', val: selectedStudent.numeracyProgress.represent },
-              { code: 'N3', name: 'Perhitungan', val: selectedStudent.numeracyProgress.calculate },
+              { code: 'N2', name: 'Representasi Pola', val: selectedStudent.numeracyProgress.represent },
+              { code: 'N3', name: 'Perhitungan & Estimasi', val: selectedStudent.numeracyProgress.calculate },
               { code: 'N4', name: 'Penerapan Masalah', val: selectedStudent.numeracyProgress.apply },
               { code: 'N5', name: 'Pemilihan Strategi', val: selectedStudent.numeracyProgress.strategy },
               { code: 'N6', name: 'Penalaran Matematis', val: selectedStudent.numeracyProgress.reason },
               { code: 'N7', name: 'Evaluasi Kewajaran', val: selectedStudent.numeracyProgress.evaluate },
               { code: 'N8', name: 'Komunikasi Matematis', val: selectedStudent.numeracyProgress.communicate }
             ].map((item) => (
-              <div key={item.code} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2">
+              <div key={item.code} className="p-4 rounded-2xl border-2 border-sky-100 bg-gradient-to-br from-sky-50/60 via-white to-indigo-50/30 space-y-2.5 shadow-2xs hover:shadow-xs transition-all">
                 <div className="flex items-center justify-between">
-                  <span className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs">
+                  <span className="w-8 h-8 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center font-black text-xs border border-sky-200 shadow-2xs">
                     {item.code}
                   </span>
-                  <span className="text-sm font-bold text-[#25324B]">{item.val}%</span>
+                  <span className="text-sm font-black text-sky-950 font-display">{item.val}%</span>
                 </div>
-                <h4 className="text-xs font-bold text-[#25324B]">{item.name}</h4>
-                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                  <div className="bg-[#7C5CFC] h-full rounded-full" style={{ width: `${item.val}%` }} />
+                <h4 className="text-xs font-bold text-[#25324B] leading-snug">{item.name}</h4>
+                <div className="w-full bg-sky-100/80 h-2.5 rounded-full overflow-hidden p-0.5 border border-sky-200">
+                  <div className="bg-gradient-to-r from-sky-400 to-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${item.val}%` }} />
                 </div>
               </div>
             ))}
