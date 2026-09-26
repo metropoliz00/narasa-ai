@@ -235,5 +235,72 @@ export const AIClientService = {
       aiCoachHint: 'Tunjukkan deret kelipatan atau langkah pembagian yang sudah kamu hitung di slide bukti.',
       timestamp: 'Baru saja'
     };
+  },
+
+  async refineStudentAnswer(params: {
+    rawAnswer: string;
+    stageId: string;
+    stageTitle?: string;
+    question?: string;
+    objectName?: string;
+    material?: string;
+  }): Promise<{
+    refinedAnswer: string;
+    explanation: string;
+    improvements: string[];
+  }> {
+    try {
+      const response = await fetch('/api/refine-student-answer', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(params)
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          refinedAnswer: data.refinedAnswer || params.rawAnswer,
+          explanation: data.explanation || 'Tulisanmu sudah dirapikan ejaannya tanpa mengubah makna aslimu.',
+          improvements: Array.isArray(data.improvements) ? data.improvements : ['Ejaan dan tanda baca dirapikan']
+        };
+      }
+    } catch (e) {
+      console.warn('Fallback refine student answer:', e);
+    }
+
+    // Client-side quick fallback
+    let refined = params.rawAnswer.trim();
+    const replacements: [RegExp, string][] = [
+      [/\bkarna\b/gi, 'karena'],
+      [/\bkrn\b/gi, 'karena'],
+      [/\bdgn\b/gi, 'dengan'],
+      [/\byg\b/gi, 'yang'],
+      [/\bbwt\b/gi, 'buat'],
+      [/\bpke\b/gi, 'pakai'],
+      [/\bpake\b/gi, 'pakai'],
+      [/\blobang\b/gi, 'lubang'],
+      [/\bbgt\b/gi, 'banget'],
+      [/\bsdh\b/gi, 'sudah'],
+      [/\budah\b/gi, 'sudah'],
+      [/\bblm\b/gi, 'belum'],
+      [/\btdk\b/gi, 'tidak'],
+      [/\bngga\b/gi, 'tidak'],
+      [/\bga\b/gi, 'tidak'],
+      [/\bjg\b/gi, 'juga'],
+      [/\btp\b/gi, 'tetapi'],
+      [/\butk\b/gi, 'untuk']
+    ];
+    for (const [pattern, rep] of replacements) {
+      refined = refined.replace(pattern, rep);
+    }
+    refined = refined.replace(/(^\s*|[.!?]\s+)([a-z])/g, (_, p1, p2) => p1 + p2.toUpperCase());
+    if (refined.length > 0 && !/[.!?]$/.test(refined)) {
+      refined += '.';
+    }
+
+    return {
+      refinedAnswer: refined,
+      explanation: 'Kakak Asisten sudah merapikan ejaan singkatan dan tanda baca kalimatmu. Ide dan maksud jawabanmu tetap 100% milikmu!',
+      improvements: ['Merapikan ejaan singkatan kata', 'Menyesuaikan huruf kapital & tanda titik']
+    };
   }
 };

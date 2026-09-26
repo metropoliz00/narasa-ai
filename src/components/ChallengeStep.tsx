@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { PhotoZoomModal } from './PhotoZoomModal';
 import { PatternPuzzleGame } from './PatternPuzzleGame';
+import { StudentWritingAssistant } from './StudentWritingAssistant';
 
 // Helper to generate natural, child-friendly, logical descriptions contextualized to the observed object
 export const getStageContextualDescription = (
@@ -110,6 +111,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
 
       let stageQuestion = stageCfg.guidingPrompt;
       let tag = stageCfg.title;
+      let stageCriticalQuestions: string[] = stageCfg.criticalQuestions || [];
 
       let scaffoldingData = {
         level1: `Amati lagi foto ${obj}. Bagian apa yang paling pertama menarik perhatianmu?`,
@@ -122,40 +124,60 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
         case 'decomposition':
           stageQuestion = `Yuk amati foto ${obj} dengan saksama! Apa saja bagian-bagian atau benda penting yang kamu lihat menyusun ${obj} ini? Coba ceritakan apa fungsi atau peran masing-masing bagian tersebut dalam kehidupan nyata!`;
           tag = 'Membongkar Bagian Objek (Dekomposisi)';
+          stageCriticalQuestions = [
+            `Apa saja bagian atau elemen penyusun utama yang kamu lihat pada objek foto "${obj}" dari luar hingga ke bagian dalamnya?`,
+            `Bagaimana bagian-bagian tersebut saling bekerja sama? Apa yang akan terjadi jika salah satu bagian penting rusak atau hilang?`,
+            `Mengapa "${obj}" dirancang dengan susunan bagian seperti itu dalam kehidupan sehari-hari?`
+          ];
           scaffoldingData = {
             level1: `Lihat foto ${obj} dari atas ke bawah: sebutkan setidaknya 2 atau 3 bagian berbeda yang tampak jelas!`,
             level2: `Apa tugas atau kegunaan dari masing-masing bagian ${obj} tersebut?`,
-            level3: `Tuliskan dalam format rapi: 1) Bagian pertama adalah... gunanya untuk..., 2) Bagian kedua...`,
+            level3: `Tuliskan dalam format rapi: 1) Bagian utama: ..., 2) Hubungan kerja bagian: ..., 3) Alasan rancangan: ...`,
             level4: `Seperti sepeda yang punya roda untuk melaju, rantai untuk mengayuh, dan stang untuk berbelok; ${obj} juga punya bagian dengan tugasnya masing-masing!`
           };
           break;
         case 'pattern_recognition':
           stageQuestion = `Perhatikan lebih dekat foto ${obj} ini! Adakah bentuk yang berulang, susunan garis atau benda yang teratur, jadwal berkala, atau kemiripan dengan konsep ${mat}? Ceritakan pola menarik apa yang berhasil kamu temukan!`;
           tag = 'Menemukan Keteraturan (Pengenalan Pola)';
+          stageCriticalQuestions = [
+            `Pola susunan, bentuk berulang, simetri, atau keteraturan apa yang paling jelas terlihat pada foto "${obj}"?`,
+            `Bagaimana pola keteraturan pada "${obj}" ini membuktikan aturan atau konsep dalam materi ${mat}?`,
+            `Jika "${obj}" ini diperbanyak atau digunakan di kondisi berbeda, apakah polanya akan tetap sama? Mengapa?`
+          ];
           scaffoldingData = {
             level1: `Cari hal yang berulang atau memiliki bentuk serupa pada ${obj}. Apa yang kamu lihat?`,
             level2: `Apakah bentuknya memiliki pola susunan tertentu, atau kejadian yang berulang secara berkala?`,
-            level3: `Tuliskan keteraturan yang kamu amati: "Saya melihat pola pada ${obj} yaitu..."`,
+            level3: `Tuliskan keteraturan yang kamu amati: 1) Pola yang saya temukan..., 2) Hubungan dengan materi..., 3) Prediksi jika kondisi berubah...`,
             level4: `Seperti deretan ubin lantai yang berjarak rapi atau jarum jam yang berputar teratur, ${obj} juga punya pola lho!`
           };
           break;
         case 'abstraction':
           stageQuestion = `Bayangkan kamu ingin menceritakan rahasia ${obj} ini kepada temanmu agar dia paham ${mat}! Informasi atau ciri apa yang PALING PENTING untuk dijelaskan, dan detail apa (seperti warna hiasan, bayangan, atau coretan kecil) yang bisa diabaikan dulu?`;
           tag = 'Memilih Hal yang Paling Penting (Abstraksi)';
+          stageCriticalQuestions = [
+            `Informasi atau ciri kunci apa yang PALING PENTING agar temanmu langsung paham cara kerja "${obj}" dan konsep ${mat}?`,
+            `Detail atau hiasan apa (seperti warna cat latar, bayangan, atau goresan debu) yang BISA DIABAIKAN dulu karena tidak mempengaruhi fungsi utamanya?`,
+            `Prinsip atau kesimpulan penting apa dari "${obj}" ini yang bisa kamu terapkan ke benda atau masalah lain?`
+          ];
           scaffoldingData = {
             level1: `Jika kamu membuat sketsa cepat dari ${obj}, bagian mana yang WAJIB digambar agar orang langsung mengenalinya?`,
             level2: `Informasi apa yang paling berguna untuk materi ${mat}? Jadikan itu sebagai hal terpenting.`,
-            level3: `Sebutkan juga hal yang tidak terlalu berpengaruh (seperti warna latar, bayangan, atau noda debu) yang bisa diabaikan dulu.`,
+            level3: `Tuliskan dalam 3 poin: 1) Ciri paling penting (wajib), 2) Detail yang diabaikan dulu, 3) Pelajaran umum.`,
             level4: `Seperti denah peta sekolah: hanya menampilkan ruang kelas dan jalan utama, bukan setiap rumput di halaman!`
           };
           break;
         case 'algorithmic_thinking':
           stageQuestion = `Sekarang giliranmu menyusun jurus langkah! Buatlah urutan langkah-langkah yang rapi dan teratur (Langkah 1, Langkah 2, Langkah 3...) yang bisa kamu atau temanmu ikuti untuk menyelesaikan tantangan atau memahami cara kerja ${obj} ini dari awal sampai berhasil!`;
           tag = 'Menyusun Langkah 1, 2, 3 (Algoritma)';
+          stageCriticalQuestions = [
+            `Bagaimana urutan instruksi langkah demi langkah (Langkah 1, Langkah 2, Langkah 3...) yang paling runtut dan logis untuk memanfaatkan atau membuktikan cara kerja "${obj}"?`,
+            `Langkah mana yang paling krusial dan butuh kehati-hatian ekstra agar rencana aksimu tidak gagal?`,
+            `Bagaimana caramu membuktikan kepada teman sekelas bahwa urutan langkah yang kamu buat adalah cara yang paling praktis dan efektif?`
+          ];
           scaffoldingData = {
             level1: `Tentukan hal pertama yang harus dilakukan: "Langkah 1: Mulai dengan..."`,
             level2: `Lalu apa langkah berikutnya? Urutkan tindakan secara logis sampai selesai.`,
-            level3: `Tuliskan urutannya: Langkah 1: ..., Langkah 2: ..., Langkah 3: ...`,
+            level3: `Tuliskan urutannya: 1) Langkah 1, 2, 3..., 2) Titik rawan kesalahan, 3) Cara pembuktian efektivitas.`,
             level4: `Seperti resep memasak telur dadar: pecahkan telur -> kocok dengan bumbu -> tuang ke wajan panas!`
           };
           break;
@@ -175,6 +197,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
           stage: stageCfg.id,
           title: existing.title || stageCfg.title,
           question: isPlaceholderOrGeneric ? stageQuestion : existing.question,
+          criticalQuestions: (existing.criticalQuestions && existing.criticalQuestions.length > 0) ? existing.criticalQuestions : stageCriticalQuestions,
           conceptTag: existing.conceptTag || tag,
           scaffolding: existing.scaffolding || scaffoldingData
         };
@@ -185,6 +208,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
         stage: stageCfg.id,
         title: stageCfg.title,
         question: stageQuestion,
+        criticalQuestions: stageCriticalQuestions,
         inputType: 'text',
         conceptTag: tag,
         scaffolding: scaffoldingData
@@ -974,20 +998,94 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                 </div>
               </div>
 
-              {/* Main Question Box */}
-              <div className="p-3.5 sm:p-4 rounded-xl bg-white border-2 border-indigo-200 shadow-2xs space-y-1.5">
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-indigo-700 tracking-wider flex items-center gap-1">
-                  <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
-                  Pertanyaan Eksplorasi untuk Kamu:
-                </span>
-                <p className="text-sm sm:text-base font-extrabold text-[#1E293B] leading-relaxed">
+              {/* Main Question Box & 2-3 Critical Thinking Spark Questions */}
+              <div className="p-3.5 sm:p-5 rounded-xl bg-white border-2 border-indigo-200 shadow-2xs space-y-3.5">
+                <div className="flex items-center justify-between gap-2 border-b border-indigo-100 pb-2.5">
+                  <span className="text-xs font-black uppercase text-indigo-900 tracking-wider flex items-center gap-1.5">
+                    <HelpCircle className="w-4 h-4 text-indigo-600" />
+                    <span>Pertanyaan Pemantik Berpikir Kritis:</span>
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-900 border border-purple-200 shadow-2xs">
+                    {(activeQuestion.criticalQuestions?.length || 3)} Pertanyaan Analisis
+                  </span>
+                </div>
+
+                {/* Subtext guiding child */}
+                <p className="text-xs sm:text-sm font-bold text-slate-700 leading-relaxed">
                   {activeQuestion.question}
                 </p>
+
+                {/* 2-3 Critical Thinking Questions List */}
+                <div className="space-y-2.5 pt-1">
+                  {(activeQuestion.criticalQuestions || [
+                    activeQuestion.question
+                  ]).map((cq, cqIdx) => {
+                    const numberIcons = ['1️⃣', '2️⃣', '3️⃣', '4️⃣'];
+                    const focusTitles = [
+                      activeStageConfig.id === 'decomposition' ? 'Analisis Bagian' :
+                      activeStageConfig.id === 'pattern_recognition' ? 'Pola & Keteraturan' :
+                      activeStageConfig.id === 'abstraction' ? 'Fokus Utama' : 'Urutan Langkah',
+                      activeStageConfig.id === 'decomposition' ? 'Hubungan Kerja' :
+                      activeStageConfig.id === 'pattern_recognition' ? 'Bukti Materi' :
+                      activeStageConfig.id === 'abstraction' ? 'Detail yang Disimpan' : 'Pencegahan Kesalahan',
+                      activeStageConfig.id === 'decomposition' ? 'Alasan Rancangan' :
+                      activeStageConfig.id === 'pattern_recognition' ? 'Prediksi Logis' :
+                      activeStageConfig.id === 'abstraction' ? 'Pelajaran Umum' : 'Uji Efektivitas'
+                    ];
+
+                    return (
+                      <div
+                        key={cqIdx}
+                        className="p-3 sm:p-3.5 rounded-xl bg-gradient-to-br from-slate-50 via-indigo-50/30 to-blue-50/40 border-2 border-indigo-100 hover:border-indigo-300 transition-all shadow-2xs flex items-start justify-between gap-3 group"
+                      >
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <span className="text-base sm:text-lg shrink-0 mt-0.5 select-none">
+                            {numberIcons[cqIdx] || `${cqIdx + 1}.`}
+                          </span>
+                          <div className="space-y-1 min-w-0">
+                            <span className="inline-block text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 bg-indigo-100/90 px-2 py-0.5 rounded-md border border-indigo-200">
+                              {focusTitles[cqIdx] || `Poin Pertanyaan ${cqIdx + 1}`}
+                            </span>
+                            <p className="text-xs sm:text-sm font-extrabold text-[#1E293B] leading-relaxed">
+                              {cq}
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleReadAloud(cq)}
+                          className="p-1.5 rounded-lg bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-100 shrink-0 transition-colors shadow-2xs cursor-pointer"
+                          title="Dengarkan pertanyaan ini"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="pt-1 border-t border-indigo-200/70 flex items-center gap-1.5 text-xs text-indigo-900 font-semibold">
-                <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-                <span className="leading-snug">{activeStageConfig.microcopy}</span>
+              <div className="pt-1 border-t border-indigo-200/70 flex items-center justify-between gap-2 text-xs text-indigo-900 font-semibold">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="leading-snug">{activeStageConfig.microcopy}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const template = `1) Jawaban Pertanyaan 1:\n...\n\n2) Jawaban Pertanyaan 2:\n...\n\n3) Jawaban Pertanyaan 3:\n...`;
+                    if (!currentAnswerValue.trim()) {
+                      handleUpdateCurrentAnswer(template);
+                    } else if (!currentAnswerValue.includes('1)')) {
+                      handleUpdateCurrentAnswer(`${currentAnswerValue}\n\n${template}`);
+                    }
+                  }}
+                  className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-100/80 hover:bg-indigo-200 px-2.5 py-1 rounded-lg border border-indigo-300 transition cursor-pointer shrink-0"
+                  title="Salin template nomor ke kotak jawaban"
+                >
+                  📝 Isi Format 1-2-3
+                </button>
               </div>
             </div>
 
@@ -1008,6 +1106,17 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                 onChange={(e) => handleUpdateCurrentAnswer(e.target.value)}
                 placeholder={activeStageConfig.placeholder}
                 className="w-full p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 focus:border-[#4F8EF7] focus:ring-4 focus:ring-blue-100 outline-none text-sm text-slate-800 transition-all resize-none shadow-xs font-medium"
+              />
+
+              {/* AI Writing Assistant for Natural Polish without changing meaning */}
+              <StudentWritingAssistant
+                currentAnswer={currentAnswerValue}
+                stageId={activeStageConfig.id}
+                stageTitle={activeStageConfig.title}
+                question={activeQuestion.question}
+                objectName={learningBridge.detectedObject}
+                material={learningBridge.material}
+                onApplyRefinedAnswer={(refinedText) => handleUpdateCurrentAnswer(refinedText)}
               />
             </div>
 

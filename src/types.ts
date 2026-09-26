@@ -110,6 +110,7 @@ export interface STEMStageDefinition {
   iconName: string;
   description: string;
   guidingPrompt: string;
+  criticalQuestions?: string[];
   placeholder: string;
   microcopy: string;
 }
@@ -123,7 +124,12 @@ export const STEM_STAGES_CONFIG: STEMStageDefinition[] = [
     iconName: 'Layers',
     description: 'Seperti membongkar balok mainan lego, kita pisahkan objek fotomu menjadi bagian-bagian yang lebih kecil agar mudah diselidiki fungsi dan perannya satu per satu.',
     guidingPrompt: 'Yuk amati fotomu baik-baik! Apa saja bagian-bagian atau benda penting yang tampak di fotomu? Coba ceritakan apa fungsi atau tugas masing-masing bagian itu!',
-    placeholder: 'Contoh: Bagian yang saya amati ada 3:\n1) Bagian utama: ... gunanya untuk ...\n2) Bagian pendukung: ... fungsinya ...\n3) Bagian ...',
+    criticalQuestions: [
+      'Apa saja bagian atau elemen penyusun utama yang kamu lihat pada objek fotomu dari luar hingga ke dalam?',
+      'Bagaimana bagian-bagian tersebut saling bekerja sama? Apa yang akan terjadi jika salah satu bagian penting rusak atau hilang?',
+      'Mengapa objek ini dirancang dengan bentuk dan bagian seperti itu dalam kehidupan nyata?'
+    ],
+    placeholder: 'Contoh:\n1) Bagian-bagian utama: ...\n2) Hubungan kerja & jika hilang: ...\n3) Alasan rancangan bentuknya: ...',
     microcopy: '🔍 Amati fotomu! Bongkar jadi bagian-bagian kecil seperti mainan balok agar mudah kamu pahami.'
   },
   {
@@ -134,7 +140,12 @@ export const STEM_STAGES_CONFIG: STEMStageDefinition[] = [
     iconName: 'LayoutGrid',
     description: 'Menjadi detektif cilik! Kita cari tahu apakah ada bentuk yang berulang, susunan yang berbaris rapi, atau kejadian teratur yang mirip dengan materi pelajaran kita.',
     guidingPrompt: 'Perhatikan lagi fotomu lebih dekat! Adakah bentuk yang berulang, garis yang teratur, jadwal berkala, atau kemiripan dengan materi yang sedang kita pelajari? Ceritakan pola apa yang kamu temukan!',
-    placeholder: 'Contoh: Saya menemukan pola yang berulang pada bentuk atau susunannya yaitu ... yang berulang setiap ...',
+    criticalQuestions: [
+      'Pola susunan, bentuk berulang, simetri, atau keteraturan apa yang paling jelas terlihat pada fotomu?',
+      'Bagaimana pola keteraturan pada objek ini membuktikan kaidah atau konsep dalam materi pelajaran kita?',
+      'Jika objek ini diperbanyak atau digunakan di kondisi berbeda, apakah polanya akan tetap sama? Mengapa?'
+    ],
+    placeholder: 'Contoh:\n1) Pola yang saya temukan: ...\n2) Hubungan dengan materi pelajaran: ...\n3) Prediksi jika kondisi berubah: ...',
     microcopy: '🧩 Jadi detektif pola! Temukan rahasia keteraturan atau kesamaan yang tersembunyi pada fotomu.'
   },
   {
@@ -145,7 +156,12 @@ export const STEM_STAGES_CONFIG: STEMStageDefinition[] = [
     iconName: 'Filter',
     description: 'Pakai kacamata fokus detektif! Kita pilih informasi utama yang paling penting untuk dipelajari, dan kita simpan atau abaikan dulu detail kecil (seperti hiasan atau debu) yang tidak terlalu berpengaruh.',
     guidingPrompt: 'Bayangkan kamu mau menceritakan rahasia benda di fotomu ke temanmu! Hal apa yang PALING PENTING dia ketahui untuk memahami pelajaran kita, dan detail apa yang cuma hiasan sehingga bisa diabaikan dulu?',
-    placeholder: 'Contoh: Hal yang paling penting dipahami adalah ... karena ..., sedangkan detail hiasan yang bisa diabaikan dulu adalah ...',
+    criticalQuestions: [
+      'Informasi atau ciri kunci apa yang PALING PENTING agar orang lain langsung mengerti fungsi dan konsep objek ini?',
+      'Detail atau hiasan apa (seperti warna cat latar, bayangan, atau goresan debu) yang BISA DIABAIKAN dulu karena tidak mempengaruhi cara kerja utamanya?',
+      'Prinsip atau pelajaran berharga apa dari objek ini yang bisa kamu terapkan ke masalah atau benda lain?'
+    ],
+    placeholder: 'Contoh:\n1) Ciri paling penting (wajib): ...\n2) Detail yang bisa diabaikan dulu: ...\n3) Prinsip umum yang bisa diterapkan ke hal lain: ...',
     microcopy: '🎯 Pakai kacamata fokus! Ambil petunjuk utamanya saja, kesampingkan detail yang tidak terlalu penting.'
   },
   {
@@ -156,7 +172,12 @@ export const STEM_STAGES_CONFIG: STEMStageDefinition[] = [
     iconName: 'ListOrdered',
     description: 'Menjadi kapten pembuat rencana! Kita susun urutan langkah yang jelas dan runtut (Langkah 1, 2, 3...) seperti resep makanan yang lezat agar kamu atau temanmu bisa menyelesaikan tantangan dengan sukses.',
     guidingPrompt: 'Sekarang giliranmu membuat petunjuk aksi! Susunlah langkah-langkah yang rapi dan teratur (Langkah 1, Langkah 2, Langkah 3...) yang bisa diikuti untuk memahami atau memanfaatkan objek fotomu dari awal sampai selesai!',
-    placeholder: 'Langkah 1: Mulai dengan ...\nLangkah 2: Lalu lakukan ...\nLangkah 3: Periksa hasil akhir ...',
+    criticalQuestions: [
+      'Bagaimana urutan instruksi langkah demi langkah (Langkah 1, Langkah 2, Langkah 3...) yang paling runtut dan logis untuk memanfaatkan atau membuktikan cara kerja objek ini?',
+      'Langkah mana yang paling krusial/penting dan rentan keliru? Apa yang harus diperiksa agar rencana tidak gagal?',
+      'Bagaimana caramu membuktikan bahwa urutan langkah yang kamu buat adalah cara yang paling praktis dan efektif?'
+    ],
+    placeholder: 'Langkah 1: Mulai dengan ...\nLangkah 2: Lalu lakukan ...\nLangkah 3: Periksa hasil akhir & pastikan ...',
     microcopy: '📋 Susun jurus langkahmu! Buat petunjuk aksi 1, 2, 3 yang runtut dan mudah dipraktikkan siapa saja.'
   }
 ];
@@ -166,6 +187,7 @@ export interface ExplorationQuestion {
   stage: STEMStage;
   title: string;
   question: string;
+  criticalQuestions?: string[];
   subtext?: string;
   placeholder?: string;
   inputType: 'text' | 'number' | 'choice';
@@ -205,7 +227,12 @@ export interface PresentationSlide {
   image?: string;
   speakingNotes: string; // 🎙️ Bantuan Berbicara
   speakerNotes?: string; // Compatibility alias
-  layout: 'title' | 'split-photo' | 'observation' | 'reasoning' | 'solution' | 'reflection' | 'conclusion';
+  layout: 'title' | 'split-photo' | 'observation' | 'reasoning' | 'solution' | 'reflection' | 'conclusion' | 'decomposition' | 'pattern' | 'abstraction' | 'algorithm';
+  keyHighlight?: string;
+  supportVisualType?: 'decomposition' | 'pattern' | 'abstraction' | 'algorithm' | 'reflection' | 'summary' | 'photo';
+  badge?: string;
+  tags?: string[];
+  stageId?: string;
 }
 
 export interface PeerQuestion {

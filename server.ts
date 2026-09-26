@@ -536,7 +536,106 @@ Format kembalian JSON: { "hint": "kalimat bimbingan singkat hangat" }
   }
 });
 
-// 3. Auto Presentation Generator
+// 2.5. AI Writing Assistant for Students (Polishing sentence flow, spelling, typos without changing student meaning)
+app.post("/api/refine-student-answer", async (req, res) => {
+  try {
+    const { rawAnswer, stageId, stageTitle, question, objectName, material } = req.body;
+    if (!rawAnswer || typeof rawAnswer !== 'string' || rawAnswer.trim().length === 0) {
+      return res.status(400).json({ error: "Jawaban siswa masih kosong." });
+    }
+
+    const client = getAiClient(req);
+
+    if (client) {
+      try {
+        const prompt = `
+Kamu adalah "Sahabat Tulis AI" - asisten menulis cerdas, ramah, dan suportif khusus untuk siswa sekolah dasar (SD) / SMP di aplikasi belajar NARASA AI.
+
+TUGAS UTAMA:
+Bantu siswa merapikan dan memperjelas TULISAN JAWABAN mereka agar mudah dibaca, DENGAN SYARAT MUTLAK:
+1. JANGAN PERNAH MENGUBAH MAKSUD, MAKNA, ATAU STRUKTUR PEMIKIRAN ASLI SISWA. Ide dan logika harus 100% tetap murni hasil pemikiran siswa.
+2. Perbaiki kesalahan ketik/typo dan singkatan santai anak-anak (misalnya: "karna" -> "karena", "lobang" -> "lubang", "gagang ny" -> "gagang-nya", "bwt" -> "buat", "pke" -> "pakai", "yg" -> "yang", "sdh" -> "sudah", "blm" -> "belum", "ga/ngga" -> "tidak", "jg" -> "juga", "tp" -> "tetapi").
+3. Rapikan tanda baca (huruf kapital di awal kalimat atau nama, tanda titik, tanda koma) agar kalimat mengalir alami dan teratur.
+4. Gunakan bahasa Indonesia yang baik, santun, hangat, dan alami untuk anak sekolah. JANGAN gunakan bahasa kaku, jargon birokrasi, atau istilah akademis rumit yang asing bagi anak.
+5. Berikan pesan penjelasan singkat yang hangat dan menyemangati, menjelaskan bahwa idenya tetap dipertahankan dan hanya ejaan/tanda baca yang dipercantik.
+
+Konteks Pembelajaran:
+- Objek Foto yang Diamati: "${objectName || 'Objek Foto'}"
+- Materi Pelajaran: "${material || 'Sains & STEM'}"
+- Langkah Berpikir Komputasional: "${stageTitle || stageId || 'Langkah Berpikir'}"
+- Pertanyaan Guru: "${question || ''}"
+- Jawaban Asli Siswa: "${rawAnswer}"
+
+Keluarkan hasil HANYA dalam format JSON valid berikut:
+{
+  "refinedAnswer": "Teks jawaban siswa yang sudah dirapikan ejaan dan tanda bacanya tanpa merubah makna sama sekali",
+  "explanation": "Pesan hangat singkat untuk siswa tentang apa yang dirapikan dan apresiasi idenya",
+  "improvements": ["Merapikan ejaan kata singkatan", "Menyesuaikan huruf kapital & tanda titik"]
+}
+`;
+
+        const resp = await callGeminiWithFallback(client, {
+          contents: prompt,
+          config: { responseMimeType: "application/json" }
+        });
+        const parsed = extractJsonFromGeminiResponse(resp);
+        if (parsed && parsed.refinedAnswer) {
+          return res.json({
+            refinedAnswer: parsed.refinedAnswer,
+            explanation: parsed.explanation || "Kakak Asisten sudah merapikan ejaan dan tanda baca tulisanmu. Idenya tetap 100% milikmu yang hebat!",
+            improvements: Array.isArray(parsed.improvements) ? parsed.improvements : ["Ejaan dan tanda baca dirapikan"]
+          });
+        }
+      } catch (_e) {
+        // Fall back to rule-based polish below
+      }
+    }
+
+    // Fallback: Smart rule-based Indonesian text polish
+    let refined = rawAnswer.trim();
+    const replacements: [RegExp, string][] = [
+      [/\bkarna\b/gi, 'karena'],
+      [/\bkrn\b/gi, 'karena'],
+      [/\bdgn\b/gi, 'dengan'],
+      [/\byg\b/gi, 'yang'],
+      [/\bbwt\b/gi, 'buat'],
+      [/\bpke\b/gi, 'pakai'],
+      [/\bpake\b/gi, 'pakai'],
+      [/\blobang\b/gi, 'lubang'],
+      [/\bbgt\b/gi, 'banget'],
+      [/\bsdh\b/gi, 'sudah'],
+      [/\budah\b/gi, 'sudah'],
+      [/\bblm\b/gi, 'belum'],
+      [/\btdk\b/gi, 'tidak'],
+      [/\bngga\b/gi, 'tidak'],
+      [/\bga\b/gi, 'tidak'],
+      [/\bjg\b/gi, 'juga'],
+      [/\btp\b/gi, 'tetapi'],
+      [/\butk\b/gi, 'untuk'],
+      [/\bny\b/gi, 'nya']
+    ];
+
+    for (const [pattern, rep] of replacements) {
+      refined = refined.replace(pattern, rep);
+    }
+
+    // Capitalize first letter of sentences
+    refined = refined.replace(/(^\s*|[.!?]\s+)([a-z])/g, (_, p1, p2) => p1 + p2.toUpperCase());
+    if (refined.length > 0 && !/[.!?]$/.test(refined)) {
+      refined += '.';
+    }
+
+    res.json({
+      refinedAnswer: refined,
+      explanation: "Kakak Asisten sudah merapikan ejaan singkatan dan tanda baca kalimatmu agar semakin rapi dibaca. Makna jawabanmu tetap sama!",
+      improvements: ["Merapikan ejaan singkatan kata", "Menyesuaikan huruf kapital & tanda titik"]
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. Auto Presentation Generator aligned with 4 Computational Thinking Steps + Context & Reflection
 app.post("/api/generate-presentation", async (req, res) => {
   try {
     const { studentSession } = req.body;
@@ -545,123 +644,164 @@ app.post("/api/generate-presentation", async (req, res) => {
     }
 
     const { studentName, subject, missionTitle, image, imageLabel, learningBridge, answers, reflection } = studentSession;
+    const objName = imageLabel || learningBridge?.detectedObject || 'Objek Nyata';
+    const matName = learningBridge?.material || subject || 'STEM';
+    const subjName = subject || learningBridge?.subject || 'Sains';
 
-    // Structured 10-slide standard presentation aligned with the 8 STEM Thinking Stages
+    const decompositionAns = answers?.decomposition || answers?.realProblem || learningBridge?.observation || 'Mengamati dan membongkar bagian-bagian penyusun objek foto secara teliti.';
+    const patternAns = answers?.patternRecognition || answers?.askInquire || learningBridge?.learningBridge || 'Menemukan keteraturan bentuk, susunan, dan hubungan logis dengan materi pelajaran.';
+    const abstractionAns = answers?.abstraction || answers?.designSolution || answers?.strategy || 'Menentukan fokus penting yang paling berpengaruh dan menyaring detail pengalih.';
+    const algorithmAns = answers?.algorithmicThinking || answers?.prototype || answers?.testing || 'Menyusun urutan instruksi langkah 1, 2, 3 yang rapi dan teratur agar dapat dicoba bersama.';
+    const learnedAns = reflection?.q2Learned || answers?.conclusion || `Memahami cara kerja ${objName} menggunakan konsep ${matName}.`;
+    const solvedAns = reflection?.q4Solved || answers?.improvement || 'Mendiskusikan dan mengamati foto secara lebih cermat bersama bimbingan petunjuk.';
+
+    // Structured 8-slide presentation with rich visual aids, clear tags, and stage-specific layouts
     const slides = [
       {
         id: "slide-1",
         slideNumber: 1,
-        title: `Proyek STEM: ${imageLabel || learningBridge.detectedObject}`,
-        subtitle: `${missionTitle} • Oleh ${studentName}`,
-        content: `Halo teman-teman! Saya ${studentName}. Hari ini saya membagikan hasil proyek penyelidikan dan rekayasa STEM pada objek nyata di sekitar kita.`,
+        title: `Eksplorasi Objek Nyata: ${objName}`,
+        subtitle: `${missionTitle || 'Proyek Penalaran STEM'} • Oleh ${studentName}`,
+        content: `Halo semuanya! Saya ${studentName}. Hari ini saya akan membagikan hasil penyelidikan objek foto "${objName}" melalui 4 Langkah Berpikir Komputasional dan materi ${matName}.`,
         image: image,
-        speakingNotes: "Beri salam pembuka dengan hangat. Sebutkan nama dan perkenalkan objek menarik yang kamu amati.",
-        layout: "title"
+        badge: "🚀 Presentasi Proyek Siswa",
+        tags: [matName, subjName, "Berpikir Komputasional"],
+        keyHighlight: `Mempelajari konsep ${matName} dari objek nyata di sekitar kita.`,
+        speakingNotes: "Beri salam pembuka dengan hangat dan senyum. Sebutkan namamu dan perkenalkan objek foto menarik yang kamu selidiki.",
+        layout: "title",
+        supportVisualType: "photo"
       },
       {
         id: "slide-2",
         slideNumber: 2,
-        title: "Tahap 1: Masalah Nyata",
-        subtitle: "Observasi Objek & Identifikasi Kebutuhan",
-        content: answers.realProblem || learningBridge.observation || "Pengamatan rinci terhadap bentuk, pola, dan karakteristik objek nyata di lingkungan sekitar.",
+        title: "Konteks Objek & Jembatan Materi",
+        subtitle: `Observasi Langsung Objek "${objName}"`,
+        content: learningBridge?.observation || `Dari hasil pengamatan foto "${objName}", kita menemukan hubungan nyata dengan materi pelajaran kita.`,
         bullets: [
-          `Objek utama: ${learningBridge.detectedObject}`,
-          `Konteks: ${learningBridge.context || 'Lingkungan sekitar'}`,
-          `Masalah teridentifikasi: ${answers.realProblem ? answers.realProblem.slice(0, 90) + '...' : 'Tantangan kontekstual di sekitar'}`
+          `📸 Objek Foto: ${objName} (${learningBridge?.context || 'Lingkungan Nyata'})`,
+          `📚 Materi Terkait: ${matName} (${subjName})`,
+          `🎯 Target Pemahaman: ${learningBridge?.learningTarget || `Memahami cara kerja ${objName}`}`
         ],
         image: image,
-        speakingNotes: "Ajak teman-teman memperhatikan foto. Ceritakan masalah nyata yang kamu temukan secara langsung.",
-        layout: "split-photo"
+        badge: "👁️ Pengamatan Nyata",
+        tags: ["Konteks Nyata", "Eksplorasi"],
+        keyHighlight: learningBridge?.learningBridge || `Menghubungkan ${objName} dengan konsep ${matName}.`,
+        speakingNotes: "Ajak teman-teman melihat foto di slide. Ceritakan di mana objek ini biasa ditemukan dan apa kaitannya dengan materi pelajaran.",
+        layout: "split-photo",
+        supportVisualType: "photo"
       },
       {
         id: "slide-3",
         slideNumber: 3,
-        title: "Tahap 2: Bertanya & Mencari Info",
-        subtitle: "Inkuiri & Eksplorasi Konsep Materi",
-        content: answers.askInquire || learningBridge.learningBridge || "Mengumpulkan pertanyaan kunci dan mengaitkannya dengan konsep materi pelajaran.",
+        title: "Langkah 1: Dekomposisi Bagian",
+        subtitle: `Membongkar Bagian & Fungsi pada ${objName}`,
+        content: decompositionAns,
         bullets: [
-          `Mata Pelajaran: ${subject}`,
-          `Materi: ${learningBridge.material}`,
-          `Target Belajar: ${learningBridge.learningTarget}`
+          `🔍 Bagian Utama: Terurai menjadi komponen-komponen penyusun yang saling bekerja sama`,
+          `⚙️ Fungsi Tiap Bagian: Setiap elemen memiliki peran khusus agar ${objName} berfungsi optimal`,
+          `💡 Prinsip Kerja: Memahami bagian kecil mempermudah kita memahami keseluruhan objek`
         ],
-        speakingNotes: "Jelaskan bagaimana konsep materi membantu menjawab pertanyaan penyelidikanmu.",
-        layout: "observation"
+        image: image,
+        badge: "🧩 Dekomposisi (Decomposition)",
+        tags: ["Urai Bagian", "Struktur & Fungsi"],
+        keyHighlight: `Seperti balok lego, ${objName} tersusun dari bagian-bagian penting dengan fungsinya masing-masing.`,
+        speakingNotes: "Jelaskan bagian-bagian penting dari objek foto yang berhasil kamu uraikan dan apa tugas masing-masing bagian tersebut.",
+        layout: "decomposition",
+        supportVisualType: "decomposition"
       },
       {
         id: "slide-4",
         slideNumber: 4,
-        title: "Tahap 3: Merancang Solusi",
-        subtitle: "Sketsa Ide & Strategi Logis",
-        content: answers.designSolution || answers.strategy || "Rancangan solusi terstruktur untuk memecahkan masalah nyata yang diamati.",
-        speakingNotes: "Jelaskan strategi dan langkah perencanaan yang kamu rancang bersama ide solusimu.",
-        layout: "reasoning"
+        title: "Langkah 2: Pengenalan Pola",
+        subtitle: `Menemukan Keteraturan & Pola pada ${objName}`,
+        content: patternAns,
+        bullets: [
+          `🔄 Pola Teridentifikasi: Adanya susunan berulang, kesimetrisan bentuk, atau keteraturan waktu`,
+          `🔗 Hubungan Materi: Pola ini cocok dengan aturan konsep ${matName}`,
+          `📐 Keteraturan Logis: Pola membantu kita memprediksi cara kerja objek berikutnya`
+        ],
+        image: image,
+        badge: "🔍 Pengenalan Pola (Pattern Recognition)",
+        tags: ["Keteraturan", "Pola Berulang", "Prediksi"],
+        keyHighlight: `Pola keteraturan membantu kita memahami rahasia di balik ${objName} dan materi ${matName}.`,
+        speakingNotes: "Tunjukkan pola atau keteraturan apa yang kamu temukan pada foto dan bagaimana pola itu membuktikan konsep pelajaran kita.",
+        layout: "pattern",
+        supportVisualType: "pattern"
       },
       {
         id: "slide-5",
         slideNumber: 5,
-        title: "Tahap 4: Membuat Produk/Prototipe",
-        subtitle: "Realisasi Model Kerja & Produk Nyata",
-        content: answers.prototype || "Realisasi solusi ke dalam bentuk model hitungan, tabel kerja, alat, atau prototipe sederhana.",
+        title: "Langkah 3: Abstraksi Fokus",
+        subtitle: `Menyaring Hal Utama & Menyimpan Detail Pengalih`,
+        content: abstractionAns,
         bullets: [
-          "Bahan / komponen pendukung",
-          "Langkah pembuatan model solusi",
-          "Realisasi konkret ide rancangan"
+          `🎯 Fokus Utama: Memusatkan perhatian pada fitur atau sifat yang paling berpengaruh`,
+          `🔎 Abaikan Pengalih: Menyimpan sementara detail warna hiasan atau debu kecil yang tidak berpengaruh`,
+          `✨ Kesimpulan Inti: Menemukan sari pati konsep yang paling penting`
         ],
-        speakingNotes: "Tunjukkan model kerja atau prototipe yang kamu buat dan jelaskan komponennya.",
-        layout: "solution"
+        image: image,
+        badge: "👓 Abstraksi (Abstraction)",
+        tags: ["Fokus Penting", "Saring Informasi"],
+        keyHighlight: `Dengan kacamata fokus, kita langsung melihat inti penting tanpa terganggu hal-hal kecil.`,
+        speakingNotes: "Ceritakan hal terpenting yang wajib diperhatikan pada objek ini, dan apa saja detail kecil yang bisa kita simpan dulu.",
+        layout: "abstraction",
+        supportVisualType: "abstraction"
       },
       {
         id: "slide-6",
         slideNumber: 6,
-        title: "Tahap 5: Menguji",
-        subtitle: "Uji Coba Lapangan & Eksperimen",
-        content: answers.testing || "Pelaksanaan uji coba terhadap prototipe untuk melihat kesesuaian dan efektivitasnya.",
-        speakingNotes: "Ceritakan bagaimana proses pengujian dilakukan dan apa saja yang diuji.",
-        layout: "observation"
+        title: "Langkah 4: Berpikir Algoritma",
+        subtitle: `Urutan Rencana Kerja Teratur (1, 2, 3...)`,
+        content: algorithmAns,
+        bullets: [
+          `1️⃣ Tahap Awal: Persiapan dan langkah awal yang harus dilakukan terlebih dahulu`,
+          `2️⃣ Tahap Pelaksanaan: Tindakan utama secara berurutan dan terstruktur`,
+          `3️⃣ Tahap Akhir: Pemeriksaan hasil dan memastikan keberhasilan cara kerja`
+        ],
+        image: image,
+        badge: "⚡ Berpikir Algoritma (Algorithm)",
+        tags: ["Langkah 1-2-3", "Alur Kerja", "Resep Aksi"],
+        keyHighlight: `Langkah yang teratur seperti resep resep rahasia membuat rencana kita selalu berhasil.`,
+        speakingNotes: "Bacakan urutan langkah 1, 2, dan 3 yang sudah kamu susun secara teratur agar teman-teman bisa mempraktikkannya.",
+        layout: "algorithm",
+        supportVisualType: "algorithm"
       },
       {
         id: "slide-7",
         slideNumber: 7,
-        title: "Tahap 6: Menganalisis Data",
-        subtitle: "Bukti Kuantitatif & Hasil Perhitungan",
-        content: answers.dataAnalysis || answers.evidence || "Pengolahan data hasil pengujian dan verifikasi perhitungan matematika.",
+        title: "Refleksi Pengalaman Belajar",
+        subtitle: "Temuan Menarik & Cara Mengatasi Tantangan",
+        content: `Selama melakukan penyelidikan pada ${objName}, saya mempelajari banyak hal baru dan berhasil mengatasi bagian yang paling menantang.`,
         bullets: [
-          `Data uji coba terverifikasi`,
-          `Analisis perhitungan konsep ${subject}`
+          `🌟 Pelajaran Berharga: ${learnedAns}`,
+          `💪 Cara Mengatasi Kesulitan: ${solvedAns}`,
+          `🚀 Rencana Perbaikan: Ingin mencoba mengamati objek lain dengan metode berpikir yang sama`
         ],
-        speakingNotes: "Tunjukkan data hitungan atau bukti tabel yang mengonfirmasi bahwa solusimu berhasil.",
-        layout: "reasoning"
+        image: image,
+        badge: "💡 Refleksi & Wawasan",
+        tags: ["Refleksi Diri", "Pertumbuhan"],
+        keyHighlight: `Belajar dari pengamatan nyata membuat ilmu ${matName} semakin hidup dan menyenangkan!`,
+        speakingNotes: "Ceritakan dengan jujur apa pengalaman paling berkesan saat belajar dan bagaimana kamu menyelesaikan kesulitanmu.",
+        layout: "reflection",
+        supportVisualType: "reflection"
       },
       {
         id: "slide-8",
         slideNumber: 8,
-        title: "Tahap 7: Memperbaiki",
-        subtitle: "Iterasi & Penyempurnaan Desain",
-        content: answers.improvement || "Evaluasi kendala yang ditemukan saat uji coba serta langkah perbaikan yang dilakukan.",
-        speakingNotes: "Jelaskan apa yang kamu perbaiki agar model/solusi menjadi semakin optimal.",
-        layout: "solution"
-      },
-      {
-        id: "slide-9",
-        slideNumber: 9,
-        title: "Tahap 8: Mengomunikasikan Hasil",
-        subtitle: "Kesimpulan & Refleksi Pembelajaran",
-        content: answers.communication || answers.conclusion || reflection?.q2Learned || "Kesimpulan utama dan manfaat proyek STEM bagi kehidupan sehari-hari.",
+        title: "Kesimpulan & Diskusi Terbuka",
+        subtitle: "Terima Kasih atas Perhatian Teman-Teman!",
+        content: `“Dengan mengamati objek nyata ${objName} dan menerapkan Berpikir Komputasional, kita dapat menjadi pemikir kritis dan pemecah masalah yang hebat!”`,
         bullets: [
-          `Pelajaran bermakna: ${reflection?.q2Learned || 'Konsep STEM dalam dunia nyata'}`,
-          `Penerapan sehari-hari: Solusi dapat diaplikasikan di sekolah`
+          `✨ 4 Pilar Berpikir: Dekomposisi • Pola • Abstraksi • Algoritma`,
+          `💬 Sesi Tanya Jawab: Silakan jika teman-teman atau Bapak/Ibu Guru ingin bertanya`
         ],
-        speakingNotes: "Sampaikan intisari utama proyekmu dan apa yang paling berkesan dari proses belajar ini.",
-        layout: "conclusion"
-      },
-      {
-        id: "slide-10",
-        slideNumber: 10,
-        title: "Terima Kasih & Diskusi",
-        subtitle: "Sesi Tanya Jawab Teman Sekelas",
-        content: "“Pola Berpikir STEM: Amati Nyata • Rancang Solusi • Uji & Buktikan • Komunikasikan Karya!”",
-        speakingNotes: "Tutup presentasi dengan senyuman dan persilakan teman-teman mengajukan pertanyaan.",
-        layout: "conclusion"
+        image: image,
+        badge: "🎉 Penutup & Sesi Diskusi",
+        tags: ["Tanya Teman", "Apresiasi"],
+        keyHighlight: `Siap menjawab pertanyaan teman-teman sekelas! 💬`,
+        speakingNotes: "Tutup presentasimu dengan senyuman dan ucapkan terima kasih. Persilakan teman-teman sekelas untuk mengajukan pertanyaan.",
+        layout: "conclusion",
+        supportVisualType: "summary"
       }
     ];
 

@@ -139,8 +139,8 @@ export const PresentationEditor: React.FC<PresentationEditorProps> = ({
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Top Action Bar */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-        <div>
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col xl:flex-row items-start xl:items-center justify-between gap-5">
+        <div className="flex-1 min-w-0 space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="p-1.5 rounded-xl bg-purple-100 text-[#7C5CFC]">
               <Edit3 className="w-5 h-5" />
@@ -155,23 +155,38 @@ export const PresentationEditor: React.FC<PresentationEditorProps> = ({
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Rangkuman karya dan refleksi milik <strong className="text-slate-800 font-semibold">{currentUser?.name || 'Murid'}</strong> ({currentUser?.className || 'Kelas V'} {currentUser?.schoolName || 'SDN 01 Nusantara'}) telah disusun menjadi {slides.length} slide siap tampil.
+          <p className="text-xs text-slate-600 flex flex-wrap items-center gap-1.5 leading-relaxed">
+            <span>Rangkuman karya dan refleksi milik</span>
+            <span className="inline-flex items-center gap-1 font-black text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-200 shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              {currentUser?.name || 'Murid'}
+            </span>
+            <span className="inline-flex items-center gap-1 font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 shadow-2xs text-[11px]">
+              <span className="text-amber-600">🏷️</span>
+              {currentUser?.className || 'Kelas V'}
+            </span>
+            <span className="inline-flex items-center gap-1 font-bold text-emerald-900 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200 shadow-2xs text-[11px]">
+              <span className="text-emerald-600">🏫</span>
+              {currentUser?.schoolName || 'SDN 01 Nusantara'}
+            </span>
+            <span>telah disusun menjadi <strong className="text-purple-700 font-extrabold">{slides.length} slide</strong> siap tampil.</span>
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full lg:w-auto flex-wrap">
-          {/* Buttons */}
+        {/* Action Buttons Row */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full xl:w-auto shrink-0 pt-1 xl:pt-0">
           <button
+            type="button"
             onClick={handleAddSlide}
-            className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-50 text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            className="px-4 py-2.5 rounded-xl border-2 border-slate-200 font-bold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-2xs whitespace-nowrap cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 text-slate-600" />
             <span>Tambah Slide</span>
           </button>
           <button
+            type="button"
             onClick={onLaunchPresentation}
-            className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-bold hover:shadow-lg hover:shadow-blue-500/25 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4F8EF7] to-[#7C5CFC] text-white font-extrabold hover:shadow-lg hover:shadow-blue-500/25 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 shadow-md whitespace-nowrap cursor-pointer"
           >
             <Play className="w-4 h-4 fill-white" />
             <span>Mulai Tampil (Mode Tayang)</span>
@@ -213,19 +228,28 @@ export const PresentationEditor: React.FC<PresentationEditorProps> = ({
                 <div
                   key={slide.id}
                   onClick={() => setCurrentSlideIndex(index)}
-                  className={`p-3 rounded-2xl border text-left cursor-pointer transition-all flex items-start gap-3 ${
+                  className={`p-3 rounded-2xl border text-left cursor-pointer transition-all flex items-start gap-2.5 ${
                     isActive
                       ? 'border-[#4F8EF7] bg-blue-50/70 shadow-xs ring-2 ring-blue-500/10'
                       : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  <span
-                    className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 ${
-                      isActive ? 'bg-[#4F8EF7] text-white' : 'bg-slate-200 text-slate-600'
-                    }`}
-                  >
-                    {slide.slideNumber}
-                  </span>
+                  {slide.image ? (
+                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-slate-200 shadow-2xs relative">
+                      <img src={slide.image} alt="Thumbnail" className="w-full h-full object-cover" />
+                      <span className="absolute bottom-0 right-0 bg-blue-600 text-white text-[9px] font-black px-1 rounded-tl">
+                        {slide.slideNumber}
+                      </span>
+                    </div>
+                  ) : (
+                    <span
+                      className={`w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 ${
+                        isActive ? 'bg-[#4F8EF7] text-white' : 'bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {slide.slideNumber}
+                    </span>
+                  )}
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-bold text-[#25324B] truncate">
                       {slide.title}

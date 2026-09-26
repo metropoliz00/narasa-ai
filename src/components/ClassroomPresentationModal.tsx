@@ -128,11 +128,15 @@ export const ClassroomPresentationModal: React.FC<ClassroomPresentationModalProp
         </div>
 
         {/* Footer Action */}
-        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-          <div className="text-xs text-slate-600">
-            Terpilih:{' '}
-            <strong className="text-[#25324B]">{selectedSession?.studentName}</strong> (
-            {selectedSession?.imageLabel})
+        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="text-xs text-slate-600 flex items-center gap-1.5 flex-wrap">
+            <span>Karya Terpilih:</span>
+            <span className="font-black text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-lg border border-purple-200">
+              👤 {selectedSession?.studentName}
+            </span>
+            <span className="font-bold text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200 text-[11px]">
+              📸 {selectedSession?.imageLabel}
+            </span>
           </div>
           <button
             onClick={() => {
