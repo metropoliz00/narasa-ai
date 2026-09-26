@@ -88,10 +88,10 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
     ? `narasa_challenge_draft_${studentId}_${missionId || 'general'}`
     : 'narasa_challenge_draft_current';
 
-  // Helper to load saved draft from specific key or fallback key
+  // Helper to load saved draft from specific key
   const loadSavedDraft = () => {
     try {
-      const keysToTry = [draftKey, 'narasa_challenge_draft_current'];
+      const keysToTry = studentId ? [draftKey] : ['narasa_challenge_draft_current'];
       for (const k of keysToTry) {
         const saved = localStorage.getItem(k);
         if (saved) {

@@ -141,19 +141,29 @@ export default function App() {
     return initialNormalized;
   });
 
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('narasa_is_authenticated') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+
   const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
     try {
-      const savedUserId = localStorage.getItem('narasa_active_user_id');
-      if (savedUserId && savedUserId !== 'user-teacher-2') {
-        const found = INITIAL_SYSTEM_USERS.find(u => u.id === savedUserId && u.email !== 'maya.lestari@sdn01nusantara.sch.id');
-        if (found) return normalizeUserAvatar(found);
+      const isAuthStored = localStorage.getItem('narasa_is_authenticated') === 'true';
+      if (isAuthStored) {
+        const savedUserId = localStorage.getItem('narasa_active_user_id');
+        if (savedUserId && savedUserId !== 'user-teacher-2') {
+          const found = INITIAL_SYSTEM_USERS.find(u => u.id === savedUserId && u.email !== 'maya.lestari@sdn01nusantara.sch.id');
+          if (found) return normalizeUserAvatar(found);
+        }
       }
     } catch (e) {}
     return normalizeUserAvatar(INITIAL_SYSTEM_USERS[0]);
   });
 
   const [currentRole, setCurrentRole] = useState<UserRole>(currentUser.role);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Login & Account Modal states
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -364,18 +374,17 @@ export default function App() {
         setMissions(remoteMissions || []);
         setSessions(remoteSessions || []);
 
-        const activeUsersList = remoteUsers || [];
-        if (activeUsersList.length > 0) {
-          const savedUserId = localStorage.getItem('narasa_active_user_id');
-          const found = activeUsersList.find(u => u.id === savedUserId);
-          if (found) {
-            setCurrentUser(found);
-            setCurrentRole(found.role);
-            setIsAuthenticated(true);
-          } else {
-            setCurrentUser(activeUsersList[0]);
-            setCurrentRole(activeUsersList[0].role);
-            setIsAuthenticated(true);
+        const isAuthStored = localStorage.getItem('narasa_is_authenticated') === 'true';
+        if (isAuthStored) {
+          const activeUsersList = remoteUsers || [];
+          if (activeUsersList.length > 0) {
+            const savedUserId = localStorage.getItem('narasa_active_user_id');
+            const found = activeUsersList.find(u => u.id === savedUserId);
+            if (found) {
+              setCurrentUser(found);
+              setCurrentRole(found.role);
+              setIsAuthenticated(true);
+            }
           }
         } else {
           setIsAuthenticated(false);
@@ -413,7 +422,7 @@ export default function App() {
 
   // Auto-save active exploration session to localStorage
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!isAuthenticated || !currentUser?.id) return;
     const explorationDraftKey = `narasa_active_exploration_${currentUser.id}`;
     if (activeLearningBridge && currentCapturedImage) {
       try {
@@ -434,17 +443,24 @@ export default function App() {
         localStorage.removeItem(explorationDraftKey);
       } catch (e) {}
     }
-  }, [activeLearningBridge, currentCapturedImage, currentImageLabel, isChallengeActive, isReflectionOpen, activeMission, currentUser?.id]);
+  }, [isAuthenticated, activeLearningBridge, currentCapturedImage, currentImageLabel, isChallengeActive, isReflectionOpen, activeMission, currentUser?.id]);
 
   // Restore active exploration session draft on initial load
   useEffect(() => {
-    if (!currentUser?.id || activeLearningBridge) return;
+    if (!isAuthenticated || !currentUser?.id || activeLearningBridge) return;
     try {
       const explorationDraftKey = `narasa_active_exploration_${currentUser.id}`;
       const saved = localStorage.getItem(explorationDraftKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.activeLearningBridge && parsed.currentCapturedImage) {
+          if (parsed.updatedAt) {
+            const draftAgeMs = Date.now() - new Date(parsed.updatedAt).getTime();
+            if (draftAgeMs > 24 * 60 * 60 * 1000) {
+              localStorage.removeItem(explorationDraftKey);
+              return;
+            }
+          }
           setActiveLearningBridge(parsed.activeLearningBridge);
           setCurrentCapturedImage(parsed.currentCapturedImage);
           setCurrentImageLabel(parsed.currentImageLabel || 'Foto Murid');
@@ -456,7 +472,7 @@ export default function App() {
         }
       }
     } catch (e) {}
-  }, [currentUser?.id, missions]);
+  }, [isAuthenticated, currentUser?.id, missions]);
 
   // Active Presentation States
   const [activeSlides, setActiveSlides] = useState<PresentationSlide[]>([]);
@@ -571,10 +587,19 @@ export default function App() {
   };
 
   const handleSwitchUser = (user: UserProfile, suppressToast = false) => {
+    if (currentUser && user.id !== currentUser.id) {
+      setActiveLearningBridge(null);
+      setCurrentCapturedImage(null);
+      setIsChallengeActive(false);
+      setIsReflectionOpen(false);
+      setCompletedStudentAnswers(null);
+    }
     setCurrentUser(user);
     setCurrentRole(user.role);
+    setIsAuthenticated(true);
     try {
       localStorage.setItem('narasa_active_user_id', user.id);
+      localStorage.setItem('narasa_is_authenticated', 'true');
     } catch (e) {}
     if (!suppressToast) {
       const cleanName = user.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim();
@@ -853,6 +878,21 @@ export default function App() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setIsLoginModalOpen(false);
+    setActiveLearningBridge(null);
+    setCurrentCapturedImage(null);
+    setIsChallengeActive(false);
+    setIsReflectionOpen(false);
+    setCompletedStudentAnswers(null);
+    setActiveMission(null);
+    try {
+      localStorage.removeItem('narasa_is_authenticated');
+      localStorage.removeItem('narasa_active_user_id');
+      if (currentUser?.id) {
+        localStorage.removeItem(`narasa_active_exploration_${currentUser.id}`);
+      }
+      localStorage.removeItem('narasa_challenge_draft_current');
+      localStorage.removeItem('narasa_reflection_draft_current');
+    } catch (e) {}
     toast.info('Keluar Akun', 'Sesi login telah selesai.');
   };
 
