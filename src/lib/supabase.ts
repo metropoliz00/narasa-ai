@@ -106,12 +106,12 @@ export async function dbFetchUsers(): Promise<UserProfile[]> {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.map((u: UserProfile) => {
-            const isUnsplash = !u.avatar || u.avatar.includes('unsplash.com');
+            const isCustomBase64 = u.avatar && u.avatar.startsWith('data:image');
             const gender: UserGender = u.gender || 'male';
             return {
               ...u,
               gender,
-              avatar: isUnsplash ? getDefaultAvatar(u.role, gender) : u.avatar
+              avatar: isCustomBase64 ? u.avatar : getDefaultAvatar(u.role, gender)
             };
           });
         }
@@ -138,8 +138,8 @@ export async function dbFetchUsers(): Promise<UserProfile[]> {
 
     return data.map((row: any) => {
       const gender: UserGender = row.gender || 'male';
-      const isUnsplash = !row.avatar || row.avatar.includes('unsplash.com');
-      const avatar = isUnsplash ? getDefaultAvatar(row.role, gender) : row.avatar;
+      const isCustomBase64 = row.avatar && row.avatar.startsWith('data:image');
+      const avatar = isCustomBase64 ? row.avatar : getDefaultAvatar(row.role, gender);
       return {
         id: row.id,
         name: row.name,

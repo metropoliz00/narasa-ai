@@ -1,12 +1,23 @@
-import studentBoy1 from '../assets/avatars/student_boy_1.jpg';
-import studentBoy2 from '../assets/avatars/student_boy_2.jpg';
-import studentGirlHijab from '../assets/avatars/student_girl_hijab.jpg';
-import studentGirlRibbon from '../assets/avatars/student_girl_ribbon.jpg';
-import teacherMale from '../assets/avatars/teacher_male.jpg';
-import teacherFemale from '../assets/avatars/teacher_female.jpg';
-import adminMale from '../assets/avatars/admin_male.jpg';
-import adminFemale from '../assets/avatars/admin_female.jpg';
+import {
+  studentBoy1Base64,
+  studentBoy2Base64,
+  studentGirlHijabBase64,
+  studentGirlRibbonBase64,
+  teacherMaleBase64,
+  teacherFemaleBase64,
+  adminMaleBase64,
+  adminFemaleBase64
+} from './base64Avatars';
 import { UserRole } from '../types';
+
+export const studentBoy1 = studentBoy1Base64;
+export const studentBoy2 = studentBoy2Base64;
+export const studentGirlHijab = studentGirlHijabBase64;
+export const studentGirlRibbon = studentGirlRibbonBase64;
+export const teacherMale = teacherMaleBase64;
+export const teacherFemale = teacherFemaleBase64;
+export const adminMale = adminMaleBase64;
+export const adminFemale = adminFemaleBase64;
 
 export type UserGender = 'male' | 'female';
 
@@ -23,7 +34,7 @@ export const CHARACTER_AVATARS: CharacterAvatar[] = [
   // Murid Laki-laki
   {
     id: 'student-boy-1',
-    url: studentBoy1,
+    url: studentBoy1Base64,
     name: 'Siswa Ceria',
     gender: 'male',
     role: 'student',
@@ -31,7 +42,7 @@ export const CHARACTER_AVATARS: CharacterAvatar[] = [
   },
   {
     id: 'student-boy-2',
-    url: studentBoy2,
+    url: studentBoy2Base64,
     name: 'Siswa Kacamata',
     gender: 'male',
     role: 'student',
@@ -40,7 +51,7 @@ export const CHARACTER_AVATARS: CharacterAvatar[] = [
   // Murid Perempuan
   {
     id: 'student-girl-1',
-    url: studentGirlHijab,
+    url: studentGirlHijabBase64,
     name: 'Siswi Berhijab',
     gender: 'female',
     role: 'student',
@@ -48,7 +59,7 @@ export const CHARACTER_AVATARS: CharacterAvatar[] = [
   },
   {
     id: 'student-girl-2',
-    url: studentGirlRibbon,
+    url: studentGirlRibbonBase64,
     name: 'Siswi Ceria',
     gender: 'female',
     role: 'student',
@@ -57,7 +68,7 @@ export const CHARACTER_AVATARS: CharacterAvatar[] = [
   // Guru Laki-laki
   {
     id: 'teacher-male-1',
-    url: teacherMale,
+    url: teacherMaleBase64,
     name: 'Bapak Guru',
     gender: 'male',
     role: 'teacher',
@@ -66,7 +77,7 @@ export const CHARACTER_AVATARS: CharacterAvatar[] = [
   // Guru Perempuan
   {
     id: 'teacher-female-1',
-    url: teacherFemale,
+    url: teacherFemaleBase64,
     name: 'Ibu Guru',
     gender: 'female',
     role: 'teacher',
@@ -75,7 +86,7 @@ export const CHARACTER_AVATARS: CharacterAvatar[] = [
   // Admin Laki-laki
   {
     id: 'admin-male-1',
-    url: adminMale,
+    url: adminMaleBase64,
     name: 'Kepala / Admin Sekolah (Putra)',
     gender: 'male',
     role: 'school_admin',
@@ -84,7 +95,7 @@ export const CHARACTER_AVATARS: CharacterAvatar[] = [
   // Admin Perempuan
   {
     id: 'admin-female-1',
-    url: adminFemale,
+    url: adminFemaleBase64,
     name: 'Kepala / Admin Sekolah (Putri)',
     gender: 'female',
     role: 'school_admin',
@@ -95,8 +106,8 @@ export const CHARACTER_AVATARS: CharacterAvatar[] = [
 export const getDefaultAvatar = (role: UserRole = 'student', gender: UserGender = 'male'): string => {
   const match = CHARACTER_AVATARS.find(a => (a.role === role || (role.includes('admin') && a.role === 'school_admin')) && a.gender === gender);
   if (match) return match.url;
-  if (gender === 'female') return studentGirlHijab;
-  return studentBoy1;
+  if (gender === 'female') return studentGirlHijabBase64;
+  return studentBoy1Base64;
 };
 
 export const getAvatarsByFilter = (role?: UserRole, gender?: UserGender): CharacterAvatar[] => {

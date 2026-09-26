@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StudentGroup, UserProfile } from '../types';
 import {
+  studentBoy1,
+  studentBoy2,
+  studentGirlHijab,
+  studentGirlRibbon,
+  teacherMale,
+  teacherFemale
+} from '../data/avatarData';
+import {
   X,
   Users,
   UserPlus,
@@ -45,12 +53,12 @@ export const formatGroupUsername = (nameStr: string): string => {
 };
 
 const AVATAR_OPTIONS = [
-  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=150&auto=format&fit=crop&q=80'
+  studentBoy1,
+  studentGirlHijab,
+  studentBoy2,
+  studentGirlRibbon,
+  teacherMale,
+  teacherFemale
 ];
 
 const COLOR_OPTIONS = [

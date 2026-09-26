@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { StudentGroup, UserProfile, QuizSubmission, StudentActivitySession, GroupObservationRecord, LearningMission } from '../types';
+import { studentBoy1 } from '../data/avatarData';
 import { GroupManagerModal, formatGroupUsername } from './GroupManagerModal';
 import { GroupObservationModal } from './GroupObservationModal';
 import { GroupLoginCardsModal } from './GroupLoginCardsModal';
@@ -179,7 +180,7 @@ export const TeacherGroupManagement: React.FC<TeacherGroupManagementProps> = ({
         leaderName: leader.name,
         memberIds,
         memberNames,
-        avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150&auto=format&fit=crop&q=80',
+        avatar: studentBoy1,
         email: `kelompok${i + 1}.${theme.toLowerCase()}.${classId.toLowerCase().replace(/[^a-z0-9]/g, '')}@siswa.sdn01.sch.id`,
         username: groupUsername,
         password: groupPassword,

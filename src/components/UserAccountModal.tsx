@@ -84,9 +84,9 @@ export const UserAccountModal: React.FC<UserAccountModalProps> = ({
       setNisnNip(editingUser.nisnNip || '');
       setPhone(editingUser.phone || '');
       setStatus(editingUser.status || 'active');
-      const isOldUnsplash = !editingUser.avatar || editingUser.avatar.includes('unsplash.com');
+      const isCustomBase64 = editingUser.avatar && editingUser.avatar.startsWith('data:image');
       const defaultAv = getDefaultAvatar(editingUser.role, userGender);
-      setAvatar(isOldUnsplash ? defaultAv : editingUser.avatar);
+      setAvatar(isCustomBase64 ? editingUser.avatar : defaultAv);
       setUsername(editingUser.username || '');
       setPassword(editingUser.password || '123456');
     } else {

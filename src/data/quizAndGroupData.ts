@@ -1,5 +1,11 @@
 import { StudentGroup, ConceptQuiz, QuizSubmission, UserProfile, GroupObservationRecord, PresentationSettings } from '../types';
-import { getDefaultAvatar } from './avatarData';
+import {
+  getDefaultAvatar,
+  studentBoy1,
+  studentBoy2,
+  studentGirlHijab,
+  studentGirlRibbon
+} from './avatarData';
 
 export const INITIAL_STUDENT_GROUPS: StudentGroup[] = [
   {
@@ -13,7 +19,7 @@ export const INITIAL_STUDENT_GROUPS: StudentGroup[] = [
     leaderName: 'Adit Pratama',
     memberIds: ['user-student-1', 'user-student-2'],
     memberNames: ['Adit Pratama', 'Siti Rahma', 'Bayu Nugroho', 'Dewi Lestari'],
-    avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150&auto=format&fit=crop&q=80',
+    avatar: studentBoy1,
     email: 'kelompok1.garuda@siswa.sdn01.sch.id',
     username: 'kelompok1_garuda',
     password: '123456',
@@ -33,7 +39,7 @@ export const INITIAL_STUDENT_GROUPS: StudentGroup[] = [
     leaderName: 'Siti Rahma',
     memberIds: ['user-student-2'],
     memberNames: ['Siti Rahma', 'Bagas Saputra', 'Fatimah Az-Zahra', 'Dimas Anggara'],
-    avatar: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=150&auto=format&fit=crop&q=80',
+    avatar: studentGirlHijab,
     email: 'kelompok2.rajawali@siswa.sdn01.sch.id',
     username: 'kelompok2_rajawali',
     password: '123456',
@@ -51,7 +57,7 @@ export const INITIAL_STUDENT_GROUPS: StudentGroup[] = [
     className: 'Kelas V-A',
     memberIds: [],
     memberNames: ['Anisa Putri', 'Reno Pratama', 'Hana Salsabila', 'Zaki Alfarizi'],
-    avatar: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=150&auto=format&fit=crop&q=80',
+    avatar: studentGirlRibbon,
     email: 'kelompok3.cendrawasih@siswa.sdn01.sch.id',
     username: 'kelompok3_cendrawasih',
     password: '123456',
@@ -71,7 +77,7 @@ export const INITIAL_STUDENT_GROUPS: StudentGroup[] = [
     leaderName: 'Budi Santoso',
     memberIds: ['user-student-3'],
     memberNames: ['Budi Santoso', 'Cahyo Utomo', 'Lestari Indah'],
-    avatar: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=150&auto=format&fit=crop&q=80',
+    avatar: studentBoy2,
     email: 'kelompok1.komodo@siswa.sdn01.sch.id',
     username: 'kelompok1_komodo',
     password: '123456',
@@ -87,7 +93,7 @@ export const INITIAL_GROUP_USERS: UserProfile[] = [
     id: 'user-group-1',
     name: 'Kelompok 1 - Garuda',
     role: 'student',
-    avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=150&auto=format&fit=crop&q=80',
+    avatar: studentBoy1,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Kelas V-A (Akun Kelompok)',
@@ -108,7 +114,7 @@ export const INITIAL_GROUP_USERS: UserProfile[] = [
     id: 'user-group-2',
     name: 'Kelompok 2 - Rajawali',
     role: 'student',
-    avatar: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=150&auto=format&fit=crop&q=80',
+    avatar: studentGirlHijab,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Kelas V-A (Akun Kelompok)',
@@ -129,7 +135,7 @@ export const INITIAL_GROUP_USERS: UserProfile[] = [
     id: 'user-group-3',
     name: 'Kelompok 3 - Cendrawasih',
     role: 'student',
-    avatar: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=150&auto=format&fit=crop&q=80',
+    avatar: studentGirlRibbon,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Kelas V-A (Akun Kelompok)',
@@ -150,7 +156,7 @@ export const INITIAL_GROUP_USERS: UserProfile[] = [
     id: 'user-group-4',
     name: 'Kelompok 1 - Komodo',
     role: 'student',
-    avatar: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=150&auto=format&fit=crop&q=80',
+    avatar: studentBoy2,
     schoolName: 'SDN 01 Nusantara',
     schoolId: 'SDN01',
     className: 'Kelas V-B (Akun Kelompok)',

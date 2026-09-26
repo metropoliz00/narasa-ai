@@ -100,9 +100,9 @@ export const normalizeUserAvatar = (u: UserProfile): UserProfile => {
     }
   }
 
-  // Directly adjust default avatar if old unsplash or empty
-  const isOldUnsplash = !u.avatar || u.avatar.includes('unsplash.com');
-  const avatar = isOldUnsplash ? getDefaultAvatar(u.role, gender) : u.avatar;
+  // Ensure avatar is ALWAYS a 100% valid Base64 string (either custom upload or default character base64)
+  const isCustomBase64 = u.avatar && u.avatar.startsWith('data:image');
+  const avatar = isCustomBase64 ? u.avatar : getDefaultAvatar(u.role, gender);
 
   return {
     ...u,
@@ -155,6 +155,14 @@ export default function App() {
       if (isAuthStored) {
         const savedUserId = localStorage.getItem('narasa_active_user_id');
         if (savedUserId && savedUserId !== 'user-teacher-2') {
+          const savedUsersJson = localStorage.getItem('narasa_users_data');
+          if (savedUsersJson) {
+            const parsed = JSON.parse(savedUsersJson);
+            if (Array.isArray(parsed)) {
+              const foundInSaved = parsed.find((u: UserProfile) => u.id === savedUserId && u.email !== 'maya.lestari@sdn01nusantara.sch.id');
+              if (foundInSaved) return normalizeUserAvatar(foundInSaved);
+            }
+          }
           const found = INITIAL_SYSTEM_USERS.find(u => u.id === savedUserId && u.email !== 'maya.lestari@sdn01nusantara.sch.id');
           if (found) return normalizeUserAvatar(found);
         }
@@ -587,22 +595,23 @@ export default function App() {
   };
 
   const handleSwitchUser = (user: UserProfile, suppressToast = false) => {
-    if (currentUser && user.id !== currentUser.id) {
+    const normalizedUser = normalizeUserAvatar(user);
+    if (currentUser && normalizedUser.id !== currentUser.id) {
       setActiveLearningBridge(null);
       setCurrentCapturedImage(null);
       setIsChallengeActive(false);
       setIsReflectionOpen(false);
       setCompletedStudentAnswers(null);
     }
-    setCurrentUser(user);
-    setCurrentRole(user.role);
+    setCurrentUser(normalizedUser);
+    setCurrentRole(normalizedUser.role);
     setIsAuthenticated(true);
     try {
-      localStorage.setItem('narasa_active_user_id', user.id);
+      localStorage.setItem('narasa_active_user_id', normalizedUser.id);
       localStorage.setItem('narasa_is_authenticated', 'true');
     } catch (e) {}
     if (!suppressToast) {
-      const cleanName = user.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim();
+      const cleanName = normalizedUser.name.replace(/\s*(\[|\()(student|guru|teacher|admin|kelompok|central_admin|school_admin)[^\]\)]*(\]|\))/gi, '').trim();
       toast.info('Beralih Pengguna', `Masuk sebagai ${cleanName}`);
     }
   };

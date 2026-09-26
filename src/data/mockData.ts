@@ -7,14 +7,16 @@ import {
   TeacherInsight,
   AssessmentRecord
 } from '../types';
-import studentBoy1 from '../assets/avatars/student_boy_1.jpg';
-import studentBoy2 from '../assets/avatars/student_boy_2.jpg';
-import studentGirlHijab from '../assets/avatars/student_girl_hijab.jpg';
-import studentGirlRibbon from '../assets/avatars/student_girl_ribbon.jpg';
-import teacherMale from '../assets/avatars/teacher_male.jpg';
-import teacherFemale from '../assets/avatars/teacher_female.jpg';
-import adminMale from '../assets/avatars/admin_male.jpg';
-import adminFemale from '../assets/avatars/admin_female.jpg';
+import {
+  studentBoy1,
+  studentBoy2,
+  studentGirlHijab,
+  studentGirlRibbon,
+  teacherMale,
+  teacherFemale,
+  adminMale,
+  adminFemale
+} from './avatarData';
 
 export const INITIAL_SYSTEM_USERS: UserProfile[] = [
   // 1. SISWA
