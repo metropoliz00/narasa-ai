@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   StudentActivitySession,
   GroupObservationRecord,
@@ -7,6 +7,7 @@ import {
   SchoolProfile
 } from '../types';
 import { INITIAL_SCHOOL_PROFILES } from './SchoolSettingsManager';
+import { dbFetchSchools } from '../lib/supabase';
 import {
   X,
   Printer,
@@ -53,21 +54,34 @@ export const StudentPortfolioReportModal: React.FC<StudentPortfolioReportModalPr
   initialSelectedSessionId,
   initialSelectedStudentId
 }) => {
-  // Load school profile data
-  const schoolProfile: SchoolProfile = useMemo(() => {
+  const [dbSchools, setDbSchools] = useState<SchoolProfile[]>(() => {
     try {
       const saved = localStorage.getItem('narasa_schools_profile_data');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const match = parsed.find((s: SchoolProfile) => s.id === currentUser.schoolId);
-          return match || parsed[0];
-        }
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    const defaultMatch = INITIAL_SCHOOL_PROFILES.find((s) => s.id === currentUser.schoolId);
-    return defaultMatch || INITIAL_SCHOOL_PROFILES[0];
-  }, [currentUser.schoolId]);
+    return INITIAL_SCHOOL_PROFILES;
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    dbFetchSchools().then((schools) => {
+      if (isMounted && Array.isArray(schools) && schools.length > 0) {
+        setDbSchools(schools);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Load school profile data
+  const schoolProfile: SchoolProfile = useMemo(() => {
+    const match = dbSchools.find((s: SchoolProfile) => s.id === currentUser.schoolId);
+    return match || dbSchools[0] || INITIAL_SCHOOL_PROFILES[0];
+  }, [currentUser.schoolId, dbSchools]);
 
   // Selected session or 'all'
   const [selectedSessionId, setSelectedSessionId] = useState<string>(

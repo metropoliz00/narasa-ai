@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { UserProfile, UserRole, LearningMission, StudentActivitySession, StudentGroup } from '../types';
+import { UserProfile, UserRole, LearningMission, StudentActivitySession, StudentGroup, SchoolProfile } from '../types';
 import { toast } from './Toast';
 import { NarasaLogo } from './NarasaLogo';
-import { dbFetchSystemSettings, dbSaveSystemSettings } from '../lib/supabase';
+import { dbFetchSystemSettings, dbSaveSystemSettings, dbFetchSchools, dbUpsertSchool, dbDeleteSchool } from '../lib/supabase';
 import {
   ShieldCheck,
   Cpu,
@@ -32,7 +32,9 @@ import {
   FileSpreadsheet,
   RefreshCw,
   Camera,
-  Building2
+  Building2,
+  AlertTriangle,
+  Plus
 } from 'lucide-react';
 import { UserAccountModal } from './UserAccountModal';
 import { SchoolSettingsManager } from './SchoolSettingsManager';
@@ -88,12 +90,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [apiKeyTestResult, setApiKeyTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isSavedApiKey, setIsSavedApiKey] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+  const [dbSchools, setDbSchools] = useState<SchoolProfile[]>(() => {
+    try {
+      const saved = localStorage.getItem('narasa_schools_profile_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
 
-  // Load saved API Key & Settings from Database on mount
+  // Action states for deleting / editing schools
+  const [schoolToDelete, setSchoolToDelete] = useState<{ id: string; name: string; npsn: string; countUsers: number } | null>(null);
+  const [isDeletingSchool, setIsDeletingSchool] = useState(false);
+  const [schoolToQuickEdit, setSchoolToQuickEdit] = useState<SchoolProfile | null>(null);
+  const [isQuickEditModalOpen, setIsQuickEditModalOpen] = useState(false);
+  const [isAddSchoolModalOpen, setIsAddSchoolModalOpen] = useState(false);
+  const [newSchoolId, setNewSchoolId] = useState('');
+  const [newSchoolName, setNewSchoolName] = useState('');
+  const [newSchoolNpsn, setNewSchoolNpsn] = useState('');
+  const [newSchoolCity, setNewSchoolCity] = useState('Kota Jakarta Pusat');
+  const [newSchoolHeadmaster, setNewSchoolHeadmaster] = useState('');
+
+  // Load saved API Key, Settings & School Profiles from Database on mount
   useEffect(() => {
     setIsLoadingSettings(true);
-    dbFetchSystemSettings()
-      .then((settings) => {
+    Promise.all([
+      dbFetchSystemSettings(),
+      dbFetchSchools()
+    ])
+      .then(([settings, schools]) => {
         if (settings.geminiApiKey) {
           setSchoolApiKey(settings.geminiApiKey);
           localStorage.setItem('narasa_school_gemini_key', settings.geminiApiKey.trim());
@@ -103,6 +130,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         }
         if (settings.visionSensitivity) {
           setStrictnessLevel(settings.visionSensitivity);
+        }
+        if (Array.isArray(schools) && schools.length > 0) {
+          setDbSchools(schools);
         }
       })
       .catch((e) => console.warn('Gagal memuat pengaturan sistem:', e))
@@ -466,33 +496,158 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const distinctSchoolIds = Array.from(
-    new Set(users.filter((u) => u.schoolId && u.schoolId !== 'CENTRAL').map((u) => u.schoolId))
+    new Set([
+      ...dbSchools.map((s) => s.id),
+      ...users.filter((u) => u.schoolId && u.schoolId !== 'CENTRAL').map((u) => u.schoolId)
+    ])
   );
 
   const partnerSchools = distinctSchoolIds.map((sId) => {
     const schoolUsers = users.filter((u) => u.schoolId === sId);
-    const schoolName = schoolUsers[0]?.schoolName || (sId === 'SDN01' ? 'SDN 01 Nusantara' : sId === 'SDN02' ? 'SDN 02 Kenanga' : sId);
+    const matchedDbSchool = dbSchools.find((s) => s.id === sId);
+    const schoolName = matchedDbSchool?.name || schoolUsers[0]?.schoolName || (sId === 'SDN01' ? 'SDN 01 Nusantara' : sId === 'SDN02' ? 'SDN 02 Kenanga' : sId);
     const students = schoolUsers.filter((u) => u.role === 'student');
     const teachers = schoolUsers.filter((u) => u.role === 'teacher');
     const classes = Array.from(
       new Set(schoolUsers.filter((u) => u.classId && u.classId !== 'ALL').map((u) => u.className))
     );
-    const meta = knownSchoolMeta[sId] || { npsn: '20104050', category: 'Sekolah Mitra Narasa' };
+    const npsn = matchedDbSchool?.npsn || knownSchoolMeta[sId]?.npsn || '20104050';
+    const category = matchedDbSchool?.category || knownSchoolMeta[sId]?.category || 'Sekolah Mitra Narasa';
 
     return {
       id: sId,
       name: schoolName,
-      npsn: meta.npsn,
-      category: meta.category,
+      npsn,
+      category,
       studentsCount: students.length,
       teachersCount: teachers.length,
       classesCount: Math.max(classes.length, 1),
-      classesList: classes.length > 0 ? classes : ['Kelas V-A']
+      classesList: classes.length > 0 ? classes : ['Kelas V-A'],
+      rawProfile: matchedDbSchool
     };
   });
 
   const totalPartnerSchoolsCount = partnerSchools.length;
   const totalAdminsInSystem = users.filter((u) => u.role.includes('admin')).length;
+
+  // Handlers for School deletion & Quick Edit
+  const handleDeletePartnerSchool = async (schoolId: string, schoolName: string) => {
+    if (distinctSchoolIds.length <= 1) {
+      toast.error('Gagal Menghapus', 'Minimal harus ada 1 sekolah yang terdaftar dalam sistem.');
+      return;
+    }
+    setIsDeletingSchool(true);
+    try {
+      await dbDeleteSchool(schoolId);
+      const updated = dbSchools.filter((s) => s.id !== schoolId);
+      setDbSchools(updated);
+      try {
+        localStorage.setItem('narasa_schools_profile_data', JSON.stringify(updated));
+      } catch (e) {}
+
+      setSchoolToDelete(null);
+      toast.success(
+        'Sekolah Dihapus',
+        `Data sekolah "${schoolName}" berhasil dihapus dari database.`
+      );
+    } catch (err: any) {
+      toast.error('Gagal Menghapus', err?.message || 'Terjadi kesalahan saat menghapus data sekolah.');
+    } finally {
+      setIsDeletingSchool(false);
+    }
+  };
+
+  const handleSaveQuickEditSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!schoolToQuickEdit) return;
+    if (!schoolToQuickEdit.name.trim()) {
+      toast.error('Gagal Menyimpan', 'Nama sekolah tidak boleh kosong.');
+      return;
+    }
+
+    try {
+      const updatedSchool: SchoolProfile = {
+        ...schoolToQuickEdit,
+        updatedAt: new Date().toISOString()
+      };
+      await dbUpsertSchool(updatedSchool);
+
+      const nextList = dbSchools.some((s) => s.id === updatedSchool.id)
+        ? dbSchools.map((s) => (s.id === updatedSchool.id ? updatedSchool : s))
+        : [...dbSchools, updatedSchool];
+
+      setDbSchools(nextList);
+      try {
+        localStorage.setItem('narasa_schools_profile_data', JSON.stringify(nextList));
+      } catch (e) {}
+
+      if (onUpdateSchoolName) {
+        onUpdateSchoolName(updatedSchool.id, updatedSchool.name);
+      }
+
+      setIsQuickEditModalOpen(false);
+      setSchoolToQuickEdit(null);
+      toast.success('Profil Diperbarui', `Data sekolah "${updatedSchool.name}" berhasil disimpan ke database.`);
+    } catch (err: any) {
+      toast.error('Gagal Menyimpan', err?.message || 'Terjadi kesalahan saat memperbarui sekolah.');
+    }
+  };
+
+  const handleCreatePartnerSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSchoolId.trim() || !newSchoolName.trim() || !newSchoolNpsn.trim()) {
+      toast.error('Data Belum Lengkap', 'ID Unik, Nama Sekolah, dan NPSN wajib diisi.');
+      return;
+    }
+
+    const normalizedId = newSchoolId.toUpperCase().replace(/\s+/g, '_');
+    if (dbSchools.some((s) => s.id === normalizedId)) {
+      toast.error('ID Sekolah Sudah Ada', `Sekolah dengan ID ${normalizedId} sudah terdaftar.`);
+      return;
+    }
+
+    const newSchool: SchoolProfile = {
+      id: normalizedId,
+      name: newSchoolName.trim(),
+      npsn: newSchoolNpsn.trim(),
+      level: 'SD / MI',
+      status: 'Negeri',
+      accreditation: 'A (Unggul)',
+      curriculum: 'Kurikulum Merdeka (Fase A, B, C)',
+      headmaster: newSchoolHeadmaster.trim() || 'Kepala Sekolah, M.Pd.',
+      headmasterNip: '197501012000011001',
+      supervisorName: 'Pengawas Pembina Dinas',
+      phone: '(021) 1234567',
+      email: `${normalizedId.toLowerCase()}@sekolah.sch.id`,
+      address: 'Jl. Raya Pendidikan No. 1',
+      city: newSchoolCity,
+      province: 'DKI Jakarta',
+      postalCode: '10000',
+      motto: 'Mewujudkan Profil Pelajar Pancasila',
+      academicYear: '2024/2025',
+      activeSemester: 'Ganjil',
+      category: 'Sekolah Mitra Narasa',
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      await dbUpsertSchool(newSchool);
+      const nextList = [...dbSchools, newSchool];
+      setDbSchools(nextList);
+      try {
+        localStorage.setItem('narasa_schools_profile_data', JSON.stringify(nextList));
+      } catch (e) {}
+
+      setIsAddSchoolModalOpen(false);
+      setNewSchoolId('');
+      setNewSchoolName('');
+      setNewSchoolNpsn('');
+      setNewSchoolHeadmaster('');
+      toast.success('Sekolah Terdaftar', `Sekolah "${newSchool.name}" berhasil ditambahkan ke database.`);
+    } catch (err: any) {
+      toast.error('Gagal Menambah Sekolah', err?.message || 'Terjadi kesalahan sistem.');
+    }
+  };
 
   const handleOpenCreate = (role: UserRole = 'student') => {
     setEditingUser(null);
@@ -1224,124 +1379,487 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* 3. SEKOLAH & ROMBEL MITRA TAB */}
       {activeTab === 'schools' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* DINAS PENDIDIKAN KOTA (PUSAT KURIKULUM & PENJAMINAN MUTU) */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-[#25324B]">Dinas Pendidikan Kota</h3>
-                <p className="text-xs text-slate-500">Pusat Kurikulum & Penjaminan Mutu</p>
-              </div>
+        <div className="space-y-5">
+          {/* Header Action Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-200 shadow-xs">
+            <div>
+              <h3 className="text-base font-bold text-[#25324B]">Daftar Satuan Pendidikan Mitra</h3>
+              <p className="text-xs text-slate-500">Kelola, edit profil, dan hapus data sekolah yang tidak lagi aktif atau tidak diperlukan.</p>
             </div>
-
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <span className="text-xs text-slate-400 block">Sekolah Binaan</span>
-                <span className="text-base font-bold text-emerald-600">{totalPartnerSchoolsCount} SD</span>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <span className="text-xs text-slate-400 block">Admin</span>
-                <span className="text-base font-bold text-slate-700">{totalAdminsInSystem} Admin</span>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <span className="text-xs text-slate-400 block">Status Server</span>
-                <span className="text-base font-bold text-emerald-600 flex items-center justify-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>Aktif</span>
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-2 text-xs text-slate-600 space-y-2">
-              <div className="font-semibold text-slate-700 flex items-center justify-between">
-                <span>Daftar Sekolah Binaan Terverifikasi:</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  {totalPartnerSchoolsCount} Sekolah Aktif
-                </span>
-              </div>
-              <div className="space-y-1.5 text-[11px]">
-                {partnerSchools.map((sch) => (
-                  <div key={sch.id} className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      <span className="font-semibold text-slate-800">{sch.name}</span>
-                      <span className="text-[10px] text-slate-400">NPSN {sch.npsn}</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-full">
-                      {sch.studentsCount} Murid • {sch.teachersCount} Guru
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-1">
-                <div className="font-semibold text-slate-700">Integrasi Kebijakan:</div>
-                <p className="text-slate-500 text-[11px] leading-relaxed">
-                  Sinkronisasi otomatis rubrik penilaian literasi, numerasi, dan nalar kritis dengan standar asesmen nasional Kemendikbudristek.
-                </p>
-              </div>
-            </div>
+            {(currentUser.role === 'central_admin' || currentUser.role === 'admin') && (
+              <button
+                type="button"
+                onClick={() => setIsAddSchoolModalOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Tambah Sekolah Mitra</span>
+              </button>
+            )}
           </div>
 
-          {/* DAFTAR KARTU SEKOLAH BINAAN */}
-          {partnerSchools.map((sch) => (
-            <div key={sch.id} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* DINAS PENDIDIKAN KOTA (PUSAT KURIKULUM & PENJAMINAN MUTU) */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                  <School className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <ShieldCheck className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-[#25324B]">{sch.name}</h3>
-                  <p className="text-xs text-slate-500">NPSN: {sch.npsn} • {sch.category}</p>
+                  <h3 className="text-base font-bold text-[#25324B]">Dinas Pendidikan Kota</h3>
+                  <p className="text-xs text-slate-500">Pusat Kurikulum & Penjaminan Mutu</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
                 <div className="p-3 bg-slate-50 rounded-xl">
-                  <span className="text-xs text-slate-400 block">Murid Aktif</span>
-                  <span className="text-base font-bold text-blue-600">{sch.studentsCount} Murid</span>
+                  <span className="text-xs text-slate-400 block">Sekolah Binaan</span>
+                  <span className="text-base font-bold text-emerald-600">{totalPartnerSchoolsCount} SD</span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl">
-                  <span className="text-xs text-slate-400 block">Guru</span>
-                  <span className="text-base font-bold text-purple-600">{sch.teachersCount} Guru</span>
+                  <span className="text-xs text-slate-400 block">Admin</span>
+                  <span className="text-base font-bold text-slate-700">{totalAdminsInSystem} Admin</span>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl">
-                  <span className="text-xs text-slate-400 block">Rombel</span>
-                  <span className="text-base font-bold text-emerald-600">{sch.classesCount} Kelas</span>
+                  <span className="text-xs text-slate-400 block">Status Server</span>
+                  <span className="text-base font-bold text-emerald-600 flex items-center justify-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Aktif</span>
+                  </span>
                 </div>
               </div>
 
-              <div className="pt-2 text-xs text-slate-600 space-y-1">
-                <div className="font-semibold text-slate-700">Rombongan Belajar Terdaftar:</div>
-                <ul className="list-disc list-inside space-y-0.5 text-slate-500 text-[11px]">
-                  {sch.classesList.map((cls, idx) => (
-                    <li key={idx}>
-                      {cls} {sch.id === 'SDN01' && idx === 0 ? '(Wali: Pak Dedy, S.Pd.)' : sch.id === 'SDN01' && idx === 2 ? '(Wali: Pak Hendra Wijaya, S.Pd.)' : ''}
-                    </li>
+              <div className="pt-2 text-xs text-slate-600 space-y-2">
+                <div className="font-semibold text-slate-700 flex items-center justify-between">
+                  <span>Daftar Sekolah Binaan Terverifikasi:</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    {totalPartnerSchoolsCount} Sekolah Aktif
+                  </span>
+                </div>
+                <div className="space-y-1.5 text-[11px]">
+                  {partnerSchools.map((sch) => (
+                    <div key={sch.id} className="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="font-semibold text-slate-800">{sch.name}</span>
+                        <span className="text-[10px] text-slate-400">NPSN {sch.npsn}</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-full">
+                        {sch.studentsCount} Murid • {sch.teachersCount} Guru
+                      </span>
+                    </div>
                   ))}
-                </ul>
+                </div>
+
+                <div className="pt-1">
+                  <div className="font-semibold text-slate-700">Integrasi Kebijakan:</div>
+                  <p className="text-slate-500 text-[11px] leading-relaxed">
+                    Sinkronisasi otomatis rubrik penilaian literasi, numerasi, dan nalar kritis dengan standar asesmen nasional Kemendikbudristek.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* DAFTAR KARTU SEKOLAH BINAAN */}
+            {partnerSchools.map((sch) => {
+              const countAffiliated = users.filter((u) => u.schoolId === sch.id).length;
+              const hasAccess = currentUser.role === 'central_admin' || currentUser.role === 'admin' || (currentUser.role === 'school_admin' && currentUser.schoolId === sch.id);
+
+              return (
+                <div key={sch.id} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4 relative flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold">
+                          <School className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-bold text-[#25324B] leading-tight">{sch.name}</h3>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="text-[11px] font-bold font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                              NPSN: {sch.npsn}
+                            </span>
+                            <span className="text-[10px] font-bold font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                              ID: {sch.id}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                        {sch.category}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
+                      <div className="p-3 bg-slate-50 rounded-xl">
+                        <span className="text-xs text-slate-400 block">Murid Aktif</span>
+                        <span className="text-base font-bold text-blue-600">{sch.studentsCount} Murid</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl">
+                        <span className="text-xs text-slate-400 block">Guru</span>
+                        <span className="text-base font-bold text-purple-600">{sch.teachersCount} Guru</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl">
+                        <span className="text-xs text-slate-400 block">Rombel</span>
+                        <span className="text-base font-bold text-emerald-600">{sch.classesCount} Kelas</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 text-xs text-slate-600 space-y-1">
+                      <div className="font-semibold text-slate-700">Rombongan Belajar Terdaftar:</div>
+                      <ul className="list-disc list-inside space-y-0.5 text-slate-500 text-[11px]">
+                        {sch.classesList.map((cls, idx) => (
+                          <li key={idx}>
+                            {cls} {sch.id === 'SDN01' && idx === 0 ? '(Wali: Pak Dedy, S.Pd.)' : sch.id === 'SDN01' && idx === 2 ? '(Wali: Pak Hendra Wijaya, S.Pd.)' : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Action Bar: Quick Edit, Full Manage, and Delete */}
+                  {hasAccess && (
+                    <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 mt-2">
+                      <div className="flex items-center gap-1.5 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentProf: SchoolProfile = sch.rawProfile || {
+                              id: sch.id,
+                              name: sch.name,
+                              npsn: sch.npsn,
+                              level: 'SD / MI',
+                              status: 'Negeri',
+                              accreditation: 'A (Unggul)',
+                              curriculum: 'Kurikulum Merdeka',
+                              headmaster: 'Kepala Sekolah',
+                              headmasterNip: '',
+                              phone: '',
+                              email: '',
+                              address: '',
+                              city: 'Kota Jakarta Pusat',
+                              province: 'DKI Jakarta',
+                              postalCode: '10000',
+                              academicYear: '2024/2025',
+                              activeSemester: 'Ganjil',
+                              category: sch.category
+                            };
+                            setSchoolToQuickEdit(currentProf);
+                            setIsQuickEditModalOpen(true);
+                          }}
+                          className="px-3 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Edit className="w-3.5 h-3.5 text-slate-600" />
+                          <span>Edit Data</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedSchoolIdForEdit(sch.id);
+                            setActiveTab('school_settings');
+                          }}
+                          className="px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Building2 className="w-3.5 h-3.5" />
+                          <span>Profil Lengkap</span>
+                        </button>
+                      </div>
+
+                      {(currentUser.role === 'central_admin' || currentUser.role === 'admin') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSchoolToDelete({
+                              id: sch.id,
+                              name: sch.name,
+                              npsn: sch.npsn,
+                              countUsers: countAffiliated
+                            });
+                          }}
+                          className="px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                          title="Hapus data sekolah yang tidak diperlukan"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Hapus</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL HAPUS SEKOLAH DI ADMIN DASHBOARD */}
+      {schoolToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+              <span className="p-2.5 rounded-2xl bg-rose-100 text-rose-600 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </span>
+              <div>
+                <h4 className="text-base font-bold text-slate-900">Hapus Satuan Pendidikan?</h4>
+                <p className="text-xs text-slate-500">Tindakan ini menghapus data sekolah dari basis data server & Supabase.</p>
+              </div>
+            </div>
+
+            <div className="bg-rose-50/70 rounded-2xl p-4 border border-rose-100 space-y-2 text-xs text-rose-900">
+              <p className="font-semibold">
+                Apakah Anda yakin ingin menghapus data sekolah berikut?
+              </p>
+              <div className="bg-white/90 rounded-xl p-3 border border-rose-200/50 space-y-1 text-slate-800">
+                <div className="font-bold text-sm text-[#25324B]">{schoolToDelete.name}</div>
+                <div className="text-[11px] text-slate-600 font-mono">NPSN: {schoolToDelete.npsn} | ID: {schoolToDelete.id}</div>
               </div>
 
-              {/* Quick Settings Shortcut (Central Admin or Matching School Admin) */}
-              {(currentUser.role === 'central_admin' || currentUser.role === 'admin' || (currentUser.role === 'school_admin' && currentUser.schoolId === sch.id)) && (
-                <div className="pt-2 border-t border-slate-100 flex justify-end">
-                  <button
-                    onClick={() => {
-                      setSelectedSchoolIdForEdit(sch.id);
-                      setActiveTab('school_settings');
-                    }}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Building2 className="w-3.5 h-3.5" />
-                    <span>Kelola Data Sekolah Ini</span>
-                  </button>
+              {schoolToDelete.countUsers > 0 && (
+                <div className="text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200/70 space-y-1">
+                  <p className="font-bold">⚠️ Perhatian Pengguna Terhubung:</p>
+                  <p>Terdapat <strong>{schoolToDelete.countUsers} akun</strong> (guru/murid) yang saat ini berafiliasi dengan sekolah ini.</p>
                 </div>
               )}
             </div>
-          ))}
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={isDeletingSchool}
+                onClick={() => setSchoolToDelete(null)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingSchool}
+                onClick={() => handleDeletePartnerSchool(schoolToDelete.id, schoolToDelete.name)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{isDeletingSchool ? 'Menghapus...' : 'Ya, Hapus Data Sekolah'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL QUICK EDIT SEKOLAH */}
+      {isQuickEditModalOpen && schoolToQuickEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-blue-100 text-blue-700">
+                  <Edit className="w-5 h-5" />
+                </span>
+                <h4 className="text-base font-bold text-[#25324B]">Edit Cepat Data Sekolah</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsQuickEditModalOpen(false);
+                  setSchoolToQuickEdit(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveQuickEditSchool} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">Nama Resmi Sekolah</label>
+                <input
+                  type="text"
+                  required
+                  value={schoolToQuickEdit.name}
+                  onChange={(e) => setSchoolToQuickEdit({ ...schoolToQuickEdit, name: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1 block">NPSN</label>
+                  <input
+                    type="text"
+                    required
+                    value={schoolToQuickEdit.npsn}
+                    onChange={(e) => setSchoolToQuickEdit({ ...schoolToQuickEdit, npsn: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1 block">Akreditasi</label>
+                  <select
+                    value={schoolToQuickEdit.accreditation || 'A (Unggul)'}
+                    onChange={(e) => setSchoolToQuickEdit({ ...schoolToQuickEdit, accreditation: e.target.value as any })}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="A (Unggul)">A (Unggul)</option>
+                    <option value="B (Baik)">B (Baik)</option>
+                    <option value="C">C (Cukup)</option>
+                    <option value="Belum Terakreditasi">Belum Terakreditasi</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">Kepala Sekolah</label>
+                <input
+                  type="text"
+                  value={schoolToQuickEdit.headmaster || ''}
+                  onChange={(e) => setSchoolToQuickEdit({ ...schoolToQuickEdit, headmaster: e.target.value })}
+                  placeholder="Nama & Gelar Kepala Sekolah"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1 block">Kategori Sekolah</label>
+                  <input
+                    type="text"
+                    value={schoolToQuickEdit.category || ''}
+                    onChange={(e) => setSchoolToQuickEdit({ ...schoolToQuickEdit, category: e.target.value })}
+                    placeholder="Contoh: Sekolah Penggerak"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1 block">Kota / Kabupaten</label>
+                  <input
+                    type="text"
+                    value={schoolToQuickEdit.city || ''}
+                    onChange={(e) => setSchoolToQuickEdit({ ...schoolToQuickEdit, city: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsQuickEditModalOpen(false);
+                    setSchoolToQuickEdit(null);
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-all active:scale-95"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL TAMBAH SEKOLAH MITRA BARU */}
+      {isAddSchoolModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-blue-100 text-blue-700">
+                  <Plus className="w-5 h-5" />
+                </span>
+                <h4 className="text-base font-bold text-[#25324B]">Tambah Sekolah Mitra Baru</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddSchoolModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePartnerSchool} className="space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">ID Unik Sekolah (Kode Singkat)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: SDN03 / SMP01"
+                  value={newSchoolId}
+                  onChange={(e) => setNewSchoolId(e.target.value.toUpperCase())}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">Nama Sekolah</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: SDN 03 Menteng"
+                  value={newSchoolName}
+                  onChange={(e) => setNewSchoolName(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1 block">NPSN</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="8 digit NPSN"
+                    value={newSchoolNpsn}
+                    onChange={(e) => setNewSchoolNpsn(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1 block">Kota / Wilayah</label>
+                  <input
+                    type="text"
+                    value={newSchoolCity}
+                    onChange={(e) => setNewSchoolCity(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1 block">Kepala Sekolah (Opsional)</label>
+                <input
+                  type="text"
+                  placeholder="Nama Kepala Sekolah"
+                  value={newSchoolHeadmaster}
+                  onChange={(e) => setNewSchoolHeadmaster(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddSchoolModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-all active:scale-95"
+                >
+                  Daftarkan Sekolah
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

@@ -124,55 +124,21 @@ export const SchoolSettingsManager: React.FC<SchoolSettingsManagerProps> = ({
     return INITIAL_SCHOOL_PROFILES;
   });
 
-  // Ensure all schools from user profiles exist in schools list
+  // Load from database on mount
   useEffect(() => {
-    const existingIds = new Set(schools.map((s) => s.id));
-    const missingSchools: SchoolProfile[] = [];
-
-    users.forEach((u) => {
-      if (u.schoolId && u.schoolId !== 'CENTRAL' && !existingIds.has(u.schoolId)) {
-        existingIds.add(u.schoolId);
-        missingSchools.push({
-          id: u.schoolId,
-          name: u.schoolName || `Sekolah ${u.schoolId}`,
-          npsn: `2010${Math.floor(1000 + Math.random() * 9000)}`,
-          level: 'SD / MI',
-          status: 'Negeri',
-          accreditation: 'A (Unggul)',
-          curriculum: 'Kurikulum Merdeka',
-          headmaster: 'Drs. Pimpinan Sekolah, M.Pd.',
-          headmasterNip: '197501012000031001',
-          supervisorName: 'Dr. Pengawas Pembina, M.M.',
-          supervisorNip: '196805121992031003',
-          phone: '(021) 7890000',
-          email: `${u.schoolId.toLowerCase()}@kemdikbud.go.id`,
-          website: `https://${u.schoolId.toLowerCase()}.sch.id`,
-          address: 'Jl. Pendidikan No. 01',
-          rtRw: '001/001',
-          village: 'Pusat',
-          district: 'Pusat',
-          city: 'Kota Jakarta Pusat',
-          province: 'DKI Jakarta',
-          postalCode: '10110',
-          motto: 'Maju Bersama, Berdaya Nalar Kritis',
-          academicYear: '2024/2025',
-          activeSemester: 'Ganjil',
-          category: 'Sekolah Binaan',
-          updatedAt: new Date().toISOString()
-        });
+    let isMounted = true;
+    dbFetchSchools().then((remoteSchools) => {
+      if (isMounted && Array.isArray(remoteSchools) && remoteSchools.length > 0) {
+        setSchools(remoteSchools);
+        try {
+          localStorage.setItem('narasa_schools_profile_data', JSON.stringify(remoteSchools));
+        } catch (e) {}
       }
     });
-
-    if (missingSchools.length > 0) {
-      setSchools((prev) => {
-        const next = [...prev, ...missingSchools];
-        try {
-          localStorage.setItem('narasa_schools_profile_data', JSON.stringify(next));
-        } catch (e) {}
-        return next;
-      });
-    }
-  }, [users]);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Selected school id
   // For school_admin: strictly locked to their schoolId
@@ -257,19 +223,17 @@ export const SchoolSettingsManager: React.FC<SchoolSettingsManagerProps> = ({
     }));
   };
 
-  // Load from Supabase on mount if available
+  // Load from database (Server API / Supabase / localStorage) on mount
   useEffect(() => {
     let isMounted = true;
-    if (isSupabaseConfigured()) {
-      dbFetchSchools().then((remoteSchools) => {
-        if (isMounted && Array.isArray(remoteSchools) && remoteSchools.length > 0) {
-          setSchools(remoteSchools);
-          try {
-            localStorage.setItem('narasa_schools_profile_data', JSON.stringify(remoteSchools));
-          } catch (e) {}
-        }
-      });
-    }
+    dbFetchSchools().then((remoteSchools) => {
+      if (isMounted && Array.isArray(remoteSchools) && remoteSchools.length > 0) {
+        setSchools(remoteSchools);
+        try {
+          localStorage.setItem('narasa_schools_profile_data', JSON.stringify(remoteSchools));
+        } catch (e) {}
+      }
+    });
     return () => {
       isMounted = false;
     };

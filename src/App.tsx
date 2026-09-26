@@ -62,6 +62,7 @@ import {
   dbFetchUsers,
   dbFetchMissions,
   dbFetchSessions,
+  dbFetchSchools,
   dbFetchSystemSettings,
   dbUpsertUser,
   dbDeleteUser,
@@ -373,14 +374,20 @@ export default function App() {
   // Initial load from Supabase / Remote Database
   const refreshDatabase = useCallback(async () => {
     try {
-      const [remoteUsers, remoteMissions, remoteSessions, remoteSettings] = await Promise.all([
+      const [remoteUsers, remoteMissions, remoteSessions, remoteSettings, remoteSchools] = await Promise.all([
         dbFetchUsers(),
         dbFetchMissions(),
         dbFetchSessions(),
-        dbFetchSystemSettings()
+        dbFetchSystemSettings(),
+        dbFetchSchools()
       ]);
       if (remoteSettings && remoteSettings.geminiApiKey) {
         localStorage.setItem('narasa_school_gemini_key', remoteSettings.geminiApiKey.trim());
+      }
+      if (remoteSchools && remoteSchools.length > 0) {
+        try {
+          localStorage.setItem('narasa_schools_profile_data', JSON.stringify(remoteSchools));
+        } catch (e) {}
       }
       if (isSupabaseConfigured()) {
         setUsers(remoteUsers || []);

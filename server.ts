@@ -116,6 +116,136 @@ app.post("/api/quiz-submissions", (req, res) => {
   }
 });
 
+const DEFAULT_INITIAL_SCHOOLS = [
+  {
+    id: "SDN01",
+    name: "SDN 01 Nusantara",
+    npsn: "20104050",
+    level: "SD / MI",
+    status: "Negeri",
+    accreditation: "A (Unggul)",
+    curriculum: "Kurikulum Merdeka (Fase A, B, C)",
+    headmaster: "Dra. Hj. Siti Nurjanah, M.Pd.",
+    headmasterNip: "197203151998032004",
+    supervisorName: "Dr. H. Bambang Soetopo, M.M.",
+    supervisorNip: "196805121992031003",
+    phone: "(021) 7890123",
+    email: "sdn01nusantara@kemdikbud.go.id",
+    website: "https://sdn01nusantara.sch.id",
+    address: "Jl. Pendidikan Merdeka No. 45",
+    rtRw: "005/002",
+    village: "Menteng",
+    district: "Menteng",
+    city: "Kota Jakarta Pusat",
+    province: "DKI Jakarta",
+    postalCode: "10310",
+    motto: "Cerdas, Berkarakter, dan Berdaya Nalar Kritis",
+    academicYear: "2024/2025",
+    activeSemester: "Ganjil",
+    category: "Sekolah Penggerak",
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: "SDN02",
+    name: "SDN 02 Kenanga",
+    npsn: "20104051",
+    level: "SD / MI",
+    status: "Negeri",
+    accreditation: "A (Unggul)",
+    curriculum: "Kurikulum Merdeka (Fase A, B, C)",
+    headmaster: "Drs. H. Mulyadi, M.Pd.",
+    headmasterNip: "197008101995121001",
+    supervisorName: "Dr. H. Bambang Soetopo, M.M.",
+    supervisorNip: "196805121992031003",
+    phone: "(021) 7890456",
+    email: "sdn02kenanga@kemdikbud.go.id",
+    website: "https://sdn02kenanga.sch.id",
+    address: "Jl. Kenanga Asri No. 12",
+    rtRw: "003/004",
+    village: "Cempaka Putih",
+    district: "Cempaka Putih",
+    city: "Kota Jakarta Pusat",
+    province: "DKI Jakarta",
+    postalCode: "10510",
+    motto: "Maju Bersama, Mandiri, dan Berprestasi",
+    academicYear: "2024/2025",
+    activeSemester: "Ganjil",
+    category: "Sekolah Rujukan Kurikulum Merdeka",
+    updatedAt: new Date().toISOString()
+  }
+];
+
+function getStoredSchools(): any[] {
+  try {
+    const file = path.join(DATA_DIR, "schools.json");
+    if (!fs.existsSync(file)) {
+      fs.writeFileSync(file, JSON.stringify(DEFAULT_INITIAL_SCHOOLS, null, 2), "utf-8");
+      return DEFAULT_INITIAL_SCHOOLS;
+    }
+    const content = fs.readFileSync(file, "utf-8");
+    const data = JSON.parse(content || "[]");
+    if (Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+    return DEFAULT_INITIAL_SCHOOLS;
+  } catch (e) {
+    return DEFAULT_INITIAL_SCHOOLS;
+  }
+}
+
+// Database Endpoint: Fetch all schools from persistent server storage
+app.get("/api/schools", (req, res) => {
+  try {
+    const schools = getStoredSchools();
+    return res.json(schools);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Database Endpoint: Upsert a school profile into database
+app.post("/api/schools", (req, res) => {
+  try {
+    const school = req.body;
+    if (!school || !school.id) {
+      return res.status(400).json({ error: "Data sekolah atau ID tidak valid" });
+    }
+    const file = path.join(DATA_DIR, "schools.json");
+    let schools = getStoredSchools();
+    const existingIndex = schools.findIndex((s: any) => s.id === school.id);
+    const updatedSchool = {
+      ...school,
+      updatedAt: new Date().toISOString()
+    };
+    if (existingIndex >= 0) {
+      schools[existingIndex] = { ...schools[existingIndex], ...updatedSchool };
+    } else {
+      schools.push(updatedSchool);
+    }
+    fs.writeFileSync(file, JSON.stringify(schools, null, 2), "utf-8");
+    return res.json({ success: true, count: schools.length, school: updatedSchool, schools });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Database Endpoint: Delete a school from database
+app.delete("/api/schools/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: "ID sekolah diperlukan" });
+    }
+    const file = path.join(DATA_DIR, "schools.json");
+    let schools = getStoredSchools();
+    const filtered = schools.filter((s: any) => s.id !== id);
+    fs.writeFileSync(file, JSON.stringify(filtered, null, 2), "utf-8");
+    return res.json({ success: true, count: filtered.length, deletedId: id });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // Lazy initializer for Gemini API client with User-Agent header & dynamic key detection
 let aiClient: GoogleGenAI | null = null;
 let activeApiKey: string | null = null;

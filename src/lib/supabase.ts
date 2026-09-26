@@ -243,8 +243,100 @@ export async function dbDeleteUser(userId: string): Promise<boolean> {
 // SCHOOLS & SETTINGS REPOSITORY
 // ==========================================
 export async function dbFetchSchools(): Promise<SchoolProfile[]> {
+  let schoolsList: SchoolProfile[] = [];
+
+  // 1. Fetch from server-side database (/api/schools)
+  try {
+    const res = await fetch('/api/schools');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        schoolsList = data.map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          npsn: row.npsn || '',
+          level: row.level || 'SD / MI',
+          status: row.status || 'Negeri',
+          accreditation: row.accreditation || 'A (Unggul)',
+          curriculum: row.curriculum || 'Kurikulum Merdeka (Fase A, B, C)',
+          headmaster: row.headmaster || '',
+          headmasterNip: row.headmasterNip || row.headmaster_nip || '',
+          supervisorName: row.supervisorName || row.supervisor_name || '',
+          supervisorNip: row.supervisorNip || row.supervisor_nip || '',
+          phone: row.phone || '',
+          email: row.email || '',
+          website: row.website || '',
+          address: row.address || '',
+          rtRw: row.rtRw || row.rt_rw || '',
+          village: row.village || '',
+          district: row.district || '',
+          city: row.city || '',
+          province: row.province || '',
+          postalCode: row.postalCode || row.postal_code || '',
+          motto: row.motto || '',
+          logoUrl: row.logoUrl || row.logo_url || '',
+          academicYear: row.academicYear || row.academic_year || '2024/2025',
+          activeSemester: row.activeSemester || row.active_semester || 'Ganjil',
+          category: row.category || '',
+          updatedAt: row.updatedAt || row.updated_at || new Date().toISOString()
+        }));
+      }
+    }
+  } catch (e) {
+    console.warn('Gagal memuat sekolah dari /api/schools:', e);
+  }
+
+  // 2. Fetch from Supabase if configured
   const client = getSupabaseClient();
-  if (!client) {
+  if (client) {
+    try {
+      const { data, error } = await client
+        .from('schools')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        const supabaseSchools = data.map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          npsn: row.npsn || '',
+          level: row.level || 'SD / MI',
+          status: row.status || 'Negeri',
+          accreditation: row.accreditation || 'A (Unggul)',
+          curriculum: row.curriculum || 'Kurikulum Merdeka (Fase A, B, C)',
+          headmaster: row.headmaster || '',
+          headmasterNip: row.headmaster_nip || '',
+          supervisorName: row.supervisor_name || '',
+          supervisorNip: row.supervisor_nip || '',
+          phone: row.phone || '',
+          email: row.email || '',
+          website: row.website || '',
+          address: row.address || '',
+          rtRw: row.rt_rw || '',
+          village: row.village || '',
+          district: row.district || '',
+          city: row.city || '',
+          province: row.province || '',
+          postalCode: row.postal_code || '',
+          motto: row.motto || '',
+          logoUrl: row.logo_url || '',
+          academicYear: row.academic_year || '2024/2025',
+          activeSemester: row.active_semester || 'Ganjil',
+          category: row.category || '',
+          updatedAt: row.updated_at || new Date().toISOString()
+        }));
+        // Merge or replace if Supabase has fresh data
+        if (supabaseSchools.length > 0) {
+          schoolsList = supabaseSchools;
+        }
+      }
+    } catch (err) {
+      console.warn('Error in Supabase dbFetchSchools:', err);
+    }
+  }
+
+  // 3. Fallback to localStorage if still empty
+  if (schoolsList.length === 0) {
     try {
       const saved = localStorage.getItem('narasa_schools_profile_data');
       if (saved) {
@@ -252,61 +344,17 @@ export async function dbFetchSchools(): Promise<SchoolProfile[]> {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
     } catch (e) {}
-    return [];
+  } else {
+    try {
+      localStorage.setItem('narasa_schools_profile_data', JSON.stringify(schoolsList));
+    } catch (e) {}
   }
 
-  try {
-    const { data, error } = await client
-      .from('schools')
-      .select('*')
-      .order('id', { ascending: true });
-
-    if (error) {
-      console.warn('Supabase schools fetch error:', error.message);
-      return [];
-    }
-
-    if (!data || data.length === 0) {
-      return [];
-    }
-
-    return data.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      npsn: row.npsn || '',
-      level: row.level || 'SD / MI',
-      status: row.status || 'Negeri',
-      accreditation: row.accreditation || 'A (Unggul)',
-      curriculum: row.curriculum || 'Kurikulum Merdeka (Fase A, B, C)',
-      headmaster: row.headmaster || '',
-      headmasterNip: row.headmaster_nip || '',
-      supervisorName: row.supervisor_name || '',
-      supervisorNip: row.supervisor_nip || '',
-      phone: row.phone || '',
-      email: row.email || '',
-      website: row.website || '',
-      address: row.address || '',
-      rtRw: row.rt_rw || '',
-      village: row.village || '',
-      district: row.district || '',
-      city: row.city || '',
-      province: row.province || '',
-      postalCode: row.postal_code || '',
-      motto: row.motto || '',
-      logoUrl: row.logo_url || '',
-      academicYear: row.academic_year || '2024/2025',
-      activeSemester: row.active_semester || 'Ganjil',
-      category: row.category || '',
-      updatedAt: row.updated_at || new Date().toISOString()
-    }));
-  } catch (err) {
-    console.error('Error in dbFetchSchools:', err);
-    return [];
-  }
+  return schoolsList;
 }
 
 export async function dbUpsertSchool(school: SchoolProfile): Promise<boolean> {
-  // Always persist to local storage first
+  // 1. Always persist to local storage
   try {
     const saved = localStorage.getItem('narasa_schools_profile_data');
     let currentSchools: SchoolProfile[] = saved ? JSON.parse(saved) : [];
@@ -319,50 +367,61 @@ export async function dbUpsertSchool(school: SchoolProfile): Promise<boolean> {
     localStorage.setItem('narasa_schools_profile_data', JSON.stringify(currentSchools));
   } catch (e) {}
 
-  const client = getSupabaseClient();
-  if (!client) return true;
-
+  // 2. Persist to server database (/api/schools)
   try {
-    const payload = {
-      id: school.id,
-      name: school.name,
-      npsn: school.npsn,
-      level: school.level,
-      status: school.status,
-      accreditation: school.accreditation,
-      curriculum: school.curriculum,
-      headmaster: school.headmaster,
-      headmaster_nip: school.headmasterNip,
-      supervisor_name: school.supervisorName || null,
-      supervisor_nip: school.supervisorNip || null,
-      phone: school.phone,
-      email: school.email,
-      website: school.website || null,
-      address: school.address,
-      rt_rw: school.rtRw || null,
-      village: school.village || null,
-      district: school.district || null,
-      city: school.city,
-      province: school.province,
-      postal_code: school.postalCode,
-      motto: school.motto || null,
-      logo_url: school.logoUrl || null,
-      academic_year: school.academicYear,
-      active_semester: school.activeSemester,
-      category: school.category || null,
-      updated_at: new Date().toISOString()
-    };
-
-    const { error } = await client.from('schools').upsert(payload, { onConflict: 'id' });
-    if (error) {
-      console.warn('Supabase upsert school error:', error.message);
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.error('Error upserting school to Supabase:', err);
-    return false;
+    await fetch('/api/schools', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(school)
+    });
+  } catch (e) {
+    console.warn('Gagal menyimpan sekolah ke /api/schools:', e);
   }
+
+  // 3. Persist to Supabase if configured
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      const payload = {
+        id: school.id,
+        name: school.name,
+        npsn: school.npsn,
+        level: school.level,
+        status: school.status,
+        accreditation: school.accreditation,
+        curriculum: school.curriculum,
+        headmaster: school.headmaster,
+        headmaster_nip: school.headmasterNip,
+        supervisor_name: school.supervisorName || null,
+        supervisor_nip: school.supervisorNip || null,
+        phone: school.phone,
+        email: school.email,
+        website: school.website || null,
+        address: school.address,
+        rt_rw: school.rtRw || null,
+        village: school.village || null,
+        district: school.district || null,
+        city: school.city,
+        province: school.province,
+        postal_code: school.postalCode,
+        motto: school.motto || null,
+        logo_url: school.logoUrl || null,
+        academic_year: school.academicYear,
+        active_semester: school.activeSemester,
+        category: school.category || null,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await client.from('schools').upsert(payload, { onConflict: 'id' });
+      if (error) {
+        console.warn('Supabase upsert school error:', error.message);
+      }
+    } catch (err) {
+      console.error('Error upserting school to Supabase:', err);
+    }
+  }
+
+  return true;
 }
 
 export async function dbDeleteSchool(schoolId: string): Promise<boolean> {
@@ -376,21 +435,29 @@ export async function dbDeleteSchool(schoolId: string): Promise<boolean> {
     }
   } catch (e) {}
 
-  // 2. Remove from Supabase if connected
-  const client = getSupabaseClient();
-  if (!client) return true;
-
+  // 2. Remove from server database (/api/schools/:id)
   try {
-    const { error } = await client.from('schools').delete().eq('id', schoolId);
-    if (error) {
-      console.warn('Supabase delete school error:', error.message);
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.error('Error deleting school from Supabase:', err);
-    return false;
+    await fetch(`/api/schools/${schoolId}`, {
+      method: 'DELETE'
+    });
+  } catch (e) {
+    console.warn('Gagal menghapus sekolah dari /api/schools:', e);
   }
+
+  // 3. Remove from Supabase if connected
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      const { error } = await client.from('schools').delete().eq('id', schoolId);
+      if (error) {
+        console.warn('Supabase delete school error:', error.message);
+      }
+    } catch (err) {
+      console.error('Error deleting school from Supabase:', err);
+    }
+  }
+
+  return true;
 }
 
 // ==========================================
