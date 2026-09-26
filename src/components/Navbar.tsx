@@ -235,7 +235,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs font-black shadow-md shadow-indigo-500/25 active:scale-95 transition-all min-h-[40px]"
               >
                 <LogIn className="w-4 h-4" />
-                <span>Masuk Akun 🚀</span>
+                <span>Masuk 🚀</span>
               </button>
             ) : (
               /* If Authenticated: Colorful Profile Dropdown Menu Button */
