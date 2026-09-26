@@ -114,6 +114,12 @@ export const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({
             <img
               src={currentUser.avatar}
               alt={currentUser.name}
+              onError={(e) => {
+                const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=4F8EF7&color=fff&bold=true`;
+                if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                  (e.target as HTMLImageElement).src = fallbackUrl;
+                }
+              }}
               className="w-12 h-12 rounded-xl object-cover ring-2 ring-blue-500/20 shadow-xs"
             />
             <div className="text-left space-y-0.5">
@@ -224,6 +230,12 @@ export const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({
                     <img
                       src={u.avatar}
                       alt={u.name}
+                      onError={(e) => {
+                        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=4F8EF7&color=fff&bold=true`;
+                        if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                          (e.target as HTMLImageElement).src = fallbackUrl;
+                        }
+                      }}
                       className="w-10 h-10 rounded-xl object-cover shrink-0"
                     />
                     <div className="min-w-0 space-y-0.5">

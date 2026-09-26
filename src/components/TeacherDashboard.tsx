@@ -994,6 +994,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           <img
                             src={student.avatar}
                             alt={student.name}
+                            onError={(e) => {
+                              const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=4F8EF7&color=fff&bold=true`;
+                              if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                                (e.target as HTMLImageElement).src = fallbackUrl;
+                              }
+                            }}
                             className="w-12 h-12 rounded-xl object-cover ring-2 ring-blue-500/20"
                           />
                           <span className="absolute inset-0 bg-slate-900/50 rounded-xl opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">

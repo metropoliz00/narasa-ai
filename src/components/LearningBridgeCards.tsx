@@ -462,7 +462,7 @@ export const LearningBridgeCards: React.FC<LearningBridgeCardsProps> = ({
                         isItemWarning
                           ? 'border-rose-400 focus:ring-2 focus:ring-rose-200'
                           : 'border-slate-300 focus:border-[#4F8EF7] focus:ring-2 focus:ring-blue-100'
-                      } outline-none transition-all placeholder:text-slate-400 shadow-2xs`}
+                      } outline-none transition-all placeholder:text-[11px] sm:placeholder:text-xs placeholder:text-slate-400 leading-normal shadow-2xs`}
                     />
 
                     {isItemWarning && (

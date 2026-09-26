@@ -1273,7 +1273,7 @@ export const ChallengeStep: React.FC<ChallengeStepProps> = ({
                 value={currentAnswerValue}
                 onChange={(e) => handleUpdateCurrentAnswer(e.target.value)}
                 placeholder={activeStageConfig.placeholder}
-                className="w-full p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 focus:border-[#4F8EF7] focus:ring-4 focus:ring-blue-100 outline-none text-sm text-slate-800 transition-all resize-none shadow-xs font-medium"
+                className="w-full p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 focus:border-[#4F8EF7] focus:ring-4 focus:ring-blue-100 outline-none text-sm text-slate-800 transition-all resize-none shadow-xs font-medium placeholder:text-xs sm:placeholder:text-sm placeholder:text-slate-400 leading-normal"
               />
 
               {/* AI Writing Assistant for Natural Polish without changing meaning */}

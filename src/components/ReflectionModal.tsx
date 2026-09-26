@@ -158,7 +158,7 @@ export const ReflectionModal: React.FC<ReflectionModalProps> = ({
               value={q1}
               onChange={(e) => setQ1(e.target.value)}
               placeholder="Tuliskan temuanmu di sini..."
-              className="w-full p-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-xs sm:text-sm text-slate-800 resize-none"
+              className="w-full p-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-xs sm:text-sm text-slate-800 resize-none placeholder:text-xs sm:placeholder:text-sm placeholder:text-slate-400 leading-normal"
             />
           </div>
 
@@ -175,7 +175,7 @@ export const ReflectionModal: React.FC<ReflectionModalProps> = ({
               value={q2}
               onChange={(e) => setQ2(e.target.value)}
               placeholder="Tuliskan pemahaman materimu di sini..."
-              className="w-full p-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none text-xs sm:text-sm text-slate-800 resize-none"
+              className="w-full p-3 rounded-xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 outline-none text-xs sm:text-sm text-slate-800 resize-none placeholder:text-xs sm:placeholder:text-sm placeholder:text-slate-400 leading-normal"
             />
           </div>
 
@@ -192,7 +192,7 @@ export const ReflectionModal: React.FC<ReflectionModalProps> = ({
               value={q3}
               onChange={(e) => setQ3(e.target.value)}
               placeholder="Tuliskan tantangan yang kamu hadapi di sini..."
-              className="w-full p-3 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none text-xs sm:text-sm text-slate-800 resize-none"
+              className="w-full p-3 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none text-xs sm:text-sm text-slate-800 resize-none placeholder:text-xs sm:placeholder:text-sm placeholder:text-slate-400 leading-normal"
             />
           </div>
 
@@ -209,7 +209,7 @@ export const ReflectionModal: React.FC<ReflectionModalProps> = ({
               value={q4}
               onChange={(e) => setQ4(e.target.value)}
               placeholder="Tuliskan cara penyelesaianmu di sini..."
-              className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-xs sm:text-sm text-slate-800 resize-none"
+              className="w-full p-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-xs sm:text-sm text-slate-800 resize-none placeholder:text-xs sm:placeholder:text-sm placeholder:text-slate-400 leading-normal"
             />
           </div>
 
@@ -226,7 +226,7 @@ export const ReflectionModal: React.FC<ReflectionModalProps> = ({
               value={q5}
               onChange={(e) => setQ5(e.target.value)}
               placeholder="Tuliskan rencana perbaikanmu di sini..."
-              className="w-full p-3 rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none text-xs sm:text-sm text-slate-800 resize-none"
+              className="w-full p-3 rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 outline-none text-xs sm:text-sm text-slate-800 resize-none placeholder:text-xs sm:placeholder:text-sm placeholder:text-slate-400 leading-normal"
             />
           </div>
         </div>

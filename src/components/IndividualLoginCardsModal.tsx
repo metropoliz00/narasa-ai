@@ -324,6 +324,12 @@ export const IndividualLoginCardsModal: React.FC<IndividualLoginCardsModalProps>
                           <img
                             src={student.avatar}
                             alt={student.name}
+                            onError={(e) => {
+                              const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=4F8EF7&color=fff&bold=true`;
+                              if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                                (e.target as HTMLImageElement).src = fallbackUrl;
+                              }
+                            }}
                             className="w-13 h-13 rounded-xl object-cover border-2 border-slate-200 shrink-0 bg-white"
                             referrerPolicy="no-referrer"
                           />

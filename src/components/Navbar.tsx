@@ -254,6 +254,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <img
                       src={currentUser.avatar}
                       alt={currentUser.name}
+                      onError={(e) => {
+                        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=4F8EF7&color=fff&bold=true`;
+                        if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                          (e.target as HTMLImageElement).src = fallbackUrl;
+                        }
+                      }}
                       className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover ring-2 ring-indigo-400 shadow-xs"
                     />
                     <span
@@ -312,6 +318,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                             <img
                               src={currentUser.avatar}
                               alt={currentUser.name}
+                              onError={(e) => {
+                                const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=4F8EF7&color=fff&bold=true`;
+                                if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                                  (e.target as HTMLImageElement).src = fallbackUrl;
+                                }
+                              }}
                               className="w-12 h-12 rounded-2xl object-cover"
                             />
                             <span className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
